@@ -50,8 +50,9 @@ Thumbs.db
 
 # Environment files
 .env
-.env.prod
+.env.prod*
 .env.local
+.vscode/
 
 # SQL and backup
 *.backup
