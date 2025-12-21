@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Products</h2>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-full">
+    <div class="ml-5 mb-2">
+      <a href="{% url 'wrsm_app:add-product' %}">
+        <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+      </a>
+    </div>
+    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-2 py-2 hidden md:table-cell lg:table-cell">Product Type</th>
+          <th class="px-2 py-2">Product Name</th>
+          <th class="px-2 py-2 hidden md:table-cell lg:table-cell">Jug Size</th>
+          <th class="px-2 py-2 hidden md:table-cell lg:table-cell">Jug Type</th>
+          <th class="px-2 py-2">Unit Price</th>
+          <th class="px-2 py-2">Qty</th>
+          <th class="px-2 py-2">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td class="border px-2 py-2 hidden md:table-cell lg:table-cell">{{ product.product_type }}</td>
+          <td class="border px-2 py-2">{{ product.product_name|remove_none }}</td>
+          <td class="border px-2 py-2 hidden md:table-cell lg:table-cell">{{ product.jug_size|remove_none }}</td>
+          <td class="border px-2 py-2 hidden md:table-cell lg:table-cell">{{ product.jug_type|remove_none }}</td>
+          <td class="border px-2 py-2">{{ product.unit_price }}</td>
+          <td class="border px-2 py-2">{{ product.quantity|remove_none }}</td>
+          <td class="border px-2 py-2 text-center">
+            <a href="{% url 'wrsm_app:update-product' pk=product.pk %}" title="edit">
+              <ion-icon name="create-outline"></ion-icon>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <a href="{% url 'wrsm_app:add-product' %}" 
+      class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">
+      Add Product
+    </a>
+  </div>
+</div>
+{% endblock %}

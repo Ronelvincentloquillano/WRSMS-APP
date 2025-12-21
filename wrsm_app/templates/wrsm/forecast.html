@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}Order Forecast{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="flex text-center items-center mt-5 mx-auto gap-4 text-4xl">
+    <h2>Order Forecast</h2>
+    <form action="{% url 'wrsm_app:update_forecast' %}" method="post">
+      {% csrf_token %}
+      <button type="submit" class="flex">
+        <ion-icon name="sync-circle-outline" title="update"></ion-icon>
+      </button>
+    </form>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
+    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2">Customer</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Days freq.</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Last ordered date</th>
+          <th class="px-4 py-2">Next order date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in forecast %}
+          {% now "Y-m-d" as current_date %}
+          {% if item.next_order_date|date:"Y-m-d" == current_date %}
+          <tr class="bg-green-300 dark:text-slate-800">
+            <td class="border px-4 py-2">{{ item.customer.name }}</td>
+            <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.days_frequency }}</td>
+            <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.last_order_date }}</td>
+            <td class="border px-4 py-2">{{ item.next_order_date|remove_none }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="border px-4 py-2">{{ item.customer.name }}</td>
+            <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.days_frequency }}</td>
+            <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.last_order_date }}</td>
+            <td class="border px-4 py-2">{{ item.next_order_date|remove_none }}</td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

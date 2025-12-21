@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Container Inventory List{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Container Inventory</h2>
+  </div>
+
+  <div class="flex flex-col gap-5 px-4 mx-auto">
+    <div class="mx-auto">
+      <!-- search fields -->
+      <form method="get">
+        <div class="flex-1">
+          {% if customers %}
+          <select 
+            name="customer" 
+            id="customer" 
+            class="w-full border rounded-md px-3 py-2 text-slate-700"
+            onchange="this.form.submit()"
+          >
+            <option value="">All Customers</option>
+            {% for customer in customers %}
+            <option value="{{ customer.customer.name }}" {% if customer.customer.name == searched_customer %}selected{% endif %}>
+              {{ customer.customer.name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% endif %}
+        </div>
+      </form>
+      <!-- end of search fields -->
+    </div>
+  
+    <div class="flex justify-between gap-4 items-center w-96">
+      <div class="">
+        <a href="{% url 'wrsm_app:add-container-inventory' %}">
+          <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+        </a>
+      </div>
+      <div class="text-right p-2 rounded bg-slate-100 dark:text-slate-800">
+        <p class="font-medium">Total loaned jugs: <span class="text-lg">{{ loaned_jugs }}/{{ initial_jug_count }}</span></p>
+      </div>
+    </div>
+  </div>
+  
+  <section class="w-full justify-center p-1 text-slate-800 dark:bg-slate-500 dark:text-slate-100">
+    <section class="w-full justify-center p-1 text-slate-800 dark:bg-slate-500 dark:text-slate-100">
+    <h6 class="mb-2 text-center mx-auto bg-yellow-200 p-2 text-md font-medium {% if searched_customer == '' %}hidden{% endif %}">{{searched_customer}}'s Record</h6>
+    <table class="table-auto mx-auto">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">Created on</th>
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2 {% if searched_customer %}hidden{% endif %}">Customer</th>
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">BFLV</th>
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">DC</th>
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">REC</th>
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">NB</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      {% if inventory %}
+        {% for inv in inventory %}
+        <tr class="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors row-clickable">
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2">{{ inv.created_date }}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 {% if searched_customer %}hidden{% endif %}">{{ inv.customer }}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.balance_from_last_visit }}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.delivered_container }}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.returned_empty_container }}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.new_balance }}</td>
+        </tr>
+        {% endfor %}
+      {% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Modal -->
+  <div id="recordModal" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 items-center justify-center">
+    <div class="bg-white dark:bg-slate-700 m-auto rounded-lg max-w-md w-11/12 shadow-lg">
+      <div class="bg-slate-700 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Record Details</h2>
+        <button id="closeModalX" class="text-2xl hover:text-gray-300 transition-colors">&times;</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Created on</p>
+          <p class="text-xl font-medium text-gray-800 dark:text-gray-100" id="modalCreatedDate"></p>
+        </div>
+        <div class="border-b border-gray-200 dark:border-gray-600 pb-3">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Customer</p>
+          <p class="text-lg font-medium text-gray-800 dark:text-gray-100" id="modalCustomer"></p>
+        </div>
+        <div class="border-b border-gray-200 dark:border-gray-600 pb-3 flex justify-between">
+          <p class="text-auto text-gray-500 dark:text-gray-400">Balance From Last Visit (BFLV)</p>
+          <p class="text-2xl font-medium text-gray-800 dark:text-gray-100" id="modalBFLV"></p>
+        </div>
+        <div class="border-b border-gray-200 dark:border-gray-600 pb-3 flex justify-between">
+          <p class="text-auto text-gray-500 dark:text-gray-400">Delivered Container (DC)</p>
+          <p class="text-2xl font-medium text-gray-800 dark:text-gray-100" id="modalDC"></p>
+        </div>
+        <div class="border-b border-gray-200 dark:border-gray-600 pb-3 flex justify-between">
+          <p class="text-auto text-gray-500 dark:text-gray-400">Returned Empty Container (REC)</p>
+          <p class="text-2xl font-medium text-gray-800 dark:text-gray-100" id="modalREC"></p>
+        </div>
+        <div class="pb-3 flex justify-between">
+          <p class="text-auto text-gray-500 dark:text-gray-400">New Balance (NB)</p>
+          <p class="text-2xl font-medium text-gray-800 dark:text-gray-100" id="modalNB"></p>
+        </div>
+      </div>
+      <div class="bg-gray-100 dark:bg-slate-600 px-6 py-4 rounded-b-lg">
+        <button id="closeModalBtn" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded transition-colors">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="flex flex-col mx-auto border border-gray-50 p-5 text-xs shadow-inner">
+    <div class="mx-auto mb-2 font-bold">
+      <h5>LEGEND</h5>
+    </div>
+    <div class="flex gap-10">
+      <p><strong>BFLV</strong> = balance from last visit</p>
+      <p><strong>REC</strong> = returned empty containers</p>
+    </div>
+    <div class="flex gap-10 text-left">
+      <p><strong>DC</strong> = delivered container</p>
+      <p><strong>NB</strong> = new balance</p>
+    </div>
+    <div class="mx-auto font-bold">
+      <p>NB = BFLV + DC - REC</p>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  $(document).ready(function() {
+    // Open modal when row is clicked
+    $('.row-clickable').on('click', function() {
+      const cells = $(this).find('td');
+      $('#modalCreatedDate').text(cells.eq(0).text());
+      $('#modalCustomer').text(cells.eq(1).text());
+      $('#modalBFLV').text(cells.eq(2).text());
+      $('#modalDC').text(cells.eq(3).text());
+      $('#modalREC').text(cells.eq(4).text());
+      $('#modalNB').text(cells.eq(5).text());
+      $('#recordModal').removeClass('hidden').addClass('flex');
+    });
+
+    // Close modal function
+    function closeModal() {
+      $('#recordModal').addClass('hidden').removeClass('flex');
+    }
+
+    // Close modal when clicking X button
+    $('#closeModalX').on('click', closeModal);
+
+    // Close modal when clicking Close button
+    $('#closeModalBtn').on('click', closeModal);
+
+    // Close modal when clicking outside
+    $('#recordModal').on('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+
+    // Close modal with Escape key
+    $(document).on('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  });
+</script>
+
+{% endblock %}

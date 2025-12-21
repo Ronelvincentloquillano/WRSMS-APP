@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}Promo{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Promos</h2>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-[300px]">
+    <table class="table-auto overflow-x-auto w-full">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2">Promo Code</th>
+          <th class="px-4 py-2">Promo Description</th>
+          <th class="px-4 py-2">Promo Rate</th>
+          <th class="px-4 py-2">End Date</th>
+          <th class="px-4 py-2">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for promo in promos %}
+        <tr>
+          <td class="border px-4 py-2">{{ promo.promo_code }}</td>
+          <td class="border px-4 py-2">{{ promo.promo_description }}</td>
+          <td class="border px-4 py-2">{{ promo.promo_rate }}</td>
+          <td class="border px-4 py-2">{{ promo.end_date|remove_none }}</td>
+          <td class="border px-4 py-2">
+            <a href="{% url 'wrsm_app:delete-promo' pk=promo.pk %}" 
+              class="btn btn-sm btn-danger">
+              delete
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <div class="flex justify-between">
+    <a href="{% url 'wrsm_app:add-promo' %}" 
+      class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 shadow-xl">
+      Add promo
+    </a>
+    <a href="{% url 'wrsm_app:station-setting-detail' pk=station.pk %}" 
+      class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
+      Station Settings
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Maintenance{% endblock %}
+
+{% block content %}
+<div class="min-h-screen min-w-auto flex flex-col items-center">
+  <div class="bg-white text-slate-700 shadow-md rounded-lg w-full md:w-full mt-10">
+    <div class="text-center border-b p-4">
+      <h2 class="text-2xl font-semibold">Add Maintenance Record</h2>
+    </div>
+    <div class="p-5">
+      <form action="" method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl" type="submit">Submit</button>
+        <a href="{% url 'wrsm_app:maintenance' %}" 
+          class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
+          Cancel
+        </a>
+      </form>
+    </div>  
+  </div>
+</div>
+{% endblock %}

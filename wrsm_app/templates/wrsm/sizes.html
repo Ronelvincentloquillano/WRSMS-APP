@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sizes{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Sizes</h2>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-[300px]">
+    <table class="table-auto overflow-x-auto w-full">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2">Size label</th>
+          <th class="px-4 py-2">Size in liters</th>
+          <th class="px-4 py-2">Unit price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for size in sizes %}
+        <tr>
+          <td class="border px-4 py-2">{{ size.size_label }}</td>
+          <td class="border px-4 py-2">{{ size.size_in_liters }}</td>
+          <td class="border px-4 py-2">{{ size.unit_price }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <div class="flex justify-between">
+    <a href="{% url 'wrsm_app:add-size' %}" 
+      class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 shadow-xl">
+      Add size
+    </a>
+    <a href="{% url 'wrsm_app:station-setting-detail' pk=station.pk %}" 
+      class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
+      Station Settings
+    </a>
+  </div>
+</div>
+{% endblock %}

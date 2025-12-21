@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Add Payment{% endblock %}
+
+{% block content %}
+<div class="min-h-screen min-w-sm flex flex-col items-center">
+  <div class="bg-white dark:bg-gray-700 dark:text-slate-100 text-slate-700 shadow-md rounded-lg w-full md:w-full mt-10">
+    <div class="text-center border-b p-2">
+      <h2 class="text-2xl font-semibold">Payment Form</h2>
+    </div>
+    <div class="text-center border-b p-4">
+      {% if customer.name %}
+      <h3 class="text-xl">Payment for <span class="font-medium">{{customer.name}}</span></h3>
+      <p class="text-md p-2 bg-cyan-300 dark:bg-cyan-700 mt-2 rounded">
+        {% if total_unpaid_amount %}
+        <strong>Total balance: </strong> {{ total_unpaid_amount }}
+        {% else %}
+        <span class="text-pretty">No payment items were selected. <br>The amount will be applied as customer credit.</span>
+        {% endif %}
+      </p>
+      {% else %}
+      <p>
+        <strong>Sales ID: </strong> {{ sales_obj.pk }}
+      </p>
+      {% endif %}
+      {% if total_unpaid_amount %}
+      <button class="bg-green-300 dark:bg-green-600 p-2 rounded-md mt-2 shadow-lg" id="payFullAmount" data-amount="{{ total_unpaid_amount }}">Pay full amount</button>
+      {% endif %}
+    </div>
+    <div class="px-5 text-slate-700 dark:text-slate-100">
+      <form method="post">
+        {% csrf_token %}
+        <!-- PAYMENT DETAILS -->
+        <div class="mt-3 min-w-fit flex bg-gray-100 dark:bg-gray-500 rounded-md p-2 gap-5" id="payment_div">
+
+          <div class="w-1/2 space-y-2">
+            <label class="block font-semibold mb-1">
+              Payment Type
+            </label>
+            {% for i in form.payment_type %}
+            <label class="flex items-center gap-2 cursor-pointer">
+              <span>{{i}}</span>
+            </label>
+            {% endfor %}
+          </div>
+
+          <div class="w-full">
+            <div>
+              {{form.total_paid.errors}}
+              <label for="form.total_paid" class="mr-3 font-medium w-1/3">Amount</label>
+              {{form.total_paid|add_class:"dark:bg-slate-200 dark:text-slate-800 w-full mt-2 p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+            </div>
+  
+            <div class="mt-4">
+              {{form.note.errors}}
+              <label for="form.note" class="mr-3 font-medium w-1/3">Payment note</label>
+              {{form.note|add_class:"dark:bg-slate-200 dark:text-slate-800 w-full mt-2 p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex space-x-2 my-5">
+          <button type="submit" 
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">
+            Submit
+          </button>
+          <a href="{% url 'wrsm_app:customer-detail' pk=customer.pk %}" 
+            class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  <div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  $('#payFullAmount').on('click', function () {
+    const total_paid = $("#id_total_paid");
+    total_paid.val($(this).data("amount"));
+    $(this).hide();
+  });
+</script>
+{% endblock %}

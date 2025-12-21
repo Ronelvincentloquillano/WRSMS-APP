@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+
+{% block title %}Add Order{% endblock %}
+
+{% block content %}
+<div class="min-h-screen min-w-96 flex flex-col items-center">
+  <div class="bg-white text-slate-700 shadow-md rounded-lg w-full md:w-full mt-10">
+    <div class="text-center border-b p-4">
+      <h2 class="text-2xl font-semibold">Add Order Form</h2>
+    </div>
+
+    <div class="p-5">
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- CUSTOMER -->
+        <div class="mt-3 flex">
+          {{form.customer.errors}}
+          <label for="form.customer" class="mr-3 font-medium w-1/3">Customer</label>
+          {{form.customer|add_class:"w-full p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+        </div>
+
+        <!-- ORDER TYPE -->
+        <div class="mt-3 flex">
+          {{form.order_type.errors}}
+          <label for="form.order_type" class="mr-3 font-medium w-1/3">Order Type</label>
+          {{form.order_type|add_class:"w-full p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+        </div>
+
+        <!-- QUANTITY -->
+        <div class="mt-3 flex">
+          {{form.quantity.errors}}
+          <label for="form.quantity" class="mr-3 font-medium w-1/3">Quantity</label>
+          {{form.quantity|add_class:"w-full p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+        </div>
+
+        <!-- NOTE -->
+        <div class="mt-3 flex">
+          {{form.note.errors}}
+          <label for="form.note" class="mr-3 font-medium w-1/3">Note</label>
+          {{form.note|add_class:"w-full p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+        </div>
+
+        <!-- IS PAID -->
+        <div class="mt-3 flex">
+          {{form.is_paid.errors}}
+          <label for="form.is_paid" class="mr-3 font-medium w-1/4">Paid</label>
+          {{form.is_paid|add_class:"checked:bg-blue-500 p-2 size-5"|attr:"id:is_paid"}}
+        </div>
+
+        <!-- PAYMENT DETAILS -->
+        <div class="mt-3 min-w-fit flex hidden bg-gray-100 rounded-md p-2" id="payment_div">
+
+          <div class="w-1/2 space-y-2">
+            <label class="block font-semibold text-slate-700 mb-1">
+              Payment Type
+            </label>
+            {% for i in form.payment_type %}
+            <label class="flex items-center gap-2 cursor-pointer">
+              <span>{{i}}</span>
+            </label>
+            {% endfor %}
+          </div>
+
+          <div class="w-full">
+            <div>
+              {{form.paid_amount.errors}}
+              <label for="form.paid_amount" class="mr-3 font-medium w-1/3">Paid Amount</label>
+              {{form.paid_amount|add_class:"w-full mt-2 p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+            </div>
+  
+            <div class="mt-4">
+              {{form.payment_note.errors}}
+              <label for="form.payment_note" class="mr-3 font-medium w-1/3">Payment Note</label>
+              {{form.payment_note|add_class:"w-full mt-2 p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- STATUS -->
+        <div class="mt-4 flex">
+          {{form.status.errors}}
+          <label for="form.payment_note" class="mr-3 font-medium w-1/3">Status</label>
+          {{form.status|add_class:"w-full p-2 outline-1 -outline-offset-1 outline-white/10 placeholder:text-slate-500 focus:outline-2 focus:-outline-offset-2 focus:outline-sky-400 border border-slate-400"}}
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="mt-6 flex gap-3">
+          <button 
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl" 
+            type="submit"
+          >
+            Submit
+          </button>
+
+          <a 
+            href="{% url 'wrsm_app:orders' %}" 
+            class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl"
+          >
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+<script>
+$(document).ready(function () {
+  const $paymentDiv = $("#payment_div");
+  const $isPaid = $("#is_paid");
+
+  $isPaid.on("change", function () {
+    const isPaid = $(this).val()
+    if(isPaid){
+      $paymentDiv.toggleClass('hidden');
+    }
+  });
+});
+$(document).ready(function () {
+  // Customer selection
+  const $customerSelect = $("#id_customer");
+  const $id_order_type = $("#id_order_type");
+  const $default_order_type = $("#id_default_order_type");
+  const $station_default_order_type = $("#id_station_default_order_type");
+  const initialOrderType = $id_order_type.val()
+
+  $customerSelect.on("change", function () {
+    const customerId = $(this).val();
+
+    if (customerId) {
+      $.getJSON(`/wrsm/ajax/get-customer-data/?id_customer=${customerId}`)
+        .done(function (data) {
+          if (data.error) {
+            console.log("Error:", data.default_order_type);
+          } else {
+            $id_order_type.val(data.default_order_type);
+          }
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+          console.error("Error fetching customer data:", errorThrown);
+          $id_order_type.val(data.station_default_order_type);
+        });
+    } else {
+      $id_order_type.val(initialOrderType);
+    }
+  });
+});
+</script>
+{% endblock %}

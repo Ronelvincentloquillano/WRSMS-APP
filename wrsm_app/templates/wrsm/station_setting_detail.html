@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Station Setting detail{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Station Settings</h2>
+  </div>
+
+  <section class="w-full bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 mt-5">
+    <table class="table-auto">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50 text-left">
+        <tr>
+          <th class="px-4 py-2">Default setting</th>
+          <th class="px-4 py-2">Default value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Delivery Rate</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.default_delivery_rate }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Jug Size</td>
+          <td class="border px-4 py-2 text-lg">
+            {% if station_settings.default_jug_size %}
+            {{ station_settings.default_jug_size }}
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Unit Price</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.default_unit_price }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Minimum Delivery Qty</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.default_minimum_delivery_qty }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Order Type</td>
+          <td class="border px-4 py-2 text-lg">
+            {% if station_settings.default_order_type %}
+            {{ station_settings.default_order_type }}
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Default Payment Type</td>
+          <td class="border px-4 py-2 text-lg">
+            {% if station_settings.default_payment_type %}
+            {{ station_settings.default_payment_type }}
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Number of days to filter Sales list</td>
+          <td class="border px-4 py-2 text-lg">
+            {{ station_settings.days_to_filter_saleslist }}
+          </td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Num. of liters to backwash</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.num_of_liters_to_backwash }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Num. of liters to change filter</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.num_of_liters_to_change_filter }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Auto deduct supplies</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.auto_deduct_supplies }}</td>
+        </tr>
+        <tr>
+          <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">Initial Jug Count</td>
+          <td class="border px-4 py-2 text-lg">{{ station_settings.initial_jug_count }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="p-5 my-2 mx-auto">
+      <a href="{% url 'wrsm_app:station-setting-update' pk=station_settings.pk %}" 
+      class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 shadow-xl">edit</a>
+    </div>
+  </section>
+
+  <!-- Links -->
+  <div class="grid grid-cols-2 gap-5 mx-5 mt-5 text-center mb-5">
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:sizes' %}">Sizes</a>
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:jug-types' %}">Jug Types</a>
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:order-types' %}">Order Types</a>
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:payment-types' %}">Payment Types</a>
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:promos' %}">Promos</a>
+    <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:discounts' %}">Discounts</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Customers <ion-icon name="people-outline"></ion-icon></h2>
+  </div>
+  
+  <div class="flex flex-col p-2 md:flex-row justify-between items-center gap-4 text-center">
+
+    <!-- Add Customer button -->
+    <div class="w-full md:w-auto">
+      <a href="{% url 'wrsm_app:add-customer' %}"
+        class="bg-blue-600 px-3 py-2 text-white rounded-md hover:bg-blue-700 shadow-xl inline-flex items-center gap-1"
+      >
+        <ion-icon name="add-outline" class="text-md"></ion-icon>
+        Add Customer
+      </a>
+    </div>
+
+    <!-- Search field -->
+    {% if customers %}
+    <div class="w-full md:w-auto">
+      <form method="get" class="w-full flex">
+        <input 
+          type="text" 
+          name="customer" 
+          value="{{searched_customer}}" 
+          id="customer"
+          placeholder="search customer here"
+          class="px-3 py-2 rounded w-full md:w-auto text-center text-slate-700 placeholder:italic placeholder:text-slate-500"
+          onkeypress.enter="form.submit.prevent()"
+        >
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
+    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100">
+        <tr class="text-left">
+          <th class="px-4 py-2">Name</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Purok/Sitio</th>
+          <th class="px-4 py-2">Brgy</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Promo code</th>
+          <th class="px-4 py-2 sm:table-cell md:table-cell lg:table-cell">Discount code</th>
+          <th class="px-4 py-2">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr>
+          <td class="border px-4 py-2">
+            <a href="{% url 'wrsm_app:customer-detail' pk=customer.pk %}" style="margin-right: 5px;">
+            {{ customer.name }}
+            </a>
+          </td>
+          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{% if customer.purok %}{{ customer.purok }}{% endif %}</td>
+          <td class="border px-4 py-2">{{ customer.brgy }}</td>
+          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{% if customer.promo_code %}{{ customer.promo_code }}{% endif %}</td>
+          <td class="border px-4 py-2 sm:table-cell md:table-cell lg:table-cell">{% if customer.discount_code %}{{ customer.discount_code }}{% endif %}</td>
+          <td colspan="1" class="border px-4 py-2 text-center">
+            <a href="{% url 'wrsm_app:update-customer' pk=customer.pk %}">
+              <ion-icon name="create-outline"></ion-icon>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if customers %}
+      <tfoot>
+        <tr class="bg-slate-300/50">
+          <td colspan="8" class="pl-2 py-1 font-medium text-slate-700 dark:text-slate-100">Total records: <span class="text-lg text-slate-500 dark:text-slate-100">{{count}}</span></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </section>
+</div>
+
+{% endblock %}

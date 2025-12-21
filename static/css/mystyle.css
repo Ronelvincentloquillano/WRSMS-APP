@@ -1,0 +1,21 @@
+#main_button {
+  font-size: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  align-content: center;
+  margin: 5px;
+  width: max-content;
+  height: max-content;
+}
+
+.mydiv {
+  border-radius: 10px;
+  margin: 5px;
+}
+
+.mydiv button {
+  border-radius: 10px;
+  padding: 1em;
+  width: 12em;
+}

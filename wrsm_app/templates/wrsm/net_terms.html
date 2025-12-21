@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Net Terms{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Net Terms</h2>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-[300px] sm:min-w-[400px] lg:min-w-[1020px] md:min-w-[740px]">
+    <table class="table-auto overflow-x-auto w-full">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2">Terms Label</th>
+          <th class="px-4 py-2">Terms in Days</th>
+          <th class="px-4 py-2">Terms Description</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% if net_terms %}
+        {% for terms in net_terms %}
+        <tr>
+          <td class="border px-4 py-2">{{ terms.terms_label }}</td>
+          <td class="border px-4 py-2">{{ terms.terms_in_days }}</td>
+          <td class="border px-4 py-2">{{ terms.terms_description }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr class="bg-slate-100/50 text-center text-xl">
+          <td colspan="3" class="text-slate-900 dark:text-slate-100">No entered data yet</td>
+        </tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </section>
+  <div>
+    <a href="{% url 'wrsm_app:add-net-terms' %}" 
+      class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 shadow-xl">
+      Add terms
+    </a>
+  </div>
+</div>
+{% endblock %}

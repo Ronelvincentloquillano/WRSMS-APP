@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pricing{% endblock %}
+
+{% block content %}
+<div class="mt-32">
+  <div class="flex flex-col items-center">
+    
+    <p class="text-center text-3xl font-bold bg-yellow-300 dark:text-slate-900 w-96 px-4 py-2 rounded">
+      Coming Soon!
+    </p>
+
+    <h1 class="text-center text-4xl font-extrabold mt-4">Pricing Plans</h1>
+    <p class="text-center text-lg text-gray-600 dark:text-slate-200 mb-8">
+      Choose a plan that suits your needs
+    </p>
+
+    <!-- Pricing Cards Container -->
+    <div class="flex flex-col sm:flex-row justify-center gap-6">
+
+      <!-- Card 1 -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
+        <h4 class="text-xl font-semibold capitalize">sediment</h4>
+        <h1 class="text-4xl font-bold">
+          ₱200
+          <small class="text-base font-normal">/per month</small>
+        </h1>
+        <p class="dark:text-slate-200 mt-3">
+          Designed for small entity with limited number of transaction per month
+        </p>
+
+        <p class="mt-5">
+          <strong>Transaction per month:</strong> up to 300
+        </p>
+
+        <div class="text-center mt-6">
+          <a href="#" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
+            Sign-up
+          </a>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
+        <h4 class="text-xl font-semibold capitalize">carbon</h4>
+        <h1 class="text-4xl font-bold">
+          ₱300
+          <small class="text-base font-normal">/per month</small>
+        </h1>
+        <p class="dark:text-slate-200 mt-3">
+          Designed for medium entity with limited number of transaction per month
+        </p>
+
+        <p class="mt-5">
+          <strong>Transaction per month:</strong> up to 500
+        </p>
+
+        <div class="text-center mt-6">
+          <a href="#" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
+            Sign-up
+          </a>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
+        <h4 class="text-xl font-semibold capitalize">RO</h4>
+        <h1 class="text-4xl font-bold">
+          ₱400
+          <small class="text-base font-normal">/per month</small>
+        </h1>
+        <p class="dark:text-slate-200 mt-3">
+          Designed for large entity with unlimited number of transaction per month
+        </p>
+
+        <p class="mt-5">
+          <strong>Transaction per month:</strong> unlimited
+        </p>
+
+        <div class="text-center mt-6">
+          <a href="#" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
+            Sign-up
+          </a>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Trial Notice -->
+    <div class="bg-gray-100 dark:bg-yellow-300 shadow-md rounded-xl w-72 max-w-5xl text-center p-4 mt-6">
+      <p class="text-gray-700 text-balance">
+        Free 30-day trial comes with full feature and unlimited number of transaction.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

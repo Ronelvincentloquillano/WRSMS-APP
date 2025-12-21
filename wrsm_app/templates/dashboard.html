@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen p-4">
+  <div class="text-center text-4xl mt-5">
+    <h1>Dashboard</h1>
+  </div>
+  <div>
+    <div class="mb-4 text-center">
+      <h3 class="text-xl font-semibold">Welcome {{request.user.first_name}}</h3>
+      <h6 class="text-slate-500 text-lg">{% now "l, F j, Y" %}</h6>
+    </div>
+    <table class="table-fixed min-w-full sm:min-w-full max-w-xl sm:max-w-lg text-sm md:text-xl mx-auto mb-10">
+      <thead>
+        <tr>
+          <th colspan="2" class="text-xl">Seals Inventory</th>
+        </tr>
+        <tr class="border border-s-0 border-t-0 border-r-0 border-slate-800 dark:border-slate-400 text-lg">
+          <th class="text-left">Seal</th>
+          <th class="text-left">Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for seal in slim_seals %}
+        <tr>
+          <th class="text-left">{{ seal.product_name }}:</th>
+          <td>{{ seal.quantity }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th class="text-left">umbrella seals:</th>
+          <td>{{ umbrella_seals }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="table-fixed min-w-96 sm:min-w-full max-w-xl sm:max-w-lg text-xl md:text-2xl mx-auto mb-10">
+      <thead>
+        <tr>
+          <th colspan="2" class="text-xl">Maintenance Records</th>
+        </tr>
+        <tr class="border border-s-0 border-t-0 border-r-0 border-slate-800 dark:border-slate-400 text-lg">
+          <th>Type</th>
+          <th>Date/Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="text-left">Last backwash:</th>
+          <td>{{last_backwash.date}}{% if last_backwash.note %} (note: {{ last_backwash.note }}){% endif %}</td>
+        </tr>
+        <tr>
+          <th class="text-left">Last filter change:</th>
+          <td>{{last_filter_change.date}}{% if last_filter_change.note %} (note: {{ last_filter_change.note }}){% endif %}</td>
+        </tr>
+        <tr>
+          <th class="text-left">Number of liters left to backwash:</th>
+          <td>{{ station_settings.num_of_liters_to_backwash|subtract:total_liters }} or 
+            <span>({{ station_settings.num_of_liters_to_backwash|subtract:total_liters|divide:20 }} 20L containers)</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

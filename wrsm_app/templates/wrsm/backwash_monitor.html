@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load math_filters %}
+
+{% block title %}Backwash Monitor{% endblock %}
+
+{% block content %}
+<div class="min-h-screen min-w-96 flex flex-col items-center">
+
+  <div class="bg-white mt-5 dark:bg-gray-800 text-slate-700 dark:text-slate-100 shadow-md rounded-lg min-w-96">
+    <div class="text-center p-5 mb-2">
+      <h2 class="text-2xl font-semibold">Backwash Monitor</h2>
+    </div>
+    <div class="flex flex-col text-center mx-10 mb-2">
+      <p class="rounded bg-yellow-300 dark:text-slate-800 p-2 mb-2 text-sm text-balance">
+        If you perform a backwash at the end of the day, <br>
+        simply add one day to the last backwash date indicated below.
+      </p>
+      <p class="font-medium"><strong>Last backwash date:</strong> {{ last_backwash_date }}</p>
+    </div>
+    <div class="flex p-5 my-5 mx-auto border">
+      <form method="get" class="flex gap-6">
+        <div class="flex-1">
+          <label class="block font-medium mb-1" for="start_date">
+            Start Date: 
+          </label>
+          <input class="w-full border rounded-md px-3 py-2 text-slate-700" 
+            type="date" name="start_date" value="{{ start_date }}"
+          >
+        </div>
+        <div class="flex-1">
+          <label class="block font-medium mb-1" for="end_date">
+            End Date: 
+          </label>
+          <input class="w-full border rounded-md px-3 py-2 text-slate-700" 
+            type="date" name="end_date" value="{{ end_date }}"
+          >
+        </div>
+        <div class="flex mx-auto my-auto items-center">
+          <button type="submit" 
+            class="bg-cyan-400 px-2 py-1 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl"
+          >
+            Generate Report
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="p-4 overflow-x-auto">
+      {% if transactions %}
+      <div class="p-2 mx-auto bg-cyan-300 dark:text-slate-800 rounded w-auto text-center mb-5">
+        <h3 class="font-medium text-balance">Total Liters Filled: {{ total_liters }} liters or <span>({{ total_liters|divide:20 }} 20L containers)</span></h3>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Receivable{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Accounts Receivable</h2>
+  </div>
+
+  <div class="mb-6 mt-6 max-w-xl mx-auto flex justify-between md:flex-row gap-4">
+    <form method="get" class="bg-cyan-200 px-2 py-1 text-slate-700 dark:text-slate-100/50 rounded-md flex flex-col md:flex-row lg:flex-row gap-2 items-center">
+      <div class="flex-1">
+        <input 
+          type="text" 
+          name="customer"
+          value="{{ request.GET.customer }}" 
+          class="w-full border rounded-md px-3 py-2 text-slate-700"
+          placeholder="customer name">
+      </div>
+      <div class="flex rounded px-5 py-2 space-x-2 items-center">
+        <label for="filter" class="font-medium mb-1">Filter by status:</label>
+        <div class="flex items-center">
+          <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
+            value="Partially Paid" {% if "Partially Paid" in selected_filters %}checked{% endif %}
+            onchange="this.form.submit()"
+          >
+          <label for="Completed" class="mr-5">Partially Paid</label>
+          <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
+            value="Paid" {% if "Paid" in selected_filters %}checked{% endif %}
+            onchange="this.form.submit()"
+          >
+          <label for="Paid">Paid</label>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
+    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Sales ID</th>
+          <th class="px-4 py-2">Date</th>
+          <th class="px-4 py-2">Customer</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Sales Note</th>
+          <th class="px-4 py-2">Total Amount</th>
+          <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ar_item in ar_items %}
+        <tr>
+          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ ar_item.sales.id }}</td>
+          <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.sales.created_date.date }}</td>
+          <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.customer|default:'' }}</td>
+          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ ar_item.sales.note|default:'' }}</td>
+          <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.total_amount }}</td>
+          <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if ar_items %}
+      <tfoot>
+        <tr class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100 text-right">
+          <td colspan="5" class="px-10 py-1 font-medium text-slate-700 dark:text-slate-100/50">Grand total: <span class="text-lg text-slate-500 dark:text-slate-100">{{grand_total}}</span></td>
+          <td></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </section>
+
+</div>
+{% endblock %}

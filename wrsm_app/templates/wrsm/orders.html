@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<div class="min-h-screen max-w-6xl mx-auto px-4">
+  <div class="text-center mt-6 flex justify-center px-5">
+    <h2 class="text-3xl font-bold w-full">Orders</h2>
+    <div class="text-right w-auto">
+      <a href="{% url 'wrsm_app:add-order' %}">
+        <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+      </a>
+    </div>
+  </div>
+
+  <!-- search fields -->
+  <form method="get" class="mb-6 text-center mt-6 max-w-xl mx-auto">
+    <div class="text-center flex flex-col gap-4">
+      <div class="flex mx-auto gap-4 bg-cyan-200 px-4 py-2 rounded text-slate-900">
+        <label for="filter" class="block font-medium mb-1">Filter:</label>
+        <div class="flex">
+        <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
+          value="Completed" {% if "Completed" in selected_filters %}checked{% endif %}
+          onchange="this.form.submit()"
+        >
+        <label for="Completed" class="mr-5">Completed</label>
+        <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
+          value="Cancelled" {% if "Cancelled" in selected_filters %}checked{% endif %}
+          onchange="this.form.submit()"
+        >
+        <label for="Cancelled">Cancelled</label>
+      </div>
+    </div>
+  </form>
+  <!-- end of search fields -->
+
+  <div class="flex flex-col items-center">
+   
+    {% for item in orders %}
+    <div class="bg-white text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl">
+      
+      <!-- Card Header -->
+      <div class="border-b p-3">
+        <h4 class="text-lg font-semibold">
+          Order #: {{ item.pk }}
+          {% if item.customer %}
+            | {{ item.customer.name }}
+          {% endif %}
+          | {{ item.created_date }}
+        </h4>
+
+        <div class="mt-1 font-medium text-gray-600">
+          <h6>
+            Address:
+            {% if item.customer.brgy %}
+              {{ item.customer.brgy }}
+            {% else %}
+              &nbsp;
+            {% endif %}
+          </h6>
+        </div>
+      </div>
+
+      <!-- Card Body -->
+      <div class="p-4 overflow-x-auto">
+        <table class="min-w-full border border-gray-300 text-sm">
+          <thead class="bg-gray-100">
+            <tr class="text-left">
+              <th class="px-3 py-2 border-b text-left">Qty</th>
+              <th colspan="2" class="px-3 py-2 border-b text-left">Order type</th>
+              <th colspan="2" class="px-3 py-2 border-b text-left">Amount paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="text-left">
+              <td class="px-3 py-2 border-b">{{ item.quantity }}</td>
+              <td colspan="2" class="px-3 py-2 border-b">{{ item.order_type }}</td>
+              <td colspan="2" class="px-3 py-2 border-b">
+                {% if item.is_paid %}
+                  {{ item.paid_amount }}
+                {% else %}
+                  0.00
+                {% endif %}
+              </td>
+            </tr>
+            <tr class="text-left">
+              <th colspan="2" class="px-3 py-2 border-b">Payment note:</th>
+              <td colspan="3" class="px-3 py-2 border-b">
+                {% if item.payment_note %}
+                  {{ item.payment_note }}
+                {% endif %}
+              </td>
+            </tr>
+            <tr class="text-left">
+              <th colspan="2" class="px-3 py-2 border-b">Note:</th>
+              <td colspan="3" class="px-3 py-2 border-b">
+                {% if item.note %}
+                  {{ item.note }}
+                {% endif %}
+              </td>
+            </tr>
+            <thead class="bg-gray-100">
+              <tr class="text-left">
+                <th colspan="2" class="px-3 py-2 border-b text-left">Entered by</th>
+                <th colspan="3" class="px-3 py-2 border-b text-left">Status</th>
+              </tr>
+            </thead>
+            <tr class="text-left">
+              <td colspan="2" class="px-3 py-2 border-b">{{ item.created_by.user }}</td>
+              <td colspan="3" class="px-3 py-2 border-b">
+                <!-- Payment badge -->
+                {% if item.is_paid == True %}
+                  <span class="px-2 py-1 rounded text-white bg-green-600 text-xs">paid</span>
+                {% elif item.is_paid == False %}
+                  <span class="px-2 py-1 rounded text-white bg-red-600 text-xs">unpaid</span>
+                {% else %}
+                  <span class="px-2 py-1 rounded text-black bg-yellow-400 text-xs">unknown</span>
+                {% endif %}
+
+                <!-- Dropdown -->
+                <el-dropdown class="inline-block">
+                  <button class="inline-flex w-full justify-center 
+                    gap-x-1.5 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold ring-1 ring-inset ring-white/5 hover:bg-white/20
+                    {% if item.status == 'Pending' %}
+                      text-red-600
+                    {% elif item.status == 'In Progress' %}
+                      text-yellow-500
+                    {% elif item.status == 'Completed' %}
+                      text-green-600
+                    {% else %}
+                      bg-gray-400
+                    {% endif %}
+                    " {% if item.status == 'Cancelled' or item.status == 'Completed' %} disabled {% endif %}>
+                    {{ item.status }}
+                    <svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class="-mr-1 size-5 text-gray-400">
+                      <path d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd" />
+                    </svg>
+                  </button>
+  
+                  <el-menu anchor="bottom end" popover class="m-0 w-32 origin-top-right rounded-md bg-slate-100 p-0 outline outline-1 -outline-offset-1 outline-white/10 transition [--anchor-gap:theme(spacing.2)] [transition-behavior:allow-discrete] data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in">
+                    <div class="py-1">
+                      {% if item.status != 'In Progress' %}
+                      <a href="{% url 'wrsm_app:process_order' order_id=item.pk %}" class="block px-4 py-2 text-sm text-slate-700 focus:bg-slate-700 focus:text-slate-100">In Progress</a>
+                      {% endif %}
+                      <a href="{% url 'wrsm_app:add-sales-from-order' order_id=item.pk %}" class="block px-4 py-2 text-sm text-slate-700 focus:bg-slate-700 focus:text-slate-100">Complete</a>
+                      <a href="{% url 'wrsm_app:cancel_order' order_id=item.pk %}" class="block px-4 py-2 text-sm text-slate-700 focus:bg-slate-700 focus:text-slate-100">Cancel</a>
+                    </div>
+                  </el-menu>
+                </el-dropdown>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+{% endblock %}

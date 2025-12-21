@@ -1,0 +1,11 @@
+.free-button {
+  width: max-content;
+  font-size: small;
+  padding: 5px;
+  border: 1px;
+  border-color: #596975;
+  border-style: solid;
+  background: inherit;
+  border-radius: 5px;
+  align-items: center;
+}

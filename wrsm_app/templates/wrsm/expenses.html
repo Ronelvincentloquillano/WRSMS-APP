@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+{% load humanize %}
+{% load math_filters %}
+
+{% block title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Expenses</h2>
+  </div>
+
+  <div class="mb-6 mt-6 max-w-xl mx-auto flex justify-between flex gap-4">
+    <form method="get" class="px-4 text-slate-700 dark:text-slate-100/50 rounded-md flex flex-col md:flex-row lg:flex-row gap-2 items-center">
+      <div class="flex items-center gap-2">
+        <label for="year_month" class="font-medium mb-1 ml-5">Month/Year</label>
+        <input 
+          type="month" 
+          name="year_month"
+          value="{{ request.GET.year_month }}" 
+          class="w-full border rounded-md px-3 py-2 text-slate-700"
+        >
+      </div>
+      <div class="flex border border-gray-300 rounded px-5 py-2 space-x-2 items-center">
+        <button type="submit" 
+          class="bg-cyan-400 px-4 py-2 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl">
+          Filter
+        </button>
+        <a href="{% url 'wrsm_app:expenses' %}" 
+          class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
+          Reset
+        </a>
+      </div>
+    </form>
+  </div>
+    
+  <div class="flex mt-3 mb-3 text-sm sm:text-lg justify-between gap-4 items-center">
+    <div class="w-auto">
+      <a href="{% url 'wrsm_app:add-expense' %}">
+        <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+      </a>
+    </div>
+    <div class="w-auto bg-gray-100 rounded py-2 text-right px-5">
+      <h4 class="text-md sm:text-xl font-semibold text-slate-800">
+        Grand total: {{total_expenses.expense_items__total_amount__sum|floatformat:2}}
+      </h4>
+    </div>
+  </div>
+
+  {% for expense in expenses %}
+  <div class="bg-white text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl">
+    
+    <div class="border-b p-4">
+      <p>Reference #: {{ expense.reference_number }}</p>
+      <p>Notes: {{ expense.notes }}</p>
+    </div>
+
+    <div class="p-4 overflow-x-auto">
+      <table class="min-w-full border border-gray-300 text-sm">
+        <thead class="bg-gray-100">
+          <tr class="text-left">
+            <th class="px-3 py-2 border-b">Description</th>
+            <th class="px-3 py-2 border-b">Qty</th>
+            <th class="px-3 py-2 border-b">Unit price</th>
+            <th class="px-3 py-2 border-b">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in expense.expense_items.all %}
+          <tr>
+            <td class="px-3 py-2 border-b">{{ item.description }}</td>
+            <td class="px-3 py-2 border-b">{{ item.qty }}</td>
+            <td class="px-3 py-2 border-b">{{ item.unit_price }}</td>
+            <td class="px-3 py-2 border-b">{{ item.total_amount }}</td>
+          </tr>
+          {% endfor %}
+
+          <tr class="font-bold bg-gray-50">
+            <td colspan="4" class="pr-5 py-2 text-right border-b">Subtotal: {{ totals_by_items|get_item:expense.id|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="mt-4 w-full max-w-3xl bg-gray-100 rounded py-3 text-right pr-5 shadow">
+    <h4 class="text-xl font-semibold text-slate-800">Grand total: {{total_expenses.expense_items__total_amount__sum|floatformat:2}}</h4>
+  </div>
+
+  {% if expenses.count != 0 %}
+  <div class="mt-3 mb-3 text-lg">
+    <a href="{% url 'wrsm_app:add-expense' %}" 
+      class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">
+      <ion-icon name="add-circle-outline"></ion-icon>
+      Add expense
+    </a>
+  </div>
+  {% endif %}
+  
+</div>
+{% endblock %}

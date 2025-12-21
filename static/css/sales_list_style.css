@@ -1,0 +1,9 @@
+.no-data {
+  text-align: center;
+  font-size: medium;
+  font-weight: bold;
+  color: white;
+  padding: 2em;
+  background-color: gray;
+  border-radius: 10px;
+}

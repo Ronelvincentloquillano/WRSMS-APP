@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+{% load humanize %}
+{% load math_filters %}
+
+{% block title %}Customer detail{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col mt-5">
+  <div>
+    <section class="text-center mb-5">
+      <h2 class="text-4xl mb-5"><span class="font-medium">{{ customer.name }}</span> Details</h2>
+    </section>
+    
+    <section class="lg:min-w-[1080px] md:min-w-[740px]">
+      <div class="flex justify-between ml-5 mr-5">
+        <a href="{% url 'wrsm_app:customers' %}" 
+          class="bg-cyan-400 px-4 py-2 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl">
+          <ion-icon name="people-outline"></ion-icon>
+          Customers
+        </a>
+        <button id="showCustomerInfoBtn" 
+          class="p-2 bg-slate-500 ml-5 text-slate-100 md:hidden lg:hidden rounded shadow-lg"
+        >
+          <span id="custInfoText">show customer info</span>
+        </button>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-2 bg-slate-300 mt-5">
+
+        <div class="flex-col hidden md:block lg:block" id="customerInfo">
+
+          <div class="text-slate-800">
+            <div class="bg-slate-700 text-slate-100 p-2 mb-5">
+              <h3 class="text-2xl font-semibold text-center">
+                Customer Info
+                <a href="{% url 'wrsm_app:update-customer' pk=customer.pk %}">
+                  <ion-icon name="create-outline"></ion-icon>
+                </a>
+              </h3>
+            </div>
+            <div class="mb-10 text-lg p-5">
+              <p>
+                <strong>Address:</strong> 
+                {% if customer.purok %}
+                {{ customer.purok }}, {{customer.brgy}}, {{customer.city }}
+                {% else %}
+                {{customer.brgy}}, {{customer.city }}
+                {% endif %}
+              </p>
+              {% if customer.note %}
+              <p>
+                <strong>Note:</strong> {{ customer.note }}
+              </p>
+              {% endif %}
+              {% if customer.contact_number %}
+              <p>
+                <strong>Contact Number:</strong> {{ customer.contact_number }}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="text-slate-800 p-5">
+            <button id="imageBtn" 
+              class="bg-cyan-400 px-4 py-2 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl">
+              <span id="imageBtnText">show image</span>
+            </button>
+            <div id="customer_image" class="hidden w-full p-5">
+              {% if customer.image %}
+              <img src="{{ customer.image.url }}" alt="{{ customer.name }}" class="w-[200px] object-cover">
+              {% endif %}
+              {% if customer.location_image %}
+              <img src="{{ customer.location_image.url }}" alt="{{ customer.name }}" class="w-96 object-cover">
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+
+        <div class="bg-slate-100 text-slate-800 min-w-full">
+          <div class="bg-slate-500 text-slate-100 p-2 mb-5">
+            <h3 class="text-2xl font-semibold text-center">
+              Order and Payment History
+            </h3>
+          </div>
+          <form method="get" action="{% url 'wrsm_app:add-payment' customer_id=customer.pk %}" class="px-5">
+            <div class="flex justify-between mb-5">
+              <button type="submit" id="add_credit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">add credit</button>
+              <button type="submit" id="add_payment" class="bg-cyan-400 text-slate-700 px-4 py-2 rounded-md hover:bg-cyan-500 hover:text-slate-100 shadow-xl" hidden>add payment (P<span id="totalSelectedAmount"></span>)</button>
+              <p class="px-5 py-2 border border-1 border-slate-300 rounded">
+                <strong>Credit Balance:</strong>
+                  {% if credit %}
+                    {{ credit.amount|intcomma }}
+                  {% else %}
+                    0.00
+                  {% endif %}
+              </p>
+            </div>
+            <table class="table-fixed min-w-full">
+              <thead class="mb-5 dark:bg-slate-700 bg-slate-300 dark:text-slate-100 min-w-auto">
+                <tr>
+                  <th class="w-auto">Pay</th>
+                  <th class="w-auto">SalesID</th>
+                  <th class="w-auto">Date</th>
+                  <th class="w-auto">Order type</th>
+                  <th class="w-auto">Note</th>
+                  <th class="w-auto">Total</th>
+                  <th class="w-auto">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ar in ar_records %}
+                  <tr class="bg-light font-light text-sm">
+                    <td>
+                      <input type="checkbox" name="sales-id-checked" class="checked:bg-blue-500 p-2 size-5 payment-checkbox"
+                        style="font-size: large;"
+                        value="{{ar.sales.id|cut:","}}"
+                        data-ar-amount="{{ar.total_amount}}"
+                        data-ar-status="{{ar.status}}"
+                        {% if ar.status == 'Paid' %}disabled{% endif %}
+                      >
+                    </td>
+                    <td>{{ ar.sales.id|cut:"," }}</td>
+                    <td>{{ ar.sales.created_date.date }}</td>
+                    <td>{{ ar.sales.order_type }}</td>
+                    <td>{% if ar.note %}{{ ar.note }}{% endif %}</td>
+                    <td>{{ ar.total_amount }}</td>
+                    <td>
+                      <div class="flex justify-between align-middle">
+                        <div class="text-xs">
+                          {% if ar.status == "Paid" %}
+                          <span class="inline-block px-1 py-1 bg-green-500 text-slate-100 text-xs rounded">Paid</span>
+                          {% elif ar.status == "Partially Paid" %}
+                          <span class="inline-block px-1 py-1 bg-yellow-200 text-green-700 text-xs rounded">Partially Paid</span>
+                          {% else %}
+                          <span class="inline-block px-1 py-1 bg-red-400 text-slate-800 text-xs rounded">Unpaid</span>
+                          {% endif %}
+                        </div>
+                        {% if ar.status != "Pending" %}
+                        <div> <!-- collapse icon -->
+                          <button type="button"
+                            class="p-1 toggleBtn" 
+                            data-bs-target="#collapsePayments{{ar.id}}" 
+                          >
+                            <ion-icon name="chevron-down-outline" class="text-md shadow-lg"></ion-icon>
+                          </button>
+                        </div>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td></td>
+                    <td colspan="6">
+                      <div class="overflow-hidden transition-all duration-300 ease-in-out h-0 flex justify-end" id="collapsePayments{{ar.id}}">
+                        <div class="p-4 bg-gray-100 mt-2">
+                          <table class="table-fixed font-light text-sm min-w-screen">
+                            <thead class="mb-5 dark:bg-slate-500 bg-slate-300/50 dark:text-slate-100 min-w-auto">
+                              <tr class="text-xs font-light">
+                                <th class="w-auto">Date</th>
+                                <th class="w-auto">Note</th>
+                                <th class="w-auto">Amount</th>
+                                <th class="w-auto">Posted by</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for payment in ar.ar_payment_items.all %}
+                              <tr>
+                                <td class="px-2">{{payment.payment.payment_date|date:"m-d-Y h:i A" }}</td>
+                                <td class="px-2">{% if payment.payment.note %}{{payment.payment.note}}{% endif %}</td>
+                                <td class="px-2">{{payment.amount_applied}}</td>
+                                <td class="px-2">{{payment.payment.received_by.user}}</td>
+                              </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+<script>
+$(document).ready(function () {
+  const $paymentCheckboxes = $(".payment-checkbox");
+  const $add_payment = $("#add_payment");
+  let ids = {};
+  let totalAmount = 0;
+
+  function togglePaymentCreditBtn(amount) {
+    if (amount > 0) {
+      $("#add_credit").attr("hidden", true);
+      $("#add_payment").attr("hidden", false);
+    }
+    else {
+      $("#add_credit").attr("hidden", false);
+      $("#add_payment").attr("hidden", true);
+    }
+    $("#totalSelectedAmount").text(totalAmount);
+  }
+
+  // multiple payment selection
+  $paymentCheckboxes.on("change", function () {
+    const salesId = $(this).val();
+    const ARamount = parseFloat($(this).data("ar-amount"));
+    const ARstatus = $(this).data("ar-status");
+    if ($(this).is(":checked")) {
+    // If the checkbox is checked, add item
+      // check if AR status
+      if (ARstatus == "Partially Paid") {
+        $.getJSON(`/wrsm/ajax/get-payment-item-data/?sales_id=${salesId}`)
+          .done(function (data) {
+            if (data.error) {
+              console.log("Data error:", data.error);
+            }
+            else {
+              var total_payment = ARamount - parseFloat(data.total_payments);
+              ids[salesId] = total_payment;
+              totalAmount += total_payment;
+              console.log("returned data:", data);
+              console.log("total amount:", totalAmount);
+            }
+            togglePaymentCreditBtn(totalAmount);
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+            console.error("Error fetching payments data:", errorThrown);
+          });
+      }
+      else {
+        ids[salesId] = ARamount
+        totalAmount += ARamount;
+      }
+    } else {
+      // If the checkbox is unchecked, remove item
+      if (ids[salesId] != undefined) {
+        totalAmount -= ids[salesId];
+      }
+      delete ids[salesId]
+    }
+    togglePaymentCreditBtn(totalAmount);
+  });
+
+  $("#imageBtn").on("click", function () {
+    $("#customer_image").toggleClass("hidden");
+    $('#imageBtnText').text(
+      $('#imageBtnText').text() === "show image" 
+      ? "hide image" 
+      : "show image"
+    );
+  });
+
+  $('#showCustomerInfoBtn').on('click', function () {
+    const customerInfo = $('#customerInfo');
+    customerInfo.toggleClass('hidden');
+    
+    $('#custInfoText').text(
+      $('#custInfoText').text() === "show customer info" 
+      ? "hide customer info" 
+      : "show customer info"
+    );
+  });
+});
+
+$('.toggleBtn').on('click', function () {
+  const target = $(this).data("bs-target");
+  const content = $(target);
+
+  if (content.hasClass('h-0')) {
+      content.removeClass('h-0');
+      content.height(content[0].scrollHeight); // Set to actual height for smooth transition
+  } else {
+      content.height(content[0].scrollHeight); // Set to actual height before collapsing
+      content.addClass('h-0');
+      // Optional: Remove inline height after transition to allow h-auto or other classes
+      setTimeout(() => {
+          content.height('');
+      }, 300); // Match transition duration
+  }
+});
+
+</script>
+
+{% endblock %}

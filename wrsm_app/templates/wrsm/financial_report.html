@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load math_filters %}
+
+{% block title %}Monthly Financial Report{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Monthly Financial Report</h2>
+  </div>
+
+  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
+    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+      <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+        <tr class="text-left">
+          <th class="px-4 py-2">Month</th>
+          <th class="px-4 py-2">Total Sales</th>
+          <th class="px-4 py-2">Total Expenses</th>
+          <th class="px-4 py-2">Net Profit</th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Total Liters Filled <small style="font-size: small;">(20L Containers)</small></th>
+          <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Total Transactions</th>
+        </tr>
+      </thead>
+    <tbody>
+      {% if monthly_report %}
+      {% for report in monthly_report %}
+      <tr>
+        <td class="border px-4 py-2">{{ report.month|date:"F Y" }}</td>
+        <td class="border px-4 py-2">{{ report.total_sales|intcomma }}</td>
+        <td class="border px-4 py-2">{{ report.total_expenses }}</td>
+        <td class="border px-4 py-2">{{ report.total_sales|subtract:report.total_expenses }}</td>
+        <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">
+          {% if report.total_liters %}
+          {{ report.total_liters|intcomma }}
+          <small style="font-size: small;">
+          ({{ report.total_liters|divide:20 }})
+          </small>
+          {% endif %}
+        </td>
+        <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ report.total_transactions|intcomma }}</td>
+      </tr>
+      {% endfor %}
+      {% else %}
+      <tr>
+        <td colspan="6">No data available.</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load humanize %}
+{% load math_filters %}
+
+{% block title %}Sales List{% endblock %}
+
+{% block content %}
+<div class="min-h-screen max-w-6xl mx-auto px-4">
+  <div class="text-center mt-6">
+    <h2 class="text-3xl font-bold">Sales Record</h2>
+    <h6 class="text-gray-600 dark:text-gray-400">{% now "l, F j, Y" %}</h6>
+  </div>
+
+  <!-- search fields -->
+  <div class="text-right"> <!-- collapse icon -->
+    <button type="button"
+      id="filterDiv"
+      data-bs-target="#collapseFilter" 
+    >
+      <ion-icon name="filter-circle-outline" class="text-2xl"></ion-icon>
+    </button>
+  </div>
+  <div class="overflow-hidden transition-all duration-300 ease-in-out h-0 flex justify-end" id="collapseFilter">
+    <form method="get" class="mb-6 text-center mt-6 max-w-xl mx-auto">
+      <div class="text-center flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+          <label for="date" class="block font-medium mb-1">Date:</label>
+          <input 
+            type="date" 
+            name="date" 
+            value="{{ request.GET.date }}" 
+            class="w-full bg-white border rounded-md px-3 py-2 text-slate-700"
+          >
+        </div>
+  
+        <div class="flex-1">
+          {% if customers %}
+          <label for="customer" class="block font-medium mb-1">Customer:</label>
+          <select 
+            name="customer" 
+            id="customer" 
+            class="w-full bg-white border rounded-md px-3 py-2 text-slate-700"
+          >
+            <option value="">All Customers</option>
+            {% for customer in customers %}
+            <option value="{{ customer.name }}" {% if customer.name == entered_customer %}selected{% endif %}>
+              {{ customer.name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% endif %}
+        </div>
+  
+        <div class="flex-1">
+          <label for="keyword" class="block font-medium mb-1">Keyword:</label>
+          <input 
+            type="text" 
+            name="keyword"
+            value="{{ request.GET.keyword }}" 
+            class="w-full border rounded-md px-3 py-2 text-slate-700"
+            placeholder="customer or sales #">
+        </div>
+      </div>
+  
+      <div class="mt-4 flex justify-center gap-4">
+        <button type="submit" class="bg-cyan-400 px-4 py-2 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl">
+          Filter
+        </button>
+  
+        <a 
+          href="{% url 'wrsm_app:sales' %}" 
+          class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl"
+        >
+          Reset
+        </a>
+      </div>
+    </form>
+  </div>
+  <!-- end of search fields -->
+
+
+  <div class="flex flex-col items-center">
+    <div class="flex flex-col md:flex-row w-full max-w-3xl">
+      <div class="mt-3">
+        <a href="{% url 'wrsm_app:add-sales' %}"
+          class=""
+        >
+          <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+        </a>
+      </div>
+
+      <div class="mt-3 md:ml-auto text-right p-2 bg-gray-100 text-slate-800 rounded">
+        <h4 class="text-xl font-semibold">Total Sales: {{grand_total|floatformat:2}}</h4>
+      </div>
+    </div>
+
+    {% if sales_list %}
+      {% for sale in sales_list %}
+      <div class="bg-white text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl">
+        
+        <!-- Card Header -->
+        <div class="border-b p-4">
+          <h4 class="text-xl font-semibold">
+            {% if sale.customer %}
+            <a 
+              href="{% url 'wrsm_app:customer-detail' pk=sale.customer.pk %}" 
+              class="text-blue-600 hover:underline"
+            >
+              {{ sale.customer.name }}
+            </a>
+            {% else %}
+              {{ sale.customer.name }}
+            {% endif %}
+          </h4>
+
+          <div class="mt-1 text-gray-600">
+            <h6>
+              SALES ID: {{ sale.id|cut:"," }} | {{ sale.created_date.date }} | {{ sale.order_type }}
+            </h6>
+            <div class="flex items-center gap-5">
+              <div>
+                {% if sale.customer %}
+                  {% if sale.ar_records.last.status == "Paid" %}
+                  <span class="inline-block px-2 py-1 bg-green-500 text-slate-100 text-xs rounded">Paid</span>
+                  {% elif sale.ar_records.last.status == "Partially Paid" %}
+                  <span class="inline-block px-2 py-1 bg-yellow-200 text-green-700 text-xs rounded">Partially Paid</span>
+                  {% else %}
+                  <span class="inline-block px-2 py-1 bg-red-400 text-slate-100 text-xs rounded">Unpaid</span>
+                  {% endif %}
+                {% else %}
+                  {% if sale.is_paid %}
+                  <span class="inline-block px-2 py-1 bg-green-500 text-slate-100 text-xs rounded">Paid</span>
+                  {% else %}
+                  <span class="inline-block px-2 py-1 bg-red-400 text-slate-100 text-xs rounded">Unpaid</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+              {% if sale.customer == None and sale.is_paid == False %}
+              <div>
+                <a 
+                  href="{% url 'wrsm_app:add-payment-generic' pk=station.pk sales_id=sale.id %}" 
+                  class="bg-blue-500 text-white text-sm px-3 py-1 rounded hover:bg-blue-600"
+                >
+                  add payment
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+
+          {% if sale.note %}
+          <p class="text-gray-700 text-lg mt-2">{{ sale.note }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Card Body -->
+        <div class="p-4 overflow-x-auto">
+          <table class="min-w-full border border-gray-300 text-sm">
+            <thead class="bg-gray-100">
+              <tr>
+                <th colspan="5" class="px-3 py-2 border-b font-semibold">ORDERED PRODUCTS</th>
+              </tr>
+              <tr>
+                <th colspan="2" class="px-3 py-2 border-b text-left">Product</th>
+                <th class="px-3 py-2 border-b">Qty</th>
+                <th class="px-3 py-2 border-b">Unit price</th>
+                <th class="px-3 py-2 border-b">Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for item in sale.sales_items.all %}
+              <tr>
+                <td colspan="2" class="px-3 py-2 border-b" title="item ID: {{ item.id }}">
+                  {{ item.product.product_name }}{% if item.note %} ({{ item.note }}){% endif %}
+                </td>
+                <td class="px-3 py-2 border-b">{{ item.quantity }}</td>
+                <td class="px-3 py-2 border-b">{{ item.unit_price }}</td>
+                <td class="px-3 py-2 border-b">{{ item.total }}</td>
+              </tr>
+              {% endfor %}
+
+              <tr class="font-bold bg-gray-50">
+                <td colspan="4" class="px-3 py-2 text-right border-b">Subtotal:</td>
+                <td class="px-3 py-2 border-b">
+                  {{ totals_by_product|get_item:sale.id|intcomma|floatformat:2 }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="mt-4 w-full max-w-3xl bg-gray-100 rounded py-3 px-5 text-right shadow">
+        <h4 class="text-xl font-semibold text-slate-800">Grand total: {{grand_total|floatformat:2}}</h4>
+      </div>
+
+    {% else %}
+    <div class="mt-6 max-w-3xl w-full text-slate-700 text-center bg-white shadow p-5 rounded">
+      No sales record found.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  $('#filterDiv').on('click', function () {
+    const target = $(this).data("bs-target");
+    const content = $(target);
+
+    if (content.hasClass('h-0')) {
+        content.removeClass('h-0');
+        content.height(content[0].scrollHeight); // Set to actual height for smooth transition
+    } else {
+        content.height(content[0].scrollHeight); // Set to actual height before collapsing
+        content.addClass('h-0');
+        // Optional: Remove inline height after transition to allow h-auto or other classes
+        setTimeout(() => {
+            content.height('');
+        }, 300); // Match transition duration
+    }
+  });
+</script>
+{% endblock %}

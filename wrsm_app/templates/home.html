@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="flex flex-col space-y-4 text-xl sm:text-lg mt-5 items-center">
+  <section class="grid grid-cols-1 px-5 w-full sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-5"> <!-- shortcuts -->
+    {% for shortcut in shortcuts %}
+    <div class="flex shadow-lg text-center">
+      <a href="{% url 'wrsm_app:process-shortcut' pk=shortcut.pk %}"
+        {% if shortcut.is_paid %}
+        class="bg-green-500 text-slate-900 p-5 rounded-lg w-full"
+        {% else %}
+        class="bg-red-400 text-slate-900 p-5 rounded-lg w-full"
+        {% endif %}>
+        <ion-icon name="link-outline"></ion-icon>
+        {{ shortcut.name }}
+      </a>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="grid grid-cols-1 px-5 w-full sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:orders' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="cart-outline"></ion-icon>
+        Orders
+      </a>
+    </div>
+
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:sales' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="cash-outline"></ion-icon>
+        Sales
+      </a>
+    </div>
+
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:customers' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="people-outline"></ion-icon>
+        Customers
+      </a>
+    </div>
+
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:expenses' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="card-outline"></ion-icon>
+        Expenses
+      </a>
+    </div>
+
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:order-forecast' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="sync-outline"></ion-icon>
+        Order Forecast
+      </a>
+    </div>
+
+    <div class="shadow-lg">
+      <a href="{% url 'wrsm_app:container-inventory-list' %}"
+        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
+        <ion-icon name="water-outline"></ion-icon>
+        Container Inventory
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
