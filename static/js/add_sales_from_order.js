@@ -13,7 +13,7 @@ $(document).ready(function () {
 
   console.log("customer id:", customer_id);
 
-  $.getJSON(`/wrsm/ajax/get-customer-data/?id_customer=${customer_id}`)
+  $.getJSON(`/ajax/get-customer-data/?id_customer=${customer_id}`)
     .done(function (data) {
       $("#order_type").text(data.default_ot || "");
       if (data.error) {

@@ -2,12 +2,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from . import views_offline
 
 app_name = 'wrsm_app'
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('home/', views.home, name='home'),
+    path('api/offline-master-data/', views_offline.get_offline_master_data, name='offline_master_data'),
     path('add-station-settings/<int:pk>/', views.add_station_settings, name='add-station-settings'),
     path('station-setting-detail/<int:pk>/', views.StationSettingDetail.as_view(), 
          name='station-setting-detail'),

@@ -11,7 +11,7 @@
       <h2 class="text-2xl font-semibold">Add Customer Form</h2>
     </div>
     <div class="p-5">
-      <form action="" method="post" enctype="multipart/form-data">
+      <form action="" method="post" enctype="multipart/form-data" id="add_customer_form">
         {% csrf_token %}
         {{ form|crispy }}
         <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl" type="submit">Submit</button>

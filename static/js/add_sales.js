@@ -27,7 +27,7 @@ $(document).ready(function () {
       clearCustomerInfo();
 
       if (customerId) {
-        $.getJSON(`/wrsm/ajax/get-customer-data/?id_customer=${customerId}`)
+        $.getJSON(`/ajax/get-customer-data/?id_customer=${customerId}`)
           .done(function (data) {
             $("#order_type").text(data.default_ot || '');
             if (data.error) {
@@ -69,7 +69,7 @@ $(document).ready(function () {
       const ordertypeID = $(this).val();
 
       if (ordertypeID) {
-        $.getJSON(`/wrsm/ajax/get-ordertype-data/?id_order_type=${ordertypeID}`)
+        $.getJSON(`/ajax/get-ordertype-data/?id_order_type=${ordertypeID}`)
           .done(function (data) {
             $ot_unit_price.text(data.ot_unit_price || '');
             $unit_price.val(data.ot_unit_price || '');
@@ -116,7 +116,7 @@ $(document).ready(function () {
         calculateTotal();
 
         if (productID) {
-          $.getJSON(`/wrsm/ajax/get-product-data/?id_product=${productID}`)
+          $.getJSON(`/ajax/get-product-data/?id_product=${productID}`)
             .done(function (data) {
               // Apply discount logic for 20 liters REFILL products
               if (discountRate.text() !== '' && orderType !== sysOrderType && data.jug_size_in_liters === 20 && data.product_type === 'REFILL') {

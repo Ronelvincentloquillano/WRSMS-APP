@@ -15,15 +15,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <script src="{% static 'js/offline.js' %}"></script>
   <script src="{% static 'js/main.js' %}"></script>
-  <link rel="manifest" href="{% static 'manifest.json' %}">
-  <meta name="theme-color" content="#0ea5e9">
-  <link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
 
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js")
+      navigator.serviceWorker.register("/serviceworker.js")
       .then(() => console.log("Service Worker Registered"));
     }
   </script>
@@ -345,6 +341,7 @@
   </footer>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="{% static 'js/offline_forms.js' %}"></script>
   <script>
     setTimeout(function () {
       const alerts = document.querySelectorAll('.message-item');

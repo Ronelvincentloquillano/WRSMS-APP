@@ -30,7 +30,7 @@
       {% endif %}
     </div>
     <div class="px-5 text-slate-700 dark:text-slate-100">
-      <form method="post">
+      <form method="post" id="add_payment_form">
         {% csrf_token %}
         <!-- PAYMENT DETAILS -->
         <div class="mt-3 min-w-fit flex bg-gray-100 dark:bg-gray-500 rounded-md p-2 gap-5" id="payment_div">
