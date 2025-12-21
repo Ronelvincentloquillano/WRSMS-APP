@@ -81,6 +81,11 @@
 
             {{form.new_balance|add_class:"w-1/3 text-center px-3 py-2 border border-gray-300 border-l-0 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-400"}}
           </div>
+          
+          <div class="flex items-center w-full max-w-md">
+            {{form.note.errors}}
+            {{form.note|add_class:"w-full text-center px-3 py-2 border border-gray-300 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"| attr:"placeholder:Additional notes (optional)"}}
+          </div>
 
         </div>
 
@@ -96,70 +101,5 @@
 {% block scripts %}
 <!-- <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script> -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script >
-  $(document).ready(function () {
-    const $bflv = $("#id_balance_from_last_visit");
-    const $dc = $("#id_delivered_container");
-    const $rec = $("#id_returned_empty_container");
-    const $nb = $("#id_new_balance");
-
-    $dc.on("click", function () {
-      if ($(this).val() == 0) {
-        $(this).val('');
-      }
-    });
-    $rec.on("click", function () {
-      if ($(this).val() == 0) {
-        $(this).val('');
-      }
-    });
-
-    // Calculate total amount
-    $(
-      "#id_balance_from_last_visit, \
-        #id_delivered_container, #id_returned_empty_container, \
-        #id_new_balance"
-    ).on("keyup", function () {
-      // Convert values to numbers
-      var bflv = parseFloat($("#id_balance_from_last_visit").val()) || 0;
-      var dc = parseFloat($("#id_delivered_container").val()) || 0;
-      var rec = parseFloat($("#id_returned_empty_container").val()) || 0;
-      var new_balance = bflv + dc - rec;
-
-      $("#id_new_balance").val(new_balance);
-    });
-
-    const $customerSelect = $("#id_customer");
-
-    $customerSelect.on("change", function () {
-      const customerId = $(this).val();
-
-      if (customerId) {
-        $.getJSON(`/ajax/get-container-balance/?id_customer=${customerId}`)
-          .done(function (data) {
-            if (data.error) {
-              alert("Error. Customer ID not found!");
-            } else {
-              if (data.bflv === null || data.bflv === undefined) {
-                $bflv.val("");
-                $bflv.prop("readonly", false);
-              } else {
-                $bflv.val(data.bflv);
-                $bflv.prop("readonly", true);
-              }
-            }
-          })
-          .fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("Error fetching customer data:", errorThrown);
-          });
-      } else {
-        $bflv.val("");
-        $bflv.prop("readonly", false);
-      }
-    });
-  });
-
-</script>
+<script src="{% static 'js/add_container_inventory.js' %}"></script>
 {% endblock %}
-
-

@@ -1652,7 +1652,7 @@ class ForecastListView(LoginRequiredMixin, ListView):
 class ContainerInventoryListView(LoginRequiredMixin, ListView):
     template_name = 'wrsm/container_inventory_list.html'
     model = models.ContainerInventory
-    paginate_by = 20
+    # paginate_by = 10
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
@@ -1666,11 +1666,14 @@ class ContainerInventoryListView(LoginRequiredMixin, ListView):
                 customer=customer.customer
             ).latest('created_date').new_balance
             loaned_jugs += latest_record if latest_record else 0
+        
+        inventory = inventory.order_by('customer', '-created_date').distinct('customer')
+
         searched_customer = self.request.GET.get('customer')
         if searched_customer:
-            inventory = inventory.filter(customer__name__icontains=searched_customer)
+            inventory = models.ContainerInventory.objects.filter(station=station, customer__name__icontains=searched_customer).order_by('-created_date')[:10]
         context = {
-            'inventory': inventory.order_by('-created_date'),
+            'inventory': inventory,
             'station': station,
             'searched_customer': self.request.GET.get('customer', ''),
             'customers': models.ContainerInventory.objects.filter(station=station).distinct('customer__name'),
