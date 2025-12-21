@@ -48,6 +48,11 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Environment files
+.env
+.env.prod
+.env.local
+
 # SQL and backup
 *.backup
 *.sqlite3
@@ -70,7 +75,6 @@ static/fontawesome/
 static/js/jquery-3.7.1.min.js
 static/js/popper.min.js
 static/js/bootstrap*.*
-static/js/main.js
 static/css/bootstrap*.*
 static/css/input.css
 static/css/output.css

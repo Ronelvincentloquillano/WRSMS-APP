@@ -6,16 +6,25 @@
   
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" href="{% static 'img/SDR_thumbnail.png' %}" sizes="any">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartDynamic Refilling</title>
-  {% progressive_web_app_meta %}
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json?v=2">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SDR">
+  <link rel="apple-touch-icon" href="{% static 'img/SDR_thumbnail.png' %}">
+
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <!-- <link rel="stylesheet" href="{% static 'css/output.css' %}"> -->
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <script src="{% static 'js/main.js' %}"></script>
+  <!-- <script src="{% static 'js/main.js' %}"></script> -->
 
   <script>
     if ("serviceWorker" in navigator) {
@@ -341,6 +350,7 @@
   </footer>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="{% static 'js/menu.js' %}"></script>
   <script src="{% static 'js/offline_forms.js' %}"></script>
   <script>
     setTimeout(function () {
