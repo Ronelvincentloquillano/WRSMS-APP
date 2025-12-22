@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v21';
+const SW_VERSION = 'wrsm-v22';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -27,6 +27,27 @@ const ASSETS_TO_CACHE = [
     '/customers/',
     '/orders/',
     '/container-inventory-list/',
+    // Ionicons
+    '/static/ionicons/ionicons.esm.js',
+    '/static/ionicons/p-7a41fcdf.entry.js',
+    '/static/ionicons/p-BKJPfAGl.js',
+    '/static/ionicons/p-DQuL1Twl.js',
+    '/static/ionicons/p-Z3yp5Yym.js',
+    '/static/ionicons/svg/link-outline.svg',
+    '/static/ionicons/svg/cart-outline.svg',
+    '/static/ionicons/svg/cash-outline.svg',
+    '/static/ionicons/svg/people-outline.svg',
+    '/static/ionicons/svg/card-outline.svg',
+    '/static/ionicons/svg/sync-outline.svg',
+    '/static/ionicons/svg/water-outline.svg',
+    '/static/ionicons/svg/settings-outline.svg',
+    '/static/ionicons/svg/home-outline.svg',
+    '/static/ionicons/svg/add-circle-outline.svg',
+    '/static/ionicons/svg/create-outline.svg',
+    '/static/ionicons/svg/chevron-down-outline.svg',
+    '/static/ionicons/svg/add-outline.svg',
+    '/static/ionicons/svg/sync-circle-outline.svg',
+    '/static/ionicons/svg/filter-circle-outline.svg',
 ];
 
 // Helper: Fetch Master Data from Cache
