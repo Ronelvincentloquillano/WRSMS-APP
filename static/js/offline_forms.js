@@ -153,14 +153,23 @@ function showToast(message, type='info') {
     }
 
     const toast = document.createElement('div');
+    
+    // Default Tailwind mappings
     const bgColors = {
         'info': 'bg-blue-600',
         'success': 'bg-green-600',
-        'warning': 'bg-yellow-600',
+        'warning': 'bg-orange-500', 
         'error': 'bg-red-600'
     };
     
-    toast.className = `${bgColors[type] || 'bg-gray-800'} text-white px-6 py-3 rounded shadow-lg transition-opacity duration-500`;
+    toast.className = `${bgColors[type] || 'bg-gray-800'} text-white px-6 py-3 rounded shadow-lg transition-opacity duration-500 font-bold`;
+    
+    // Specific override for "offline" (warning) to ensure orange background and black text
+    if (type === 'warning') {
+        toast.style.backgroundColor = '#f97316'; // Orange
+        toast.style.color = '#000000'; // Black
+    }
+
     toast.textContent = message;
 
     container.appendChild(toast);
