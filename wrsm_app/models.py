@@ -226,6 +226,7 @@ class Sales(models.Model):
     customer = models.ForeignKey(Customer, blank=True, null=True, on_delete=models.SET_NULL)
     is_paid = models.BooleanField(null=True, default=False)
     created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    client_uuid = models.UUIDField(null=True, blank=True)
 
     def __str__(self):
         return '{} - {}'.format(self.created_date, self.customer)
