@@ -221,4 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
     setupOfflineForm('add_customer_form');
     setupOfflineForm('add_container_inventory_form');
     setupOfflineForm('add_payment_form');
+    
+    // Prime the Offline Master Data Cache
+    if (navigator.onLine) {
+        primeOfflineCache();
+    }
+    window.addEventListener('online', primeOfflineCache);
 });
+
+// Helper to fetch and cache master data
+async function primeOfflineCache() {
+    try {
+        console.log('Priming offline master data cache...');
+        const response = await fetch('/api/offline-master-data/');
+        if (response.ok) {
+            console.log('Offline master data cached successfully.');
+        } else {
+            console.warn('Failed to cache offline master data:', response.status);
+        }
+    } catch (e) {
+        console.error('Error priming offline cache:', e);
+    }
+}

@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v22';
+const SW_VERSION = 'wrsm-v25';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -9,7 +9,7 @@ const OFFLINE_DATA_URL = '/api/offline-master-data/';
 
 const ASSETS_TO_CACHE = [
     OFFLINE_URL,
-    OFFLINE_DATA_URL,
+    // OFFLINE_DATA_URL is cached dynamically by the app when online, not during install
     '/static/css/output.css',
     '/static/css/styles.css',
     '/static/js/main.js',
@@ -237,6 +237,11 @@ self.addEventListener('fetch', (event) => {
                         console.warn('[ServiceWorker] Fetch failed for asset', event.request.url);
                     });
 
+                    // For Master Data, if we have it, return it.
+                    // BUT, if it's the *first* time (installing), we might want to wait for the network?
+                    // Actually, the issue is likely that "cache.add(ASSETS_TO_CACHE)" in "install"
+                    // failed for OFFLINE_DATA_URL if the user wasn't logged in or it redirected to login HTML.
+                    
                     if (cachedResponse) {
                         return cachedResponse; 
                     }

@@ -20,7 +20,6 @@
             name="customer" 
             id="customer" 
             class="w-full border rounded-md px-3 py-2 text-slate-700"
-            onchange="this.form.submit()"
           >
             <option value="">All Customers</option>
             {% for customer in customers %}
@@ -158,45 +157,165 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
   $(document).ready(function() {
-    // Open modal when row is clicked
-    $('.row-clickable').on('click', function() {
-      const cells = $(this).find('td');
-      $('#modalCreatedDate').text(cells.eq(0).text());
-      $('#modalCustomer').text(cells.eq(1).text());
-      $('#modalBFLV').text(cells.eq(2).text());
-      $('#modalDC').text(cells.eq(3).text());
-      $('#modalREC').text(cells.eq(4).text());
-      $('#modalNB').text(cells.eq(5).text());
-      $('#modalNote').text(cells.eq(6).text());
-      $('#modalCreatedBy').text(cells.eq(7).text());
-      $('#recordModal').removeClass('hidden').addClass('flex');
-    });
+    
+    // Function to bind modal events to rows
+    function bindModalEvents() {
+        // Unbind first to avoid duplicates if called multiple times
+        $('.row-clickable').off('click');
+        
+        // Open modal when row is clicked
+        $('.row-clickable').on('click', function() {
+          const cells = $(this).find('td');
+          $('#modalCreatedDate').text(cells.eq(0).text());
+          $('#modalCustomer').text(cells.eq(1).text());
+          $('#modalBFLV').text(cells.eq(2).text());
+          $('#modalDC').text(cells.eq(3).text());
+          $('#modalREC').text(cells.eq(4).text());
+          $('#modalNB').text(cells.eq(5).text());
+          $('#modalNote').text(cells.eq(6).text());
+          $('#modalCreatedBy').text(cells.eq(7).text());
+          $('#recordModal').removeClass('hidden').addClass('flex');
+        });
+    }
+
+    // Initial binding
+    bindModalEvents();
 
     // Close modal function
     function closeModal() {
       $('#recordModal').addClass('hidden').removeClass('flex');
     }
 
-    // Close modal when clicking X button
-    $('#closeModalX').on('click', closeModal);
-
-    // Close modal when clicking Close button
-    $('#closeModalBtn').on('click', closeModal);
-
-    // Close modal when clicking outside
+    // Close modal triggers
+    $('#closeModalX, #closeModalBtn').on('click', closeModal);
     $('#recordModal').on('click', function(e) {
-      if (e.target === this) {
-        closeModal();
-      }
+      if (e.target === this) closeModal();
+    });
+    $(document).on('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+    
+    // --- Offline Filtering Logic ---
+    $('#customer').on('change', async function(e) {
+        const selectedName = $(this).val();
+        
+        if (navigator.onLine) {
+            // Online: Standard Form Submit
+            this.form.submit();
+        } else {
+            // Offline: Fetch cached data
+            e.preventDefault();
+            
+            // Show loading toast (using existing helper if available, or fallback)
+            if (typeof showToast === 'function') {
+                showToast('Offline Mode: Loading local history...', 'info');
+            } else {
+                console.log('Offline Mode: Loading local history...');
+            }
+
+            try {
+                // Fetch from Service Worker cache
+                const response = await fetch('/api/offline-master-data/');
+                if (!response.ok) throw new Error('Offline data unavailable');
+                
+                const data = await response.json();
+                let history = [];
+                
+                // Find Customer ID
+                let customerId = null;
+                // Assuming data.customers keys are IDs
+                for (const [id, cData] of Object.entries(data.customers)) {
+                    if (cData.name === selectedName) {
+                        customerId = id;
+                        break;
+                    }
+                }
+                
+                // Filter History
+                if (customerId && data.container_history && data.container_history[customerId]) {
+                    history = data.container_history[customerId];
+                } else if (selectedName === "") {
+                    // "All Customers" - Aggregate all history
+                    if (data.container_history) {
+                        for (const cid in data.container_history) {
+                            history = history.concat(data.container_history[cid]);
+                        }
+                        // Sort by timestamp desc
+                        history.sort((a, b) => {
+                             const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+                             const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+                             return dateB - dateA;
+                        });
+                        // Limit to top 50 to match typical page size
+                        history = history.slice(0, 50);
+                    }
+                }
+                
+                // Render Table
+                renderTable(history, selectedName);
+                
+                if (typeof showToast === 'function') {
+                    showToast(`Loaded ${history.length} records from offline cache.`, 'success');
+                }
+                
+            } catch (err) {
+                console.error("Offline data error:", err);
+                if (typeof showToast === 'function') {
+                    showToast(`Could not load offline data: ${err.message}`, 'error');
+                }
+            }
+        }
     });
 
-    // Close modal with Escape key
-    $(document).on('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeModal();
+    function renderTable(data, searchedCustomer) {
+      const tbody = $('#tableBody');
+      tbody.empty();
+      
+      // Update header
+      const headerTitle = searchedCustomer ? `${searchedCustomer} Record` : 'Container Inventory';
+      // We need to target the header element carefully
+      const headerEl = $('h6.text-center');
+      if (searchedCustomer) {
+        headerEl.removeClass('hidden').text(`${headerTitle} (Offline)`);
+      } else {
+        headerEl.addClass('hidden');
       }
-    });
+
+      if (data.length === 0) {
+          tbody.html('<tr><td colspan="6" class="p-4 text-center">No offline records found for this selection.</td></tr>');
+          return;
+      }
+
+      data.forEach(inv => {
+        // Safe check for nulls
+        const note = inv.note || '';
+        const createdBy = inv.created_by || '';
+        
+        const rowHtml = `
+        <tr class="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors row-clickable">
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2">${inv.created_date}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 ${searchedCustomer ? 'hidden' : ''}">${inv.customer}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">${inv.balance_from_last_visit}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">${inv.delivered_container}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">${inv.returned_empty_container}</td>
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">${inv.new_balance}</td>
+          <td class="hidden">${note}</td>
+          <td class="hidden">${createdBy}</td>
+        </tr>
+        ${note ? `
+          <tr>
+            <td class="border border-gray-300 dark:border-gray-600 px-2 py-2"></td>
+            <td colspan="5" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm bg-slate-300 dark:text-slate-800 font-medium">
+              Note: ${note}
+            </td>
+          </tr>` : ''}
+        `;
+        tbody.append(rowHtml);
+      });
+      
+      // Re-bind clicks
+      bindModalEvents();
+    }
   });
 </script>
-
 {% endblock %}

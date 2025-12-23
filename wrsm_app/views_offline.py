@@ -25,6 +25,7 @@ def get_offline_master_data(request):
 
     customers_data = {}
     container_balances = {}
+    container_history = {}
 
     for c in customers:
         customers_data[c.id] = {
@@ -35,9 +36,27 @@ def get_offline_master_data(request):
             'discount_rate': c.discount_code.discount_rate if c.discount_code else None,
             'default_order_type': c.default_order_type.pk if c.default_order_type else None,
             'default_ot': c.default_order_type.type if c.default_order_type else None,
+            'name': c.name, # Needed for name matching in offline filter
         }
         # default to 0 if no inventory record found
         container_balances[c.id] = c.latest_balance if c.latest_balance is not None else 0
+
+        # Get last 10 records for history
+        history_qs = models.ContainerInventory.objects.filter(customer=c).order_by('-created_date')[:10]
+        history_list = []
+        for h in history_qs:
+            history_list.append({
+                'created_date': h.created_date.strftime('%b. %d, %Y, %I:%M %p').replace('AM', 'a.m.').replace('PM', 'p.m.') if h.created_date else '',
+                'timestamp': h.created_date.isoformat() if h.created_date else '',
+                'customer': c.name,
+                'balance_from_last_visit': h.balance_from_last_visit,
+                'delivered_container': h.delivered_container,
+                'returned_empty_container': h.returned_empty_container,
+                'new_balance': h.new_balance,
+                'note': h.note if h.note else '',
+                'created_by': str(h.created_by.user) if h.created_by else ''
+            })
+        container_history[c.id] = history_list
 
     # 2. Station Settings
     try:
@@ -79,6 +98,7 @@ def get_offline_master_data(request):
     response_data = {
         'customers': customers_data,
         'container_balances': container_balances,
+        'container_history': container_history,
         'station_settings': station_data,
         'order_types': order_types_data,
         'products': products_data,
