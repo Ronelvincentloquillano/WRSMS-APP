@@ -74,7 +74,7 @@
           </thead>
           <tbody>
             <tr class="text-left">
-              <td class="px-3 py-2 border-b">{{ item.quantity }}</td>
+              <td class="px-3 py-2 border-b">{% if item.quantity %}{{ item.quantity }}{% else %}?{% endif %}</td>
               <td colspan="2" class="px-3 py-2 border-b">{{ item.order_type }}</td>
               <td colspan="2" class="px-3 py-2 border-b">
                 {% if item.is_paid %}

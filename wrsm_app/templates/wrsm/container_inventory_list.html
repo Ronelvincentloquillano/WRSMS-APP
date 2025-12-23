@@ -72,6 +72,7 @@
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.returned_empty_container }}</td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.new_balance }}</td>
           <td class="hidden">{{ inv.note|remove_none }}</td>
+          <td class="hidden">{{ inv.created_by.user }}</td>
         </tr>
           {% if inv.note %}
           <tr>
@@ -123,6 +124,10 @@
           <p class="text-auto text-gray-500 dark:text-gray-400">Note</p>
           <p class="text-2xl font-medium text-gray-800 dark:text-gray-100" id="modalNote"></p>
         </div>
+        <div class="pb-3 flex justify-between">
+          <p class="text-auto text-gray-500 dark:text-gray-400">Created by</p>
+          <p class="text-sm text-gray-800 dark:text-gray-100" id="modalCreatedBy"></p>
+        </div>
       </div>
       <div class="bg-gray-100 dark:bg-slate-600 px-6 py-4 rounded-b-lg">
         <button id="closeModalBtn" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded transition-colors">Close</button>
@@ -163,6 +168,7 @@
       $('#modalREC').text(cells.eq(4).text());
       $('#modalNB').text(cells.eq(5).text());
       $('#modalNote').text(cells.eq(6).text());
+      $('#modalCreatedBy').text(cells.eq(7).text());
       $('#recordModal').removeClass('hidden').addClass('flex');
     });
 
