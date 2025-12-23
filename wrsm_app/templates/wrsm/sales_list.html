@@ -117,9 +117,18 @@
           </h4>
 
           <div class="mt-1 text-gray-600">
-            <h6>
-              SALES ID: {{ sale.id|cut:"," }} | {{ sale.created_date.date }} | {{ sale.order_type }}
-            </h6>
+            <div class="flex flex-row justify-between items-center">
+              <div>
+                <h6>
+                  #<span class="font-bold">{{ sale.id|cut:"," }}</span> | {{ sale.created_date }} | {{ sale.order_type }}
+                </h6>
+              </div>
+              <div>
+                <h6 class="font-light text-xs">
+                  Created by: {{ sale.created_by.user }}
+                </h6>
+              </div>
+            </div>
             <div class="flex items-center gap-5">
               <div>
                 {% if sale.customer %}
