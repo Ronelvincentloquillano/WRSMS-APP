@@ -65,6 +65,45 @@ def dashboard(request):
             total_liters = transactions.aggregate(total=Sum('total_liters'))['total'] or 0
         except ValueError:
             pass  # Invalid date format
+
+    # Chart Data
+    # 1. Forecast
+    forecasts = models.Forecast.objects.filter(station=station)
+    today_forecast_count = forecasts.filter(next_order_date=current_date).count()
+    total_forecast_count = forecasts.count()
+    rest_forecast_count = max(0, total_forecast_count - today_forecast_count)
+
+    # 2. Container Inventory
+    inventory_qs = models.ContainerInventory.objects.filter(station=station)
+    customers_with_inventory = inventory_qs.values_list('customer', flat=True).distinct()
+    loaned_jugs = 0
+    for cust_id in customers_with_inventory:
+        try:
+            latest = inventory_qs.filter(customer_id=cust_id).latest('created_date')
+            loaned_jugs += latest.new_balance
+        except models.ContainerInventory.DoesNotExist:
+            pass
+    
+    initial_jug_count = station_settings.initial_jug_count or 0
+    remaining_jugs = max(0, initial_jug_count - loaned_jugs)
+
+    # 3. Products
+    products = models.Product.objects.filter(station=station)
+    product_names = [p.product_name or p.product_type for p in products]
+    product_quantities = [p.quantity or 0 for p in products]
+
+    # 4. Sales vs Expenses (Monthly)
+    current_month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    sales_total = models.SalesItem.objects.filter(
+        sales__station=station, 
+        sales__created_date__gte=current_month_start
+    ).aggregate(total=Sum('total'))['total'] or 0
+    
+    expenses_total = models.ExpenseItem.objects.filter(
+        expense__station=station, 
+        expense__date__gte=current_month_start
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+
     context = {
         'station': station,
         'last_backwash': last_backwash,
@@ -74,6 +113,14 @@ def dashboard(request):
         'station_settings': station_settings,
         'slim_seals': slim_seals,
         'umbrella_seals': umbrella_seals,
+        'today_forecast_count': today_forecast_count,
+        'rest_forecast_count': rest_forecast_count,
+        'loaned_jugs': loaned_jugs,
+        'remaining_jugs': remaining_jugs,
+        'product_names': json.dumps(product_names),
+        'product_quantities': json.dumps(product_quantities),
+        'sales_total': float(sales_total),
+        'expenses_total': float(expenses_total),
     }
     return render(request, 'dashboard.html', context)
 
@@ -680,6 +727,72 @@ def get_jugsize_data(request):
         return JsonResponse(data)
     except models.JugSize.DoesNotExist:
         return JsonResponse({'error': 'Jugsize not found'}, status=404)
+
+
+@login_required
+def get_finance_data(request):
+    month_str = request.GET.get('month')
+    station = request.user.profile.station
+    
+    if month_str:
+        try:
+            year, month = map(int, month_str.split('-'))
+            start_date = datetime(year, month, 1)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1)
+            else:
+                end_date = datetime(year, month + 1, 1)
+        except ValueError:
+             return JsonResponse({'error': 'Invalid date format'}, status=400)
+    else:
+        # Default to current month
+        today = timezone.now()
+        start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if today.month == 12:
+            end_date = datetime(today.year + 1, 1, 1)
+        else:
+            end_date = datetime(today.year, today.month + 1, 1)
+
+    sales_total = models.SalesItem.objects.filter(
+        sales__station=station, 
+        sales__created_date__gte=start_date,
+        sales__created_date__lt=end_date
+    ).aggregate(total=Sum('total'))['total'] or 0
+    
+    expenses_total = models.ExpenseItem.objects.filter(
+        expense__station=station, 
+        expense__date__gte=start_date,
+        expense__date__lt=end_date
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    return JsonResponse({
+        'sales_total': float(sales_total),
+        'expenses_total': float(expenses_total)
+    })
+
+
+@login_required
+def get_forecast_data(request):
+    date_str = request.GET.get('date')
+    station = request.user.profile.station
+    
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format'}, status=400)
+    else:
+        target_date = timezone.now().date()
+        
+    forecasts = models.Forecast.objects.filter(station=station)
+    target_forecast_count = forecasts.filter(next_order_date=target_date).count()
+    total_forecast_count = forecasts.count()
+    rest_forecast_count = max(0, total_forecast_count - target_forecast_count)
+    
+    return JsonResponse({
+        'target_forecast_count': target_forecast_count,
+        'rest_forecast_count': rest_forecast_count
+    })
 
 
 def get_product_data(request):

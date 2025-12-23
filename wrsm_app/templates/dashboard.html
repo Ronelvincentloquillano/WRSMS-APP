@@ -6,14 +6,61 @@
 
 {% block content %}
 <div class="min-h-screen p-4">
-  <div class="text-center text-4xl mt-5">
-    <h1>Dashboard</h1>
+  <div class="text-center mt-2">
+    <h5 class="text-lg">{{ station }}</h5>
+    <h1 class="text-4xl">Dashboard</h1>
   </div>
   <div>
     <div class="mb-4 text-center">
       <h3 class="text-xl font-semibold">Welcome {{request.user.first_name}}</h3>
       <h6 class="text-slate-500 text-lg">{% now "l, F j, Y" %}</h6>
     </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 mb-10 max-w-6xl mx-auto">
+      <!-- Forecast Chart -->
+      <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md flex flex-col">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h3 class="text-xl font-semibold">Forecast</h3>
+            <select id="forecastDateSelect" class="text-sm border rounded p-1 dark:bg-slate-600 dark:text-white dark:border-slate-500">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+        <div class="relative h-64 flex-grow">
+          <canvas id="forecastChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Container Inventory Chart -->
+      <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold text-center mb-4">Container Inventory</h3>
+        <div class="relative h-64">
+          <canvas id="inventoryChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Products Inventory Chart -->
+      <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold text-center mb-4">Product Inventory</h3>
+        <div class="relative h-64">
+          <canvas id="productChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Sales vs Expenses Chart -->
+      <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md flex flex-col">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h3 class="text-xl font-semibold">Sales vs Expenses</h3>
+            <select id="financeMonthSelect" class="text-sm border rounded p-1 dark:bg-slate-600 dark:text-white dark:border-slate-500">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+        <div class="relative h-64 flex-grow">
+          <canvas id="financeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
     <table class="table-fixed min-w-full sm:min-w-full max-w-xl sm:max-w-lg text-sm md:text-xl mx-auto mb-10">
       <thead>
         <tr>
@@ -66,4 +113,134 @@
     </table>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const colors = [
+    '#34d399', '#f87171', '#60a5fa', '#fbbf24', '#a78bfa', '#2dd4bf', '#f472b6', '#fb923c'
+  ];
+
+  // 1. Forecast Chart
+  const ctxForecast = document.getElementById('forecastChart').getContext('2d');
+  let forecastChart = new Chart(ctxForecast, {
+    type: 'pie',
+    data: {
+      labels: ['Orders', 'Rest of Forecast'],
+      datasets: [{
+        data: [{{ today_forecast_count }}, {{ rest_forecast_count }}],
+        backgroundColor: ['#4ade80', '#94a3b8'],
+      }]
+    },
+    options: { 
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: 'gray' }
+        }
+      }
+    }
+  });
+
+  // Date Selector Logic for Forecast
+  const forecastDateSelect = document.getElementById('forecastDateSelect');
+  const now = new Date();
+  for (let i = 0; i <= 5; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10); // YYYY-MM-DD
+    const label = i === 0 ? 'Today' : d.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+    const option = document.createElement('option');
+    option.value = dateStr;
+    option.text = label;
+    forecastDateSelect.appendChild(option);
+  }
+
+  forecastDateSelect.addEventListener('change', function() {
+    const selectedDate = this.value;
+    fetch(`{% url 'wrsm_app:get_forecast_data' %}?date=${selectedDate}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        forecastChart.data.datasets[0].data = [data.target_forecast_count, data.rest_forecast_count];
+        forecastChart.update();
+      })
+      .catch(err => console.error('Error fetching forecast data:', err));
+  });
+
+  // 2. Container Inventory Chart
+  const ctxInventory = document.getElementById('inventoryChart').getContext('2d');
+  new Chart(ctxInventory, {
+    type: 'pie',
+    data: {
+      labels: ['Loaned', 'Remaining'],
+      datasets: [{
+        data: [{{ loaned_jugs }}, {{ remaining_jugs }}],
+        backgroundColor: ['#f87171', '#60a5fa'],
+      }]
+    },
+    options: { maintainAspectRatio: false }
+  });
+
+  // 3. Products Inventory Chart
+  const ctxProduct = document.getElementById('productChart').getContext('2d');
+  new Chart(ctxProduct, {
+    type: 'pie',
+    data: {
+      labels: {{ product_names|safe }},
+      datasets: [{
+        data: {{ product_quantities|safe }},
+        backgroundColor: colors,
+      }]
+    },
+    options: { maintainAspectRatio: false }
+  });
+
+  // 4. Sales vs Expenses Chart
+  const ctxFinance = document.getElementById('financeChart').getContext('2d');
+  let financeChart = new Chart(ctxFinance, {
+    type: 'pie',
+    data: {
+      labels: ['Sales', 'Expenses'],
+      datasets: [{
+        data: [{{ sales_total }}, {{ expenses_total }}],
+        backgroundColor: ['#34d399', '#f87171'],
+      }]
+    },
+    options: { maintainAspectRatio: false }
+  });
+
+  // Month Selector Logic for Finance Chart
+  const monthSelect = document.getElementById('financeMonthSelect');
+  const today = new Date();
+  // Populate last 12 months
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthStr = d.toISOString().slice(0, 7); // YYYY-MM
+    const monthName = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+    const option = document.createElement('option');
+    option.value = monthStr;
+    option.text = monthName;
+    monthSelect.appendChild(option);
+  }
+
+  monthSelect.addEventListener('change', function() {
+    const selectedMonth = this.value;
+    fetch(`{% url 'wrsm_app:get_finance_data' %}?month=${selectedMonth}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        financeChart.data.datasets[0].data = [data.sales_total, data.expenses_total];
+        financeChart.update();
+      })
+      .catch(err => console.error('Error fetching finance data:', err));
+  });
+</script>
 {% endblock %}

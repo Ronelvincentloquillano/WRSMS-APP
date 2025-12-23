@@ -67,6 +67,12 @@
             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">
             Submit
           </button>
+          {% if station.stationsetting.gcash_account %}
+          <button type="button" id="payGcash" style="display: none;"
+            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 shadow-xl">
+            Pay with GCash
+          </button>
+          {% endif %}
           <a href="{% url 'wrsm_app:customer-detail' pk=customer.pk %}" 
             class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">
             Cancel
@@ -75,6 +81,36 @@
       </form>
     </div>
   <div>
+</div>
+
+<!-- GCash Modal -->
+<div id="gcashModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-700">
+    <div class="mt-3 text-center">
+      <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Scan to Pay via GCash</h3>
+      <div class="mt-2 px-7 py-3">
+        <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">
+          Amount to pay: <span id="gcashAmount" class="font-bold"></span>
+        </p>
+        <div class="flex justify-center">
+            <img id="gcashQr" src="" alt="GCash QR Code" class="w-48 h-48 border">
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          Account: {{ station.stationsetting.gcash_account }}
+        </p>
+      </div>
+      <div class="items-center px-4 py-3">
+        <button id="confirmGcash"
+          class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+          Confirm Payment
+        </button>
+        <button id="cancelGcash"
+          class="mt-3 px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -85,6 +121,46 @@
     const total_paid = $("#id_total_paid");
     total_paid.val($(this).data("amount"));
     $(this).hide();
+  });
+
+  // GCash Modal Logic
+  const gcashAccount = "{{ station.stationsetting.gcash_account }}";
+
+  function toggleGcashButton() {
+    const selectedText = $('input[name="payment_type"]:checked').parent().text().trim().toLowerCase();
+    if (selectedText.includes('gcash')) {
+      $('#payGcash').show();
+    } else {
+      $('#payGcash').hide();
+    }
+  }
+
+  $('input[name="payment_type"]').on('change', toggleGcashButton);
+  toggleGcashButton();
+  
+  $('#payGcash').on('click', function() {
+    const amount = $('#id_total_paid').val();
+    if (!amount) {
+        alert("Please enter an amount first.");
+        return;
+    }
+    
+    $('#gcashAmount').text(amount);
+    // Generate QR code for the account number
+    // Note: To embed amount, we'd need a specific payload format. 
+    // For now, we encode the account number which is the standard identifier.
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${gcashAccount}`;
+    $('#gcashQr').attr('src', qrUrl);
+    
+    $('#gcashModal').removeClass('hidden');
+  });
+
+  $('#cancelGcash').on('click', function() {
+    $('#gcashModal').addClass('hidden');
+  });
+
+  $('#confirmGcash').on('click', function() {
+    $('#add_payment_form').submit();
   });
 </script>
 {% endblock %}

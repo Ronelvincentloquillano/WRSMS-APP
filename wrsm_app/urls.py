@@ -78,5 +78,6 @@ urlpatterns = [
     path('ajax/get-container-balance/', views.get_container_balance, name='get_container_balance'),
     path('ajax/get-ordertype-data/', views.get_ordertype_data, name='get_ordertype_data'),
     path('ajax/get-jugsize-data/', views.get_jugsize_data, name='get_jugsize_data'),
-    
+    path('ajax/get-finance-data/', views.get_finance_data, name='get_finance_data'),
+    path('ajax/get-forecast-data/', views.get_forecast_data, name='get_forecast_data'),
 ] + static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")
