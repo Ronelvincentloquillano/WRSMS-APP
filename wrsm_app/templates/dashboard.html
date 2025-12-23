@@ -22,7 +22,7 @@
       <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md flex flex-col">
         <div class="flex justify-between items-center mb-4 px-2">
             <h3 class="text-xl font-semibold">Forecast</h3>
-            <select id="forecastDateSelect" class="text-sm border rounded p-1 dark:bg-slate-600 dark:text-white dark:border-slate-500">
+            <select id="forecastDateSelect" class="text-sm border rounded p-1 dark:bg-slate-600 dark:text-white dark:border-slate-500" data-url="{% url 'wrsm_app:update_forecast' %}">
                 <!-- Populated by JS -->
             </select>
         </div>
@@ -241,6 +241,27 @@
         financeChart.update();
       })
       .catch(err => console.error('Error fetching finance data:', err));
+  });
+</script>
+<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+<script>
+  $(document).ready(function() {
+    const forecastDateSelect = $('#forecastDateSelect');
+    forecastDateSelect.on('change', function () {
+      const targetUrl = $(this).data('url');
+
+        $.ajax({
+            url: targetUrl,
+            type: 'GET',
+            success: function(response) {
+                console.log("URL triggered successfully!");
+                // You can refresh a part of the page or show a notification here
+            },
+            error: function() {
+                alert("Failed to trigger the update.");
+            }
+        });
+    })
   });
 </script>
 {% endblock %}
