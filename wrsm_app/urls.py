@@ -20,6 +20,7 @@ urlpatterns = [
     path('net-terms/', views.NetTermsListView.as_view(), name='net-terms'),
     path('add-customer/', views.add_customer, name='add-customer'),
     path('customers/', views.CustomersListView.as_view(), name='customers'),
+    path('customer-map/', views.customer_map, name='customer-map'),
     path('customer-detail/<int:pk>/', views.CustomerDetail.as_view(), name='customer-detail'),
     path('update-customer/<int:pk>/', views.CustomerUpdateView.as_view(), name='update-customer'),
     path('add-size/', views.add_size, name='add-size'),

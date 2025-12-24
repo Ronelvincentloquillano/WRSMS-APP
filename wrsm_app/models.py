@@ -213,6 +213,8 @@ class Customer(models.Model):
                                     on_delete=models.CASCADE)
     contact_number = models.CharField(max_length=15, null=True, blank=True)
     net_terms = models.ForeignKey(to=NetTerms, null=True, blank=True, on_delete=models.SET_NULL)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     location_image = models.ImageField(
         upload_to=customer_image_upload_path,
         blank=True,

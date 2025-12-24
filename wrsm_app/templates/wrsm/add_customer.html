@@ -4,6 +4,14 @@
 
 {% block title %}Add Customer{% endblock %}
 
+{% block links %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+    #map { height: 300px; width: 100%; margin-bottom: 1rem; border-radius: 0.5rem; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="min-h-screen min-w-96 flex flex-col items-center">
   <div class="bg-white text-slate-700 shadow-md rounded-lg w-full md:w-full mt-10">
@@ -14,10 +22,57 @@
       <form action="" method="post" enctype="multipart/form-data" id="add_customer_form">
         {% csrf_token %}
         {{ form|crispy }}
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Pin Location</label>
+            <div id="map"></div>
+            <p class="text-xs text-gray-500">Drag the marker to the customer's location.</p>
+        </div>
+
         <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl" type="submit">Submit</button>
         <a href="{% url 'wrsm_app:customers' %}" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-xl">Cancel</a>
       </form>
     </div>    
   <div>
 </div>
+
+<script>
+    // Initialize map
+    // Default to Puerto Princesa City, Palawan
+    var defaultLat = 9.7392;
+    var defaultLng = 118.7357;
+    var map = L.map('map').setView([defaultLat, defaultLng], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var marker = L.marker([defaultLat, defaultLng], {draggable: true}).addTo(map);
+
+    function updateInputs(lat, lng) {
+        document.getElementById('id_latitude').value = lat;
+        document.getElementById('id_longitude').value = lng;
+    }
+    
+    // Set initial hidden inputs to default location so form isn't empty if user doesn't drag
+    updateInputs(defaultLat, defaultLng);
+
+    marker.on('dragend', function(event) {
+        var position = marker.getLatLng();
+        updateInputs(position.lat, position.lng);
+    });
+
+    // Try to get user location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            var newLatLng = new L.LatLng(lat, lng);
+            marker.setLatLng(newLatLng);
+            map.setView(newLatLng, 15);
+            updateInputs(lat, lng);
+        });
+    }
+</script>
 {% endblock %}

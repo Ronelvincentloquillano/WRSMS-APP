@@ -826,6 +826,32 @@ def get_product_data(request):
 
 
 @login_required
+def customer_map(request):
+    station = request.user.profile.station
+    customers = models.Customer.objects.filter(
+        station=station, 
+        latitude__isnull=False, 
+        longitude__isnull=False
+    )
+    
+    # Serialize data for the map
+    customer_data = []
+    for c in customers:
+        customer_data.append({
+            'name': c.name,
+            'lat': c.latitude,
+            'lng': c.longitude,
+            'url': reverse('wrsm_app:customer-detail', args=[c.pk])
+        })
+    
+    context = {
+        'station': station,
+        'customers_json': json.dumps(customer_data)
+    }
+    return render(request, 'wrsm/customer_map.html', context)
+
+
+@login_required
 def add_customer(request):
     station = request.user.profile.station
     if request.method == 'POST':

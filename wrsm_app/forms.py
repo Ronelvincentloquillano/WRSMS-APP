@@ -182,6 +182,10 @@ class CreateCustomerForm(forms.ModelForm):
         model = models.Customer
         fields = '__all__'
         exclude = ['station',]
+        widgets = {
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
+        }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)

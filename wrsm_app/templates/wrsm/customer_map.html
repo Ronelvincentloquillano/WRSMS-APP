@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customer Map{% endblock %}
+
+{% block links %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+    #map { height: calc(100vh - 150px); width: 100%; border-radius: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen p-4 flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-3xl font-bold dark:text-white">Customer Map</h1>
+        <a href="{% url 'wrsm_app:add-customer' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md">
+            Add Customer
+        </a>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-md flex-grow">
+        <div id="map"></div>
+    </div>
+</div>
+
+<script>
+    var map = L.map('map').setView([9.7392, 118.7357], 13); // Default view: Puerto Princesa City
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var customers = {{ customers_json|safe }};
+    var markers = [];
+
+    customers.forEach(function(c) {
+        var marker = L.marker([c.lat, c.lng])
+            .bindPopup(`<b>${c.name}</b><br><a href="${c.url}">View Details</a>`);
+        marker.addTo(map);
+        markers.push(marker);
+    });
+
+    if (markers.length > 0) {
+        var group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+</script>
+{% endblock %}
