@@ -8,12 +8,13 @@ app_name = 'wrsm_app'
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('switch-station/<int:station_id>/', views.switch_station, name='switch-station'),
     path('home/', views.home, name='home'),
     path('api/offline-master-data/', views_offline.get_offline_master_data, name='offline_master_data'),
-    path('add-station-settings/<int:pk>/', views.add_station_settings, name='add-station-settings'),
-    path('station-setting-detail/<int:pk>/', views.StationSettingDetail.as_view(), 
+    path('add-station-settings/', views.add_station_settings, name='add-station-settings'),
+    path('station-setting-detail/', views.StationSettingDetail.as_view(), 
          name='station-setting-detail'),
-    path('station-setting-update/<int:pk>/', views.StationSettingUpdateView.as_view(), 
+    path('station-setting-update/', views.StationSettingUpdateView.as_view(), 
          name='station-setting-update'),
     path('add-net-terms/', views.add_net_terms, name='add-net-terms'),
     path('net-terms/', views.NetTermsListView.as_view(), name='net-terms'),

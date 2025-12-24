@@ -30,6 +30,24 @@ def index(request):
 
 
 @login_required
+def switch_station(request, station_id):
+    user = request.user
+    profile = user.profile
+    try:
+        new_station = models.Station.objects.get(id=station_id)
+        if new_station in profile.allowed_stations.all():
+            profile.station = new_station
+            profile.save()
+            messages.success(request, f"Switched to station: {new_station.name}")
+        else:
+            messages.error(request, "You do not have permission to access this station.")
+    except models.Station.DoesNotExist:
+        messages.error(request, "Station not found.")
+    
+    return redirect('wrsm_app:dashboard')
+
+
+@login_required
 def dashboard(request):
     user = request.user
     station = getattr(user.profile, 'station', None)
@@ -156,8 +174,6 @@ def custom_logout_view(request):
 @login_required
 def add_sales(request):
     station = request.user.profile.station
-    order_types = models.OrderType.objects.filter(station=station)
-    payment_types = models.PaymentType.objects.filter(station=station)
     station_settings = models.StationSetting.objects.get(station=station)
     user = models.Profile.objects.get(user=request.user)
     
@@ -1477,7 +1493,8 @@ class SalesListView(LoginRequiredMixin, ListView):
 
         context['grand_total'] = grand_total
         context['station'] = station
-        context['customers'] = customers.order_by('name')
+        if customers != None:
+            context['customers'] = customers.order_by('name')
 
         # Calculate totals per sales_id
         product_expr = ExpressionWrapper(F('quantity') * F('unit_price'), output_field=DecimalField())
@@ -1724,10 +1741,10 @@ class StationSettingUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateVi
     template_name = 'wrsm/update_station_setting.html'
 
     def get_success_url(self):
-        return reverse_lazy('wrsm_app:station-setting-detail', kwargs={'pk' : self.object.pk})
+        return reverse_lazy('wrsm_app:station-setting-detail')
     
     def get_queryset(self, **kwargs):
-        return models.StationSetting.objects.filter(pk=self.kwargs['pk'])
+        return models.StationSetting.objects.filter(station=self.request.user.profile.station)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

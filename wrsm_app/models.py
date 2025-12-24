@@ -27,22 +27,28 @@ class Station(models.Model):
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        if not self.station_code:
-            station_code = generate_code()
-            while Station.objects.filter(station_code=station_code).exists():
-                station_code = generate_code()
-            self.station_code = station_code
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.station_code:
+    #         station_code = generate_code()
+    #         while Station.objects.filter(station_code=station_code).exists():
+    #             station_code = generate_code()
+    #         self.station_code = station_code
+    #     super().save(*args, **kwargs)
 
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     station = models.ForeignKey(to=Station, on_delete=models.SET_NULL, null=True)
+    allowed_stations = models.ManyToManyField(to=Station, related_name='allowed_profiles', blank=True)
     station_code = models.CharField(max_length=10, unique=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} ({self.station.name if self.station else 'No Station'})"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.station:
+            self.allowed_stations.add(self.station)
 
 
 class PaymentType(models.Model):

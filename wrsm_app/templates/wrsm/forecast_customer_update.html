@@ -15,7 +15,7 @@
         {% csrf_token %}
         {{ form|crispy }}
         <button class="btn btn-primary" type="submit">Submit</button>
-        <a href="{% url 'wrsm_app:forecast-list' pk=station.pk %}" class="btn btn-secondary">Reset</a>
+        <a href="{% url 'wrsm_app:forecast-list' %}" class="btn btn-secondary">Reset</a>
       </form>
     </div>    
   <div>

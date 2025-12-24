@@ -1,4 +1,4 @@
-from .models import StationSetting, Customer
+from .models import StationSetting
 
 def global_context(request):
     has_station_settings = False
@@ -14,12 +14,15 @@ def global_context(request):
         try:
             station_settings = StationSetting.objects.get(station=station)
             has_station_settings = True
-            customer_count = Customer.objects.filter(station=station).count()
         except StationSetting.DoesNotExist:
             pass
+    
+    available_stations = []
+    if profile and profile.allowed_stations.count() > 1:
+        available_stations = profile.allowed_stations.all()
 
     return {
         'station': station,
         'has_station_settings': has_station_settings,
-        'customer_count': customer_count,
+        'available_stations': available_stations,
     }

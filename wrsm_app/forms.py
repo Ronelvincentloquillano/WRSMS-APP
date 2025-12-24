@@ -33,9 +33,8 @@ class CreateSalesForm(forms.ModelForm):
         if station:
             try:
                 settings = models.StationSetting.objects.get(station=station)
-                order_types = models.OrderType.objects.filter(station=station)
-                self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station.pk).order_by('-type')
-                self.fields['customer'].queryset = models.Customer.objects.filter(station=station.pk).order_by('name')
+                self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station).order_by('-type')
+                self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
                 self.fields['order_type'].initial = settings.default_order_type
             except models.StationSetting.DoesNotExist:
                 pass
@@ -55,7 +54,7 @@ class SalesItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        self.fields['product'].queryset = models.Product.objects.exclude(product_type='SEAL').order_by(
+        self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
             'product_type','-jug_size__size_in_liters')
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
@@ -213,6 +212,11 @@ class CreateSizeForm(forms.ModelForm):
         model = models.JugSize
         fields = ['size_label','size_in_liters','unit_price']
         exclude = ['station',]
+        widgets = {
+            'size_label':forms.TextInput(attrs={
+                'placeholder':'example: 20L or 10L'
+            }),
+        }
         
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
@@ -229,6 +233,11 @@ class CreateOrderTypeForm(forms.ModelForm):
         model = models.OrderType
         fields = '__all__'
         exclude = ['station',]
+        widgets = {
+            'type':forms.TextInput(attrs={
+                'placeholder':'eg.: Pickup, or Delivery'
+            }),
+        }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
@@ -240,6 +249,11 @@ class CreatePaymentTypeForm(forms.ModelForm):
         model = models.PaymentType
         fields = '__all__'
         exclude = ['station',]
+        widgets = {
+            'name':forms.TextInput(attrs={
+                'placeholder':'eg.: Cash, Gcash, or Maya'
+            }),
+        }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
