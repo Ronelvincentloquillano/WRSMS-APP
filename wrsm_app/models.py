@@ -14,6 +14,10 @@ def customer_image_upload_path(instance, filename):
     return f'customers/{instance.id}/{filename}'
 
 
+def station_image_upload_path(instance, filename):
+    return f'stations/{instance.station.id}/{filename}'
+
+
 class Station(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
     address = models.CharField(max_length=100, null=True, blank=True)
@@ -152,7 +156,7 @@ class StationSetting(models.Model):
     default_order_type = models.ForeignKey(to=OrderType, null=True, blank=True, on_delete=models.SET_NULL)
     default_payment_type = models.ForeignKey(to=PaymentType, null=True, blank=True, on_delete=models.SET_NULL)
     gcash_account = models.CharField(max_length=50, null=True, blank=True, help_text="Gcash account number for payments")
-    gcash_account_name = models.CharField(max_length=100, null=True, blank=True, help_text="Gcash account name for payments")   
+    gcash_qr_image = models.ImageField(upload_to=station_image_upload_path, blank=True, null=True, help_text="Upload your personal GCash QR code image")
     days_to_filter_saleslist = models.IntegerField(null=True, blank=True, default=1, help_text="Number of days to filter sales list")
     num_of_liters_to_backwash = models.IntegerField(null=True, blank=True)
     num_of_liters_to_change_filter = models.IntegerField(null=True, blank=True)

@@ -39,10 +39,11 @@
             <label class="block font-semibold mb-1">
               Payment Type
             </label>
-            {% for i in form.payment_type %}
-            <label class="flex items-center gap-2 cursor-pointer">
-              <span>{{i}}</span>
-            </label>
+            {% for radio in form.payment_type %}
+            <div class="flex items-center gap-2 cursor-pointer">
+               {{ radio.tag }}
+               <label for="{{ radio.id_for_label }}" class="cursor-pointer">{{ radio.choice_label }}</label>
+            </div>
             {% endfor %}
           </div>
 
@@ -117,17 +118,19 @@
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-  $('#payFullAmount').on('click', function () {
-    const total_paid = $("#id_total_paid");
-    total_paid.val($(this).data("amount"));
-    $(this).hide();
-  });
+  $(document).ready(function() {
+    $('#payFullAmount').on('click', function () {
+      const total_paid = $("#id_total_paid");
+      total_paid.val($(this).data("amount"));
+      $(this).hide();
+    });
 
   // GCash Modal Logic
-  const gcashAccount = "{{ station.stationsetting.gcash_account }}";
+  const gcashQrUrl = "{% if station.stationsetting.gcash_qr_image %}{{ station.stationsetting.gcash_qr_image.url }}{% endif %}";
 
   function toggleGcashButton() {
-    const selectedText = $('input[name="payment_type"]:checked').parent().text().trim().toLowerCase();
+    // Find the label text associated with the checked radio button
+    const selectedText = $('input[name="payment_type"]:checked').closest('div').find('label').text().trim().toLowerCase();
     if (selectedText.includes('gcash')) {
       $('#payGcash').show();
     } else {
@@ -135,7 +138,7 @@
     }
   }
 
-  $('input[name="payment_type"]').on('change', toggleGcashButton);
+  $(document).on('change', '[name="payment_type"]', toggleGcashButton);
   toggleGcashButton();
   
   $('#payGcash').on('click', function() {
@@ -145,12 +148,13 @@
         return;
     }
     
+    if (!gcashQrUrl) {
+        alert("No GCash QR image uploaded in Station Settings. Please upload one to use this feature.");
+        return;
+    }
+
     $('#gcashAmount').text(amount);
-    // Generate QR code for the account number
-    // Note: To embed amount, we'd need a specific payload format. 
-    // For now, we encode the account number which is the standard identifier.
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${gcashAccount}`;
-    $('#gcashQr').attr('src', qrUrl);
+    $('#gcashQr').attr('src', gcashQrUrl);
     
     $('#gcashModal').removeClass('hidden');
   });
@@ -162,5 +166,6 @@
   $('#confirmGcash').on('click', function() {
     $('#add_payment_form').submit();
   });
+});
 </script>
 {% endblock %}

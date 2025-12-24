@@ -57,9 +57,6 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
           Account: {{ station.stationsetting.gcash_account }}
         </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          Account Name: {{ station.stationsetting.gcash_account_name }}
-        </p>
       </div>
       <div class="items-center px-4 py-3">
         <button id="confirmGcash"
@@ -77,43 +74,58 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-  // GCash Modal Logic
-  const gcashAccount = "{{ station.stationsetting.gcash_account }}";
+  $(document).ready(function() {
+    // GCash Modal Logic
+    const gcashQrUrl = "{% if station.stationsetting.gcash_qr_image %}{{ station.stationsetting.gcash_qr_image.url }}{% endif %}";
 
-  function toggleGcashButton() {
-    const selectedText = $('#id_payment_type option:selected').text().trim().toLowerCase();
-    if (selectedText.includes('gcash')) {
-      $('#payGcash').show();
-    } else {
-      $('#payGcash').hide();
+    function toggleGcashButton() {
+      let selectedText = "";
+      const selectEl = $('select[name="payment_type"]');
+      if (selectEl.length) {
+        selectedText = selectEl.find('option:selected').text();
+      } else {
+        selectedText = $('input[name="payment_type"]:checked').closest('div, label').text();
+      }
+      
+      selectedText = selectedText.trim().toLowerCase();
+
+      if (selectedText.includes('gcash')) {
+        $('#payGcash').show();
+      } else {
+        $('#payGcash').hide();
+      }
     }
-  }
 
-  $('#id_payment_type').on('change', toggleGcashButton);
-  toggleGcashButton();
-  
-  $('#payGcash').on('click', function() {
-    // Attempt to get value from standard Django form ID
-    let amount = $('#id_total_paid').val();
+    $(document).on('change', '[name="payment_type"]', toggleGcashButton);
+    toggleGcashButton();
     
-    if (!amount) {
-        alert("Please enter an amount first.");
-        return;
-    }
-    
-    $('#gcashAmount').text(amount);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${gcashAccount}`;
-    $('#gcashQr').attr('src', qrUrl);
-    
-    $('#gcashModal').removeClass('hidden');
-  });
+    $('#payGcash').on('click', function() {
+      // Attempt to get value from standard Django form ID
+      let amount = $('#id_total_paid').val();
+      
+      if (!amount) {
+          alert("Please enter an amount first.");
+          return;
+      }
 
-  $('#cancelGcash').on('click', function() {
-    $('#gcashModal').addClass('hidden');
-  });
+      if (!gcashQrUrl) {
+          alert("No GCash QR image uploaded in Station Settings. Please upload one to use this feature.");
+          return;
+      }
+      
+      $('#gcashAmount').text(amount);
+      $('#gcashQr').attr('src', gcashQrUrl);
+      
+      $('#gcashModal').removeClass('hidden');
+    });
 
-  $('#confirmGcash').on('click', function() {
-    $('#add_payment_generic_form').submit();
+    $('#cancelGcash').on('click', function() {
+      $('#gcashModal').addClass('hidden');
+    });
+
+    $('#confirmGcash').on('click', function() {
+      $('#add_payment_generic_form').submit();
+    });
   });
 </script>
 {% endblock %}

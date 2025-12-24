@@ -11,7 +11,7 @@
       <h2>Add Station Settings</h2>
     </div>
     <div class="card-body">
-      <form method="post" autocomplete="off" id="add_sales_form">
+      <form method="post" autocomplete="off" id="add_sales_form" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}
         <button class="btn btn-primary" type="submit">Submit</button>
