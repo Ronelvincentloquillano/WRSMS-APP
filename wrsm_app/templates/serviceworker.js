@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v23';
+const SW_VERSION = 'wrsm-v24';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
     '/static/css/output.css',
     '/static/css/styles.css',
     '/static/js/main.js',
+    '/static/js/jquery-3.7.1.min.js',
     '/static/js/offline_forms.js',
     '/static/img/SDR_thumbnail.png',
     '/static/img/SDR.png',
