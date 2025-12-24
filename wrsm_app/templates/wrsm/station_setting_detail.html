@@ -8,6 +8,12 @@
 
   <div class="text-center mt-5">
     <h2 class="text-4xl">Station Settings</h2>
+    {% if not settings_complete %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4 mx-auto max-w-lg" role="alert">
+      <strong class="font-bold">Incomplete Settings!</strong>
+      <span class="block sm:inline">Please complete your station settings by filling up all the fields.</span>
+    </div>
+    {% endif %}
   </div>
 
   <section class="w-full bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 mt-5">

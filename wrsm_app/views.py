@@ -25,6 +25,101 @@ today = timezone.now()
 local_date = today.astimezone(timezone.get_current_timezone()).date()
 current_date = today.date()
 
+class StationSetupRequiredMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        station = request.user.profile.station
+        if not (
+            models.JugSize.objects.filter(station=station).exists() and
+            models.JugType.objects.filter(station=station).exists() and
+            models.OrderType.objects.filter(station=station).exists() and
+            models.PaymentType.objects.filter(station=station).exists()
+        ):
+            messages.warning(request, "Please complete the setup wizard before accessing Station Settings.")
+            return redirect('wrsm_app:setup-wizard')
+        return super().dispatch(request, *args, **kwargs)
+
+@login_required
+def setup_wizard(request):
+    station = request.user.profile.station
+    
+    # Check existing data
+    jug_sizes = models.JugSize.objects.filter(station=station)
+    jug_types = models.JugType.objects.filter(station=station)
+    order_types = models.OrderType.objects.filter(station=station)
+    payment_types = models.PaymentType.objects.filter(station=station)
+    
+    jug_sizes_count = jug_sizes.count()
+    jug_types_count = jug_types.count()
+    order_types_count = order_types.count()
+    payment_types_count = payment_types.count()
+
+    # Initialize forms
+    jug_size_form = forms.CreateSizeForm(station=station)
+    jug_type_form = forms.CreateJugTypeForm(station=station)
+    order_type_form = forms.CreateOrderTypeForm(station=station)
+    payment_type_form = forms.CreatePaymentTypeForm(station=station)
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+        
+        if form_type == 'jug_size':
+            jug_size_form = forms.CreateSizeForm(request.POST, station=station)
+            if jug_size_form.is_valid():
+                instance = jug_size_form.save(commit=False)
+                instance.station = station
+                instance.save()
+                messages.success(request, "Jug Size added!")
+                return redirect('wrsm_app:setup-wizard')
+                
+        elif form_type == 'jug_type':
+            jug_type_form = forms.CreateJugTypeForm(request.POST, station=station)
+            if jug_type_form.is_valid():
+                instance = jug_type_form.save(commit=False)
+                instance.station = station
+                instance.save()
+                messages.success(request, "Jug Type added!")
+                return redirect('wrsm_app:setup-wizard')
+
+        elif form_type == 'order_type':
+            order_type_form = forms.CreateOrderTypeForm(request.POST, station=station)
+            if order_type_form.is_valid():
+                instance = order_type_form.save(commit=False)
+                instance.station = station
+                instance.save()
+                messages.success(request, "Order Type added!")
+                return redirect('wrsm_app:setup-wizard')
+
+        elif form_type == 'payment_type':
+            payment_type_form = forms.CreatePaymentTypeForm(request.POST, station=station)
+            if payment_type_form.is_valid():
+                instance = payment_type_form.save(commit=False)
+                instance.station = station
+                instance.save()
+                messages.success(request, "Payment Type added!")
+                return redirect('wrsm_app:setup-wizard')
+
+    is_complete = (jug_sizes_count > 0 and jug_types_count > 0 and 
+                   order_types_count > 0 and payment_types_count > 0)
+
+    context = {
+        'jug_sizes': jug_sizes,
+        'jug_types': jug_types,
+        'order_types': order_types,
+        'payment_types': payment_types,
+        'jug_sizes_count': jug_sizes_count,
+        'jug_types_count': jug_types_count,
+        'order_types_count': order_types_count,
+        'payment_types_count': payment_types_count,
+        'jug_size_form': jug_size_form,
+        'jug_type_form': jug_type_form,
+        'order_type_form': order_type_form,
+        'payment_type_form': payment_type_form,
+        'is_complete': is_complete
+    }
+    
+    return render(request, 'wrsm/setup_wizard.html', context)
+
+
 def index(request):
     return render(request, 'index.html')
 
@@ -938,6 +1033,21 @@ def add_discount(request):
 @login_required
 def add_station_settings(request):
     station = request.user.profile.station
+    
+    # Check setup completeness
+    if not (
+        models.JugSize.objects.filter(station=station).exists() and
+        models.JugType.objects.filter(station=station).exists() and
+        models.OrderType.objects.filter(station=station).exists() and
+        models.PaymentType.objects.filter(station=station).exists()
+    ):
+        messages.warning(request, "Please complete the setup wizard before adding Station Settings.")
+        return redirect('wrsm_app:setup-wizard')
+
+    # Check if StationSetting already exists
+    if models.StationSetting.objects.filter(station=station).exists():
+        return redirect('wrsm_app:station-setting-update')
+
     if request.method == 'POST':
         form = forms.CreateStationSettingsForm(request.POST, station=station)
         if form.is_valid():
@@ -1380,11 +1490,27 @@ class JugTypeListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
+        try:
+            station_settings = models.StationSetting.objects.get(station=station)
+            # Check for completeness
+            required_fields = [
+                station_settings.default_delivery_rate,
+                station_settings.default_jug_size,
+                station_settings.default_unit_price,
+                station_settings.default_minimum_delivery_qty,
+                station_settings.default_order_type,
+                station_settings.default_payment_type
+            ]
+            settings_complete = all(field is not None for field in required_fields)
+        except models.StationSetting.DoesNotExist:
+            station_settings = None
+            settings_complete = False
         jug_types = models.JugType.objects.filter(station=station)
         context = super().get_context_data(**kwargs)
         context = {
             'jug_types': jug_types,
-            'station': station
+            'station': station,
+            'settings_complete': settings_complete
         }
         return context
 
@@ -1699,16 +1825,32 @@ class DiscountsListView(LoginRequiredMixin, ListView):
         return context
 
 
-class StationSettingDetail(LoginRequiredMixin,TemplateView):
+class StationSettingDetail(StationSetupRequiredMixin,TemplateView):
     template_name = 'wrsm/station_setting_detail.html'
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
-        station_settings = models.StationSetting.objects.get(station=station)
+        try:
+            station_settings = models.StationSetting.objects.get(station=station)
+            # Check for completeness
+            required_fields = [
+                station_settings.default_delivery_rate,
+                station_settings.default_jug_size,
+                station_settings.default_unit_price,
+                station_settings.default_minimum_delivery_qty,
+                station_settings.default_order_type,
+                station_settings.default_payment_type
+            ]
+            settings_complete = all(field is not None for field in required_fields)
+        except models.StationSetting.DoesNotExist:
+            station_settings = None
+            settings_complete = False
+
         context = super().get_context_data(**kwargs)
         context = {
             'station': station,
             'station_settings': station_settings,
+            'settings_complete': settings_complete,
         }
         return context
 
@@ -1761,7 +1903,7 @@ class CustomerUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         return context
 
 
-class StationSettingUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+class StationSettingUpdateView(StationSetupRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = forms.UpdateStationSettingForm
     success_message = 'Station Settings successfully updated!'
     template_name = 'wrsm/update_station_setting.html'
@@ -1769,8 +1911,16 @@ class StationSettingUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateVi
     def get_success_url(self):
         return reverse_lazy('wrsm_app:station-setting-detail')
     
-    def get_queryset(self, **kwargs):
-        return models.StationSetting.objects.filter(station=self.request.user.profile.station)
+    def get_object(self, queryset=None):
+        obj, created = models.StationSetting.objects.get_or_create(
+            station=self.request.user.profile.station,
+            defaults={
+                'default_delivery_rate': 0,
+                'default_unit_price': 0,
+                'default_minimum_delivery_qty': 0
+            }
+        )
+        return obj
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

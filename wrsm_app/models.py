@@ -26,14 +26,6 @@ class Station(models.Model):
 
     def __str__(self):
         return self.name
-    
-    # def save(self, *args, **kwargs):
-    #     if not self.station_code:
-    #         station_code = generate_code()
-    #         while Station.objects.filter(station_code=station_code).exists():
-    #             station_code = generate_code()
-    #         self.station_code = station_code
-    #     super().save(*args, **kwargs)
 
 
 class Profile(models.Model):

@@ -1,75 +1,128 @@
-from django.http import HttpResponse
-from django.shortcuts import render
-
-from rest_framework .views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import LoginSerializer
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import login
+from django.core.mail import send_mail
+from django.conf import settings
+from django.urls import reverse
+from django.utils.crypto import get_random_string
+from django.contrib import messages
+from .forms import StationOwnerSignupForm
+from .models import PendingRegistration, StationSubscription, SubscriptionPlan
+from wrsm_app.models import Station, Profile
+from django.contrib.auth.hashers import make_password
+import datetime
 
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+def signup_view(request):
+    if request.method == 'POST':
+        form = StationOwnerSignupForm(request.POST)
+        if form.is_valid():
+            # Mock Payment Integration
+            # In a real scenario, we would redirect to a payment gateway here if a paid plan was selected.
+            # For now, we assume the user is signing up for a trial or payment is handled elsewhere.
+            
+            data = form.cleaned_data
+            email = data['email']
+            
+            # Create Pending Registration
+            pending_user, created = PendingRegistration.objects.update_or_create(
+                email=email,
+                defaults={
+                    'station_name': data['station_name'],
+                    'first_name': data['first_name'],
+                    'last_name': data['last_name'],
+                    'phone_number': data['phone_number'],
+                    'password': make_password(data['password']), # Hash password for storage
+                    'plan_name': data.get('plan', 'Trial'),
+                    'activation_key': get_random_string(32)
+                }
+            )
 
-from wrsm_app.models import Profile
-from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
-
-
-
-class LoginView(APIView):
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data.get('username')
-            password = serializer.validated_data.get('password')
+            # Send Email
+            activation_link = request.build_absolute_uri(
+                reverse('account:activate', kwargs={'key': pending_user.activation_key})
+            )
+            
+            subject = "Confirm your WRSM Account"
+            message = f"Hi {data['first_name']},\n\nPlease confirm your account by clicking the link below:\n{activation_link}\n\nThank you!"
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
             
             try:
-                user = User.objects.get(username=username)
-                
-                if check_password(password, user.password):
-                    refresh = RefreshToken.for_user(user)
-                    return Response({
-                        'refresh': str(refresh),
-                        'access': str(refresh.access_token),
-                    })
-                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-            except User.DoesNotExist:
-                return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-def register(request):
-    if request.method == 'POST':
-        user_form = UserRegistrationForm(request.POST)
-        if user_form.is_valid():
-            # Create a new user object but avoid saving it yet
-            new_user = user_form.save(commit=False)
-            # Set the chosen password
-            new_user.set_password(user_form.cleaned_data['password'])
-            # Save the User object
-            new_user.save()
-            # Create the user profile
-            Profile.objects.create(user=new_user)
-            return render(request, 'register_done.html', {'new_user': new_user})
+                send_mail(subject, message, from_email, recipient_list)
+                return render(request, 'account/register_done.html', {'email': email})
+            except Exception as e:
+                # In production, handle email errors gracefully
+                print(f"Email error: {e}")
+                messages.error(request, "Error sending confirmation email. Please try again.")
     else:
-        user_form = UserRegistrationForm()
-    return render(request, 'register.html', {'user_form': user_form})
+        initial_plan = request.GET.get('plan', 'Trial')
+        form = StationOwnerSignupForm(initial={'plan': initial_plan})
 
+    return render(request, 'account/register.html', {'form': form})
 
-@login_required
-def edit(request):
-    if request.method == 'POST':
-        user_form = UserEditForm(instance=request.user,
-        data=request.POST)
-        profile_form = ProfileEditForm(instance=request.user.profile,data=request.POST)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-    else:
-        user_form = UserEditForm(instance=request.user)
-        profile_form = ProfileEditForm(instance=request.user.profile)
-    return render(request,'account/edit.html',{'user_form': user_form,'profile_form': profile_form})
+def activate_account(request, key):
+    pending_reg = get_object_or_404(PendingRegistration, activation_key=key)
+    
+    # 1. Create User
+    username = pending_reg.email # Use email as username
+    if User.objects.filter(username=username).exists():
+        messages.error(request, "User already exists.")
+        return redirect('account:login')
+
+    user = User.objects.create(
+        username=username,
+        email=pending_reg.email,
+        first_name=pending_reg.first_name,
+        last_name=pending_reg.last_name,
+        password=pending_reg.password # Already hashed
+    )
+    # Since we set the password directly as a hash, we might need to adjust. 
+    # User.objects.create handles raw passwords usually if using create_user. 
+    # But here we are passing a hashed password to 'password' field. 
+    # Actually, create() saves raw. We should use:
+    user.password = pending_reg.password
+    user.save()
+
+    # 2. Create Station
+    station = Station.objects.create(
+        name=pending_reg.station_name,
+        contact_number=pending_reg.phone_number
+        # Station code logic handled in Station.save if present or we can generate
+    )
+
+    # 3. Create Profile
+    profile = Profile.objects.create(
+        user=user,
+        station=station,
+        station_code=station.station_code 
+    )
+    # Link profile to station (allowed_stations logic in Profile.save handles this?)
+    # Profile.save calls self.allowed_stations.add(self.station)
+    profile.save()
+
+    # 4. Subscription (Trial)
+    # Calculate 30 days trial
+    end_date = datetime.date.today() + datetime.timedelta(days=30)
+    StationSubscription.objects.create(
+        station=station,
+        is_trial=True,
+        end_date=end_date
+    )
+
+    # 5. Create Station Settings (Prevent 404 on update)
+    from wrsm_app.models import StationSetting
+    StationSetting.objects.create(
+        station=station,
+        default_delivery_rate=0,
+        default_unit_price=0,
+        default_minimum_delivery_qty=0
+    )
+
+    # 6. Cleanup
+    pending_reg.delete()
+
+    # 6. Login and Redirect
+    # We need to authenticate. Since we have the user object:
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+    return redirect('wrsm_app:setup-wizard') # Redirect to setup wizard

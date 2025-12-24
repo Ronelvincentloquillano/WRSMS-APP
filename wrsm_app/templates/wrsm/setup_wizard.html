@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Station Setup Wizard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold mb-2">Welcome to your Station Setup</h1>
+        <p class="text-gray-600 dark:text-gray-300">Please complete the following steps to get started. You need at least one entry for each category.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Jug Sizes -->
+        <div class="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-md {% if jug_sizes_count > 0 %}border-l-4 border-green-500{% else %}border-l-4 border-red-500{% endif %}">
+            <h2 class="text-2xl font-semibold mb-4 flex justify-between items-center">
+                Jug Sizes
+                {% if jug_sizes_count > 0 %}<span class="text-green-500 text-sm">✓ Completed</span>{% endif %}
+            </h2>
+            
+            {% if jug_sizes %}
+            <ul class="mb-4 list-disc pl-5">
+                {% for item in jug_sizes %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="jug_size">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Size Label</label>
+                    {{ jug_size_form.size_label|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Size in Liters</label>
+                    {{ jug_size_form.size_in_liters|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Unit Price</label>
+                    {{ jug_size_form.unit_price|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Jug Size</button>
+            </form>
+        </div>
+
+        <!-- Jug Types -->
+        <div class="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-md {% if jug_types_count > 0 %}border-l-4 border-green-500{% else %}border-l-4 border-red-500{% endif %}">
+            <h2 class="text-2xl font-semibold mb-4 flex justify-between items-center">
+                Jug Types
+                {% if jug_types_count > 0 %}<span class="text-green-500 text-sm">✓ Completed</span>{% endif %}
+            </h2>
+
+            {% if jug_types %}
+            <ul class="mb-4 list-disc pl-5">
+                {% for item in jug_types %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="jug_type">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Jug Type</label>
+                    {{ jug_type_form.jug_type|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Jug Type</button>
+            </form>
+        </div>
+
+        <!-- Order Types -->
+        <div class="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-md {% if order_types_count > 0 %}border-l-4 border-green-500{% else %}border-l-4 border-red-500{% endif %}">
+            <h2 class="text-2xl font-semibold mb-4 flex justify-between items-center">
+                Order Types
+                {% if order_types_count > 0 %}<span class="text-green-500 text-sm">✓ Completed</span>{% endif %}
+            </h2>
+
+            {% if order_types %}
+            <ul class="mb-4 list-disc pl-5">
+                {% for item in order_types %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="order_type">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Type Name</label>
+                    {{ order_type_form.type|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Unit Price</label>
+                    {{ order_type_form.unit_price|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Order Type</button>
+            </form>
+        </div>
+
+        <!-- Payment Types -->
+        <div class="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-md {% if payment_types_count > 0 %}border-l-4 border-green-500{% else %}border-l-4 border-red-500{% endif %}">
+            <h2 class="text-2xl font-semibold mb-4 flex justify-between items-center">
+                Payment Types
+                {% if payment_types_count > 0 %}<span class="text-green-500 text-sm">✓ Completed</span>{% endif %}
+            </h2>
+
+            {% if payment_types %}
+            <ul class="mb-4 list-disc pl-5">
+                {% for item in payment_types %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="payment_type">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Name</label>
+                    {{ payment_type_form.name|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Sort Number</label>
+                    {{ payment_type_form.sort_number|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
+                </div>
+                
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Payment Type</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-10 text-center">
+        {% if is_complete %}
+        <a href="{% url 'wrsm_app:station-setting-detail' %}" class="inline-block bg-green-600 text-white text-xl font-bold py-3 px-8 rounded-full hover:bg-green-700 shadow-lg animate-bounce">
+            Finish Setup & Go to Settings
+        </a>
+        {% else %}
+        <button disabled class="bg-gray-400 text-white text-xl font-bold py-3 px-8 rounded-full cursor-not-allowed">
+            Finish Setup (Complete all sections)
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

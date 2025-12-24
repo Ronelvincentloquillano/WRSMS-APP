@@ -10,6 +10,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('switch-station/<int:station_id>/', views.switch_station, name='switch-station'),
     path('home/', views.home, name='home'),
+    path('setup-wizard/', views.setup_wizard, name='setup-wizard'),
     path('api/offline-master-data/', views_offline.get_offline_master_data, name='offline_master_data'),
     path('add-station-settings/', views.add_station_settings, name='add-station-settings'),
     path('station-setting-detail/', views.StationSettingDetail.as_view(), 

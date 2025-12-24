@@ -19,7 +19,7 @@
             {% endfor %}
           </div>
         {% endif %}
-        <form class="space-y-6" action="{% url 'login' %}" method="post">
+        <form class="space-y-6" action="{% url 'account:login' %}" method="post">
           {% csrf_token %}
           <div>
             <label for="form.username" class="mb-2 block text-sm/6 font-medium text-slate-500 dark:text-slate-100">Username</label>
@@ -29,7 +29,7 @@
             <div class="flex items-center justify-between">
               <label for="form.password" class="block text-sm/6 font-medium text-slate-500 dark:text-slate-100">Password</label>
               <div class="text-sm">
-                <a href="#" class="font-semibold text-sky-500 dark:text-lime-200 hover:text-sky-400">Forgot password?</a>
+                <a href="{% url 'account:password_reset' %}" class="font-semibold text-sky-500 dark:text-lime-200 hover:text-sky-400">Forgot password?</a>
               </div>
             </div>
             <div class="mt-2">
