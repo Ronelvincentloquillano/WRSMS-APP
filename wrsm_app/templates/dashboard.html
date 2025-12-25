@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load math_filters %}
+{% load l10n %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -112,7 +113,7 @@
     data: {
       labels: ['Orders', 'Rest of Forecast'],
       datasets: [{
-        data: [{{ today_forecast_count }}, {{ rest_forecast_count }}],
+        data: [{{ today_forecast_count|unlocalize }}, {{ rest_forecast_count|unlocalize }}],
         backgroundColor: ['#4ade80', '#94a3b8'],
       }]
     },
@@ -162,7 +163,7 @@
     data: {
       labels: ['Loaned', 'Remaining'],
       datasets: [{
-        data: [{{ loaned_jugs }}, {{ remaining_jugs }}],
+        data: [{{ loaned_jugs|unlocalize }}, {{ remaining_jugs|unlocalize }}],
         backgroundColor: ['#f87171', '#60a5fa'],
       }]
     },
@@ -197,7 +198,7 @@
     data: {
       labels: ['Sales', 'Expenses'],
       datasets: [{
-        data: [{{ sales_total }}, {{ expenses_total }}],
+        data: [{{ sales_total|unlocalize }}, {{ expenses_total|unlocalize }}],
         backgroundColor: ['#34d399', '#f87171'],
       }]
     },
