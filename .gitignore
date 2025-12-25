@@ -59,9 +59,9 @@ Thumbs.db
 *.sqlite3
 
 # Tailwind CSS generated files
-tailwind.config.js
+# tailwind.config.js
 package-lock.json
-package.json
+# package.json
 
 
 # project folder

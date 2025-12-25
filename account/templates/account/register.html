@@ -1,28 +1,138 @@
 {% extends "base.html" %}
 {% load static %}
-{% load crispy_forms_tags %}
+{% load widget_tweaks %}
 
 {% block title %}Create an account{% endblock %}
 
 {% block content %}
-<div class="min-w-full flex flex-col items-center mb-10 bg-gray-50 dark:bg-slate-800 min-h-screen justify-center">
-  <div class="bg-white text-slate-700 dark:bg-slate-700 dark:text-slate-200 shadow-md rounded-lg w-full max-w-md mt-10">
-    <div class="text-center border-b dark:border-slate-600 p-4">
-      <h2 class="text-2xl font-semibold">Create your account</h2>
-      <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+<div class="flex flex-col justify-center items-center min-h-screen py-5 px-4 mt-5 sm:px-6 lg:px-8 bg-gray-50 dark:bg-slate-800">
+  <div class="w-full max-w-md space-y-8">
+    <div class="text-center border-b dark:border-slate-600 pb-4">
+      <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+        Create your account
+      </h2>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
         Start managing your water refilling station today.
       </p>
     </div>
-    <div class="p-5">
-      <form method="post">
+
+    <div class="bg-white dark:bg-slate-700 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200 dark:border-slate-600">
+      <form method="post" id="signup-form" class="flex flex-col gap-5">
         {% csrf_token %}
-        {{ form|crispy }}
-        <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl w-full mt-4" 
-          type="submit">
-          Sign up
-        </button>
+        
+        {% if form.non_field_errors %}
+          <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+            <div class="flex">
+              <div class="ml-3">
+                <p class="text-sm text-red-700">
+                  {% for error in form.non_field_errors %}
+                    {{ error }}
+                  {% endfor %}
+                </p>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        
+        <div>
+          <label for="{{ form.station_name.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ form.station_name.label }}
+          </label>
+          <div class="mt-1">
+            {{ form.station_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+            {{ form.station_name.errors }}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              {{ form.first_name.label }}
+            </label>
+            <div class="mt-1">
+              {{ form.first_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+              {{ form.first_name.errors }}
+            </div>
+          </div>
+          <div>
+            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              {{ form.last_name.label }}
+            </label>
+            <div class="mt-1">
+              {{ form.last_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+              {{ form.last_name.errors }}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ form.phone_number.label }}
+          </label>
+          <div class="mt-1">
+            {{ form.phone_number|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+            {{ form.phone_number.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ form.email.label }}
+          </label>
+          <div class="mt-1">
+            {{ form.email|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+            {{ form.email.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ form.password.label }}
+          </label>
+          <div class="mt-1">
+            {{ form.password|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+            {{ form.password.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label for="{{ form.confirm_password.id_for_label }}" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            {{ form.confirm_password.label }}
+          </label>
+          <div class="mt-1">
+            {{ form.confirm_password|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
+            {{ form.confirm_password.errors }}
+          </div>
+        </div>
+
+        <div class="hidden">
+            {{ form.plan }}
+        </div>
+
+        <div>
+          <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl w-full flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed" 
+            type="submit" id="submit-btn">
+            <svg id="loading-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="btn-text">Sign up</span>
+          </button>
+        </div>
       </form>
     </div>    
   </div>
 </div>
+
+<script>
+  document.getElementById('signup-form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    var spinner = document.getElementById('loading-spinner');
+    var btnText = document.getElementById('btn-text');
+    
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.innerText = 'Creating account...';
+  });
+</script>
 {% endblock %}
