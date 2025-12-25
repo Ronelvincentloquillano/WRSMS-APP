@@ -201,9 +201,19 @@ def dashboard(request):
     remaining_jugs = max(0, initial_jug_count - loaned_jugs)
 
     # 3. Products
-    products = models.Product.objects.filter(station=station)
-    product_names = [p.product_name or p.product_type for p in products]
-    product_quantities = [p.quantity or 0 for p in products]
+    products = models.Product.objects.filter(station=station).exclude(product_type='REFILL').exclude(product_type='DELIVERY CHARGE')
+    
+    valid_products = []
+    for p in products:
+        # Determine the name exactly as it would be displayed
+        name = p.product_name if p.product_name else p.product_type
+        
+        # rigorous check: must be truthy, not just whitespace, and not literally "undefined"
+        if name and str(name).strip() and str(name).strip().lower() != 'undefined':
+            valid_products.append(p)
+
+    product_names = [(p.product_name if p.product_name else p.product_type) for p in valid_products]
+    product_quantities = [p.quantity or 0 for p in valid_products]
 
     # 4. Sales vs Expenses (Monthly)
     current_month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -944,6 +954,38 @@ def customer_map(request):
         'customers_json': json.dumps(customer_data)
     }
     return render(request, 'wrsm/customer_map.html', context)
+
+
+@login_required
+def delivery_map(request):
+    station = request.user.profile.station
+    # Filter orders for today
+    today_orders = models.Order.objects.filter(
+        station=station,
+        created_date__date=current_date,
+        customer__latitude__isnull=False,
+        customer__longitude__isnull=False
+    )
+
+    # Serialize data for the map
+    orders_data = []
+    for o in today_orders:
+        orders_data.append({
+            'customer': o.customer.name,
+            'lat': o.customer.latitude,
+            'lng': o.customer.longitude,
+            'status': o.status,
+            'order_type': str(o.order_type),
+            'quantity': o.quantity,
+            'note': o.note or o.payment_note,
+            'url': reverse('wrsm_app:update-order', args=[o.pk, o.pk]) # Assuming update-order takes pk and order_id based on urls.py
+        })
+    
+    context = {
+        'station': station,
+        'orders_json': json.dumps(orders_data)
+    }
+    return render(request, 'wrsm/delivery_map.html', context)
 
 
 @login_required

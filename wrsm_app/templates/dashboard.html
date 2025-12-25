@@ -61,6 +61,12 @@
       </div>
     </div>
 
+    <div class="text-center mb-10">
+      <a href="{% url 'wrsm_app:delivery-map' %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition">
+        View Delivery Map
+      </a>
+    </div>
+
     <table class="table-fixed min-w-full sm:min-w-full max-w-xl sm:max-w-lg text-sm md:text-xl mx-auto mb-10">
       <thead>
         <tr>
@@ -197,7 +203,14 @@
         backgroundColor: colors,
       }]
     },
-    options: { maintainAspectRatio: false }
+    options: { 
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
   });
 
   // 4. Sales vs Expenses Chart

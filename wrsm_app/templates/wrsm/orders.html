@@ -35,6 +35,12 @@
   </form>
   <!-- end of search fields -->
 
+  <div class="text-center mb-6">
+    <a href="{% url 'wrsm_app:delivery-map' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md">
+      View Delivery Map
+    </a>
+  </div>
+
   <div class="flex flex-col items-center">
    
     {% for item in orders %}
