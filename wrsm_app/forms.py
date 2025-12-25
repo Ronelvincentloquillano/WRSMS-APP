@@ -316,7 +316,6 @@ class UpdateStationSettingForm(forms.ModelForm):
         self.fields['default_jug_size'].queryset = models.JugSize.objects.filter(station=station)
         self.fields['default_order_type'].queryset = models.OrderType.objects.filter(station=station)
         self.fields['default_payment_type'].queryset = models.PaymentType.objects.filter(station=station)
-        self.fields['default_payment_type'].queryset = models.PaymentType.objects.filter(station=station)
         self.fields['days_to_filter_saleslist'].label = "Number of days to filter Sales list (0 for all, 1 current day)"
 
         if 'default_jug_size' or 'default_order_type' in self.data:
@@ -324,6 +323,8 @@ class UpdateStationSettingForm(forms.ModelForm):
                 station = int(self.data.get('station'))
                 self.fields['default_jug_size'].queryset = models.JugSize.objects.filter(station=station)
                 self.fields['default_order_type'].queryset = models.OrderType.objects.filter(station=station)
+                self.fields['default_order_type'].queryset = models.OrderType.objects.filter(station=station)
+                self.fields['default_payment_type'].queryset = models.PaymentType.objects.filter(station=station)
             except (ValueError, TypeError):
                 pass
 

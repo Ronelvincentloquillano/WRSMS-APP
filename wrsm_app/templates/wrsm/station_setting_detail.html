@@ -64,13 +64,17 @@
         <tr>
           <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">GCash Account #</td>
           <td class="border px-4 py-2 text-lg">
-            {{ station_settings.gcash_account_number }}
+            {{ station_settings.gcash_account }}
           </td>
         </tr>
         <tr>
           <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">GCash QR Code</td>
           <td class="border px-4 py-2 text-lg">
-            {{ station_settings.gcash_qr_image }}
+            {% if station_settings.gcash_qr_image %}
+              <img src="{{ station_settings.gcash_qr_image.url }}" alt="GCash QR Code" class="w-10 h-10 object-contain border rounded p-1 bg-white">
+            {% else %}
+              <span class="text-gray-400 text-sm italic">Not uploaded</span>
+            {% endif %}
           </td>
         </tr>
         <tr>
