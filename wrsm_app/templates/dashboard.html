@@ -189,7 +189,7 @@
   // 3. Products Inventory Chart
   const ctxProduct = document.getElementById('productChart').getContext('2d');
   new Chart(ctxProduct, {
-    type: 'pie',
+    type: 'bar',
     data: {
       labels: {{ product_names|safe }},
       datasets: [{

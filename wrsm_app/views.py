@@ -275,7 +275,7 @@ def add_sales(request):
 
     if request.method == 'POST':
         sales_form = forms.CreateSalesForm(request.POST, station=station)
-        item_formset = forms.SalesItemFormSet(request.POST)
+        item_formset = forms.SalesItemFormSet(request.POST, form_kwargs={'station': station})
 
         if sales_form.is_valid() and item_formset.is_valid():
             instance = sales_form.save(commit=False)
@@ -430,7 +430,7 @@ def add_sales(request):
             
     else:
         sales_form = forms.CreateSalesForm(station=station)
-        item_formset = forms.SalesItemFormSet()
+        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station})
         
     return render(request,'wrsm/add_sales.html',{
         'form':sales_form,
@@ -450,7 +450,7 @@ def add_sales_from_order(request, order_id):
 
     if request.method == 'POST':
         sales_form = forms.CreateSalesFromOrderForm(request.POST, station=station)
-        item_formset = forms.SalesItemFromOrderFormSet(request.POST)
+        item_formset = forms.SalesItemFromOrderFormSet(request.POST, form_kwargs={'station': station})
         if sales_form.is_valid() and item_formset.is_valid():
             instance = sales_form.save(commit=False)
             instance.station = station
@@ -646,7 +646,7 @@ def add_sales_from_order(request, order_id):
             'note': note,
             'is_paid': order_obj.is_paid,
         })
-        item_formset = forms.SalesItemFromOrderFormSet()
+        item_formset = forms.SalesItemFromOrderFormSet(form_kwargs={'station': station})
 
     return render(request,'wrsm/add_sales_from_order.html',{
         'form':sales_form,
@@ -1142,7 +1142,7 @@ def add_expense(request):
     station = request.user.profile.station
     if request.method == 'POST':
         form = forms.CreateExpenseForm(request.POST, station=station)
-        item_formset = forms.ExpenseItemFormSet(request.POST)
+        item_formset = forms.ExpenseItemFormSet(request.POST, form_kwargs={'station': station})
         if form.is_valid() and item_formset.is_valid():
             instance = form.save(commit=False)
             instance.station = station
@@ -1635,6 +1635,7 @@ class SalesListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         station = self.request.user.profile.station
+        products = models.Product.objects.filter(station=station) or None
         try:
             customers = models.Customer.objects.filter(station=station) or None
         except ValueError:
@@ -1657,6 +1658,7 @@ class SalesListView(LoginRequiredMixin, ListView):
         context['totals_by_product'] = {item['sales_id']: item['total'] for item in product_totals}
         context['selected_date'] = self.request.GET.get('date', '')
         context['entered_customer'] = self.request.GET.get('customer', '')
+        context['products'] = products.count() if products else 0
 
         return context
     

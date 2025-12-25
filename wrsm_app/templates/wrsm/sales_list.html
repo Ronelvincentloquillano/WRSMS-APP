@@ -11,6 +11,13 @@
 <div class="min-h-screen max-w-6xl mx-auto px-4">
   <div class="text-center mt-6">
     <h2 class="text-3xl font-bold">Sales Record</h2>
+    {% if products == 0 %}
+    <p class="font-medium text-red-500">
+      Please add products first.  
+      <a href="{% url 'wrsm_app:add-product' %}" class="text-sky-500">Click here</a> 
+      to add products.
+    </p>
+    {% endif %}
     <h6 class="text-gray-600 dark:text-gray-400">{% now "l, F j, Y" %}</h6>
   </div>
 

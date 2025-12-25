@@ -11,6 +11,9 @@ class StationRecordAdmin(admin.ModelAdmin):
         return qs.filter(station=request.user.profile.station)
 
 
+class ProductAdmin(StationRecordAdmin):
+    list_display = ('product_name', 'station')
+
 admin.site.register(models.Customer)
 admin.site.register(models.CustomerGeneric)
 admin.site.register(models.Sales)
@@ -26,7 +29,7 @@ admin.site.register(models.Maintenance)
 admin.site.register(models.Expense)
 admin.site.register(models.Forecast)
 admin.site.register(models.SalesItem)
-admin.site.register(models.Product)
+admin.site.register(models.Product, ProductAdmin)
 admin.site.register(models.Order)
 admin.site.register(models.PaymentType)
 admin.site.register(models.ContainerInventory)

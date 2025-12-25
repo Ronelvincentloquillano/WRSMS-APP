@@ -90,7 +90,7 @@ class SalesItemFromOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        self.fields['product'].queryset = models.Product.objects.exclude(product_type='SEAL').order_by(
+        self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
             'product_type','-jug_size__size_in_liters')
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
@@ -146,6 +146,7 @@ class CreateProductForm(forms.ModelForm):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
         self.fields['jug_size'].queryset = models.JugSize.objects.filter(station=station)
+        self.fields['jug_type'].queryset = models.JugType.objects.filter(station=station)
 
 
 class UpdateProductForm(forms.ModelForm):
@@ -307,6 +308,7 @@ class CreateStationSettingsForm(forms.ModelForm):
 class UpdateStationSettingForm(forms.ModelForm):
     class Meta(CreateStationSettingForm.Meta):
         fields = '__all__'
+        exclude = ['station','modified_by']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
