@@ -67,29 +67,6 @@
       </a>
     </div>
 
-    <table class="table-fixed min-w-full sm:min-w-full max-w-xl sm:max-w-lg text-sm md:text-xl mx-auto mb-10">
-      <thead>
-        <tr>
-          <th colspan="2" class="text-xl">Seals Inventory</th>
-        </tr>
-        <tr class="border border-s-0 border-t-0 border-r-0 border-slate-800 dark:border-slate-400 text-lg">
-          <th class="text-left">Seal</th>
-          <th class="text-left">Count</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for seal in slim_seals %}
-        <tr>
-          <th class="text-left">{{ seal.product_name }}:</th>
-          <td>{{ seal.quantity }}</td>
-        </tr>
-        {% endfor %}
-        <tr>
-          <th class="text-left">umbrella seals:</th>
-          <td>{{ umbrella_seals }}</td>
-        </tr>
-      </tbody>
-    </table>
     <table class="table-fixed min-w-96 sm:min-w-full max-w-xl sm:max-w-lg text-xl md:text-2xl mx-auto mb-10">
       <thead>
         <tr>
