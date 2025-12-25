@@ -113,7 +113,7 @@ class CreateMaintenanceForm(forms.ModelForm):
     class Meta:
         model = models.Maintenance
         fields = '__all__'
-        exclude = ['station',]
+        exclude = ['station','created_by','modified_by','modified_date',]
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
@@ -134,13 +134,14 @@ class CreateJugTypeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
+        self.fields['jug_type'].initial = None
 
 
 class CreateProductForm(forms.ModelForm):
     class Meta:
         model = models.Product
         fields = ['product_type','jug_size','jug_type','product_name','unit_price','quantity']
-        exclude = ['station',]
+        exclude = ['station','created_by','modified_by','modified_date',]
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
@@ -182,7 +183,7 @@ class CreateCustomerForm(forms.ModelForm):
     class Meta:
         model = models.Customer
         fields = '__all__'
-        exclude = ['station',]
+        exclude = ['station','created_by','modified_date','modified_by',]
         widgets = {
             'latitude': forms.HiddenInput(),
             'longitude': forms.HiddenInput(),
@@ -432,7 +433,7 @@ class CreateShortcutForm(forms.ModelForm):
     class Meta:
         model = models.ShortCut
         fields = "__all__"
-        exclude = ['created_date','station','created_date','created_by',]
+        exclude = ['created_date','station','created_date','created_by','modified_by','modified_date',]
         widgets = {
             'description' : forms.Textarea(attrs={'rows':'2'}),
         }

@@ -40,7 +40,13 @@
           </label>
           <div class="mt-1">
             {{ form.station_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-            {{ form.station_name.errors }}
+            {% if form.station_name.errors %}
+              <ul class="text-red-500">
+                {% for error in form.station_name.errors %}
+                  <li>{{ error|escape }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
         </div>
 
@@ -51,7 +57,13 @@
             </label>
             <div class="mt-1">
               {{ form.first_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-              {{ form.first_name.errors }}
+              {% if form.first_name.errors %}
+                <ul class="text-red-500">
+                  {% for error in form.first_name.errors %}
+                    <li>{{ error|escape }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
             </div>
           </div>
           <div>
@@ -60,7 +72,13 @@
             </label>
             <div class="mt-1">
               {{ form.last_name|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-              {{ form.last_name.errors }}
+              {% if form.last_name.errors %}
+                <ul class="text-red-500">
+                  {% for error in form.last_name.errors %}
+                    <li>{{ error|escape }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -71,7 +89,13 @@
           </label>
           <div class="mt-1">
             {{ form.phone_number|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-            {{ form.phone_number.errors }}
+            {% if form.phone_number.errors %}
+              <ul class="text-red-500">
+                {% for error in form.phone_number.errors %}
+                  <li>{{ error|escape }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
         </div>
 
@@ -81,7 +105,13 @@
           </label>
           <div class="mt-1">
             {{ form.email|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-            {{ form.email.errors }}
+            {% if form.email.errors %}
+              <ul class="text-red-500">
+                {% for error in form.email.errors %}
+                  <li>{{ error|escape }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
         </div>
 
@@ -91,7 +121,13 @@
           </label>
           <div class="mt-1">
             {{ form.password|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-            {{ form.password.errors }}
+            {% if form.password.errors %}
+              <ul class="text-red-500">
+                {% for error in form.password.errors %}
+                  <li>{{ error|escape }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
         </div>
 
@@ -101,12 +137,19 @@
           </label>
           <div class="mt-1">
             {{ form.confirm_password|add_class:"block w-full appearance-none rounded-md border border-slate-300 px-3 py-2 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-white" }}
-            {{ form.confirm_password.errors }}
+            {% if form.confirm_password.errors %}
+              <ul class="text-red-500">
+                {% for error in form.confirm_password.errors %}
+                  <li>{{ error|escape }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
         </div>
 
-        <div class="hidden">
-            {{ form.plan }}
+        <div class="">
+          <label for="form.plan" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Seleted Plan</label>
+            {{ form.plan|add_class:"bg-gray-200" }}
         </div>
 
         <div>
