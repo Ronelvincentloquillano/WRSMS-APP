@@ -68,33 +68,6 @@
       </a>
     </div>
 
-    <table class="table-fixed min-w-96 sm:min-w-full max-w-xl sm:max-w-lg text-xl md:text-2xl mx-auto mb-10">
-      <thead>
-        <tr>
-          <th colspan="2" class="text-xl">Maintenance Records</th>
-        </tr>
-        <tr class="border border-s-0 border-t-0 border-r-0 border-slate-800 dark:border-slate-400 text-lg">
-          <th>Type</th>
-          <th>Date/Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th class="text-left">Last backwash:</th>
-          <td>{{last_backwash.date}}{% if last_backwash.note %} (note: {{ last_backwash.note }}){% endif %}</td>
-        </tr>
-        <tr>
-          <th class="text-left">Last filter change:</th>
-          <td>{{last_filter_change.date}}{% if last_filter_change.note %} (note: {{ last_filter_change.note }}){% endif %}</td>
-        </tr>
-        <tr>
-          <th class="text-left">Number of liters left to backwash:</th>
-          <td>{{ station_settings.num_of_liters_to_backwash|subtract:total_liters }} or 
-            <span>({{ station_settings.num_of_liters_to_backwash|subtract:total_liters|divide:20 }} 20L containers)</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 </div>
 {% endblock %}

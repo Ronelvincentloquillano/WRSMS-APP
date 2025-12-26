@@ -10,7 +10,9 @@ pillow
 psycopg
 psycopg2
 PyJWT
+requests
 sqlparse
 typing_extensions
 tzdata
+crispy-tailwind
 django-pwa

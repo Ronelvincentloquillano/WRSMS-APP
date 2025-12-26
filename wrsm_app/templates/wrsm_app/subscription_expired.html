@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-md">
+        <div>
+            <img class="mx-auto h-16 w-auto" src="{% static 'img/SDR.png' %}" alt="SDR Logo">
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Subscription Expired
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Your subscription has expired. Please select a plan to renew your service.
+            </p>
+        </div>
+        
+        <div class="rounded-md bg-yellow-50 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">
+                        Service Interruption
+                    </h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>
+                            Access to the dashboard is restricted until a payment method is set up.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 space-y-6">
+            <form action="{% url 'wrsm_app:initiate_payment' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="space-y-4 mb-6">
+                    <label class="block text-sm font-medium text-gray-700">Select a Subscription Plan:</label>
+                    {% for plan in plans %}
+                    <div class="relative flex items-center p-4 border rounded-lg hover:border-blue-500 cursor-pointer transition-colors duration-200">
+                        <div class="flex items-center h-5">
+                            <input id="plan_{{ plan.id }}" name="plan_id" type="radio" value="{{ plan.id }}" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" {% if forloop.first %}checked{% endif %}>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="plan_{{ plan.id }}" class="font-medium text-gray-700">
+                                {{ plan.name }}
+                                <span class="block text-gray-500 text-xs mt-1">{{ plan.description }}</span>
+                            </label>
+                        </div>
+                        <div class="ml-auto font-bold text-gray-900">
+                            ₱{{ plan.price }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-red-500 text-center">No subscription plans available. Please contact support.</div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Pay via GCash
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'account:logout' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                    Log out
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

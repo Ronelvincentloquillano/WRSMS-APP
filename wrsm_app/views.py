@@ -217,15 +217,18 @@ def dashboard(request):
 
     # 4. Sales vs Expenses (Monthly)
     current_month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    sales_total = models.SalesItem.objects.filter(
+    
+    sales_agg = models.SalesItem.objects.filter(
         sales__station=station, 
         sales__created_date__gte=current_month_start
-    ).aggregate(total=Sum('total'))['total'] or 0
+    ).aggregate(total=Sum('total'))
+    sales_total = sales_agg['total'] if sales_agg['total'] is not None else 0
     
-    expenses_total = models.ExpenseItem.objects.filter(
+    expenses_agg = models.ExpenseItem.objects.filter(
         expense__station=station, 
         expense__date__gte=current_month_start
-    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    ).aggregate(total=Sum('total_amount'))
+    expenses_total = expenses_agg['total'] if expenses_agg['total'] is not None else 0
 
     context = {
         'station': station,

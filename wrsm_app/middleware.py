@@ -1,0 +1,105 @@
+from django.shortcuts import redirect
+from django.urls import reverse, resolve
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+
+class SubscriptionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            # List of namespaces/view_names allowed even if expired
+            ALLOWED_VIEWS = [
+                'account:logout',
+                'account:password_change',
+                'account:password_change_done',
+                'wrsm_app:subscription_expired',
+                'wrsm_app:initiate_payment',
+                'wrsm_app:payment_callback',
+                'wrsm_app:customers',
+                'wrsm_app:customer-detail',
+                'wrsm_app:update-customer',
+                'wrsm_app:add-customer',
+                'wrsm_app:customer-map',
+                'wrsm_app:get_customer_data',
+                'wrsm_app:profile',
+                'admin:index',
+                'admin:login',
+                'account:login', # Just in case
+            ]
+
+            # Determine current view name
+            current_view_name = None
+            if request.resolver_match:
+                current_view_name = request.resolver_match.view_name
+            
+            # Prevent loop: If we are already at the subscription expired page, let it pass
+            # We check both view name and path to be safe
+            expired_url = reverse('wrsm_app:subscription_expired')
+            initiate_payment_url = reverse('wrsm_app:initiate_payment')
+            payment_callback_url = reverse('wrsm_app:payment_callback')
+
+            # Allow critical subscription urls by path comparison as well
+            if request.path in [expired_url, initiate_payment_url, payment_callback_url]:
+                return self.get_response(request)
+
+            if current_view_name in ['wrsm_app:subscription_expired', 'wrsm_app:initiate_payment', 'wrsm_app:payment_callback']:
+                return self.get_response(request)
+
+            # Check for static/media assets (usually handled upstream, but good practice)
+            if request.path.startswith('/static/') or request.path.startswith('/media/'):
+                return self.get_response(request)
+            
+            # Superusers bypass
+            if request.user.is_superuser:
+                 return self.get_response(request)
+
+            # Check Subscription Status
+            is_valid = True
+            try:
+                # Safely access profile and station
+                # We use getattr with default None to avoid AttributeError if profile missing
+                # But request.user.profile raises ObjectDoesNotExist if missing on OneToOne
+                try:
+                    profile = request.user.profile
+                except ObjectDoesNotExist:
+                    profile = None
+                
+                if profile and profile.station:
+                    station = profile.station
+                    
+                    # Check subscription
+                    # StationSubscription reverse relation
+                    try:
+                        subscription = station.subscription
+                        if not subscription.is_valid:
+                            is_valid = False
+                    except ObjectDoesNotExist:
+                        # No subscription = invalid
+                        is_valid = False
+            except Exception as e:
+                # Log unexpected errors to console
+                print(f"SubscriptionMiddleware Check Error: {e}")
+                # Fail open or closed? If we can't verify, we might block or allow.
+                # Letting it pass prevents locking out users due to bugs, but risks free access.
+                # For now, let's assume valid if checking fails, to avoid "Page not working"
+                is_valid = True
+
+            if not is_valid:
+                # Check if current view is allowed
+                is_allowed = False
+                
+                # Exact match check
+                if current_view_name in ALLOWED_VIEWS:
+                    is_allowed = True
+                
+                # Admin check (allow all admin sub-urls if user has access)
+                if current_view_name and current_view_name.startswith('admin:'):
+                    pass
+
+                if not is_allowed:
+                    messages.warning(request, "Subscription expired. Access restricted.")
+                    return redirect('wrsm_app:subscription_expired')
+
+        return self.get_response(request)

@@ -21,7 +21,11 @@ admin.site.register(models.JugSize)
 admin.site.register(models.OrderType)
 admin.site.register(models.JugType)
 admin.site.register(models.StationSetting)
-admin.site.register(models.Station)
+class StationAdmin(admin.ModelAdmin):
+    search_fields = ['name', 'station_code']
+    list_display = ['name', 'station_code', 'contact_number']
+
+admin.site.register(models.Station, StationAdmin)
 admin.site.register(models.Promo)
 admin.site.register(models.Discount)
 admin.site.register(models.Profile)

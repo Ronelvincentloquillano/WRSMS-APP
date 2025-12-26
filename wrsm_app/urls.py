@@ -3,10 +3,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from . import views_offline
+from . import views_subscription
+from . import views_profile
 
 app_name = 'wrsm_app'
 
 urlpatterns = [
+    path('profile/', views_profile.profile_view, name='profile'),
+    path('subscription-expired/', views_subscription.subscription_expired, name='subscription_expired'),
+    path('initiate-payment/', views_subscription.initiate_payment, name='initiate_payment'),
+    path('payment-callback/', views_subscription.payment_callback, name='payment_callback'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('switch-station/<int:station_id>/', views.switch_station, name='switch-station'),
     path('home/', views.home, name='home'),
