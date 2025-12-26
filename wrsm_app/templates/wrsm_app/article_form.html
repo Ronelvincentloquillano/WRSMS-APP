@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block links %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<style>
+    /* Basic dark mode overrides for SimpleMDE */
+    .dark .CodeMirror {
+        background-color: #334155;
+        color: #cbd5e1;
+        border-color: #475569;
+    }
+    .dark .editor-toolbar {
+        border-color: #475569;
+        background-color: #1e293b;
+    }
+    .dark .editor-toolbar i {
+        color: #cbd5e1;
+    }
+    .dark .editor-toolbar a.active, .dark .editor-toolbar a:hover {
+        background-color: #334155;
+        border-color: #475569;
+    }
+    .dark .editor-statusbar {
+        color: #94a3b8;
+    }
+    .dark .editor-preview {
+        background-color: #334155;
+        color: #cbd5e1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <h1 class="text-3xl font-bold mb-6">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Article</h1>
+    
+    <form method="post" class="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-md">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" for="id_title">
+                Title
+            </label>
+            {{ form.title|add_class:"shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-slate-600 dark:text-white dark:border-slate-500" }}
+            {{ form.title.errors }}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-200 text-sm font-bold mb-2" for="id_body">
+                Content
+            </label>
+            {{ form.body }}
+            {{ form.body.errors }}
+        </div>
+
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Save Article
+            </button>
+            <a href="{% url 'wrsm_app:manage-articles' %}" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    var simplemde = new SimpleMDE({ 
+        element: document.getElementById("markdown-editor"),
+        spellChecker: false,
+    });
+</script>
+{% endblock %}

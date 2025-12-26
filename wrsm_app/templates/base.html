@@ -165,6 +165,7 @@
                   <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
                   <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
                   <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
+                  <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage Articles</a>
                   <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
                 </div>
               </div>
@@ -218,7 +219,7 @@
         <!-- Left links (flex-grow pushes login to the right) -->
         <div class="flex flex-1 space-x-6">
           <a href="{% url 'pricing' %}" class="hover:opacity-90">Pricing</a>
-          <a href="#" class="hover:opacity-90">Documentation</a>
+          <a href="{% url 'wrsm_app:documentation' %}" class="hover:opacity-90">Documentation</a>
           <a href="#" class="hover:opacity-90">Contact Us</a>
           <a href="{% url 'about' %}" class="hover:opacity-90">About Us</a>
         </div>
@@ -332,6 +333,7 @@
               <a href="{% url 'wrsm_app:add-station-settings' %}" class="block px-4 py-2 hover:bg-blue-400">Add Station Settings</a>
               {% endif %}
               <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
+              <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage Articles</a>
               <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
             </div>
           </div>
@@ -362,7 +364,7 @@
         </div>
       {% else %} <!-- User is unauthenticated -->
         <a href="{% url 'pricing' %}" class="hover:opacity-90 mb-5">Pricing</a>
-        <a href="#" class="hover:opacity-90 mb-5">Documentation</a>
+        <a href="{% url 'wrsm_app:documentation' %}" class="hover:opacity-90 mb-5">Documentation</a>
         <a href="https://wrsms.online/#contact" class="hover:opacity-90 mb-5">Contact Us</a>
         <a href="{% url 'about' %}" class="hover:opacity-90 mb-5">About Us</a>
 

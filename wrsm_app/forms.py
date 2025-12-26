@@ -448,3 +448,12 @@ class CreateShortcutForm(forms.ModelForm):
 class UpdateShortcutForm(forms.ModelForm):
     class Meta(CreateShortcutForm.Meta):
         fields = '__all__'
+
+
+class ArticleForm(forms.ModelForm):
+    class Meta:
+        model = models.Article
+        fields = ['title', 'body']
+        widgets = {
+            'body': forms.Textarea(attrs={'id': 'markdown-editor'}),
+        }

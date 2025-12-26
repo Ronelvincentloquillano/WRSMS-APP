@@ -508,3 +508,16 @@ class ShortCut(models.Model):
 
     class Meta:
         verbose_name_plural = "shortcuts"
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    date_published = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name_plural = "articles"

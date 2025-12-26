@@ -43,4 +43,10 @@ admin.site.register(models.PaymentGeneric)
 admin.site.register(models.PaymentItem)
 admin.site.register(models.CustomerCredit)
 admin.site.register(models.NetTerms)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'date_published', 'updated_at')
+    search_fields = ('title', 'body')
+    readonly_fields = ('date_published', 'updated_at')
+
 admin.site.register(models.ShortCut)
+admin.site.register(models.Article, ArticleAdmin)

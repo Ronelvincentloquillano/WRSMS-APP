@@ -7,14 +7,14 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Sum, Max, F, ExpressionWrapper, DecimalField, Count
+from django.db.models import Sum, Max, F, ExpressionWrapper, DecimalField, Count, Q
 from collections import defaultdict
 from django.db.models.functions import TruncMonth, TruncDate
 from datetime import datetime, date, timedelta
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import logout
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, ListView, UpdateView, DetailView
 from django.forms import inlineformset_factory
 from . import models
@@ -2218,4 +2218,46 @@ def monthly_financial_report(request):
 
     return render(request, 'wrsm/financial_report.html', {'monthly_report': monthly_report, 
                                                         'station': station, 'customers': customers})
+
+
+def documentation(request):
+    query = request.GET.get('q')
+    if query:
+        articles = models.Article.objects.filter(
+            Q(title__icontains=query) | Q(body__icontains=query)
+        ).order_by('-date_published')
+    else:
+        articles = models.Article.objects.all().order_by('-date_published')
+    
+    return render(request, 'documentation.html', {'articles': articles, 'query': query})
+
+
+class AdminRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.is_staff
+
+class ManageArticlesView(AdminRequiredMixin, ListView):
+    model = models.Article
+    template_name = 'wrsm_app/manage_articles.html'
+    context_object_name = 'articles'
+    ordering = ['-date_published']
+
+class AddArticleView(AdminRequiredMixin, CreateView):
+    model = models.Article
+    form_class = forms.ArticleForm
+    template_name = 'wrsm_app/article_form.html'
+    success_url = reverse_lazy('wrsm_app:manage-articles')
+
+class UpdateArticleView(AdminRequiredMixin, UpdateView):
+    model = models.Article
+    form_class = forms.ArticleForm
+    template_name = 'wrsm_app/article_form.html'
+    success_url = reverse_lazy('wrsm_app:manage-articles')
+
+
+class ArticleDetailView(DetailView):
+    model = models.Article
+    template_name = 'wrsm_app/article_detail.html'
+    context_object_name = 'article'
+
 
