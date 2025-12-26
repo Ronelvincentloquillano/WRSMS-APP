@@ -6,6 +6,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.contrib import messages
+from django.template.loader import render_to_string
 from .forms import StationOwnerSignupForm
 from .models import PendingRegistration, StationSubscription, SubscriptionPlan
 from wrsm_app.models import Station, Profile
@@ -121,7 +122,17 @@ def activate_account(request, key):
     # 6. Cleanup
     pending_reg.delete()
 
-    # 6. Login and Redirect
+    # 7. Send Welcome Email
+    try:
+        subject = "Welcome to SmartDynamic Refilling!"
+        message = render_to_string('account/welcome_email.txt', {'user': user})
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+        send_mail(subject, message, from_email, recipient_list)
+    except Exception as e:
+        print(f"Welcome Email Error: {e}")
+
+    # 8. Login and Redirect
     # We need to authenticate. Since we have the user object:
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 

@@ -1,0 +1,16 @@
+Welcome to SmartDynamic Refilling!
+
+Dear {{ user.first_name }},
+
+Thank you for subscribing to SmartDynamic Refilling System! We are thrilled to have you on board.
+
+To get started, please complete your station setup wizard to fully enable all application features.
+
+We have comprehensive documentation available to help you understand the system:
+https://wrsms.online/#documentation
+
+If you need any assistance, please reach out to our support team at:
+support@wrsms.online
+
+Best regards,
+The SmartDynamic Refilling Team
