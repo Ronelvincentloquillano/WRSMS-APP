@@ -82,5 +82,5 @@ static/css/output.css
 static/src/
 static/icons/
 staticfiles/
-wrsm_app/migrations/
+# wrsm_app/migrations/
 media/
