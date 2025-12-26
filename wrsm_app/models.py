@@ -69,12 +69,7 @@ class OrderType(models.Model):
 
 class JugType(models.Model):
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
-    jug_type = models.CharField(max_length=20, null=True, blank=True, 
-                                choices=(
-                                    ('round', 'round'), ('slim', 'slim'), 
-                                    ('slim with faucet', 'slim with faucet'), 
-                                    ('square', 'square'), ('other', 'other')), 
-                                default='round')
+    jug_type = models.CharField(max_length=50, null=True, blank=True, default='round')
 
     def __str__(self):
         return self.jug_type
