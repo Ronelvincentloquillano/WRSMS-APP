@@ -2,6 +2,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from wrsm_app.models import Station, Profile, JugSize, JugType, OrderType, PaymentType, StationSetting
+from account.models import StationSubscription, SubscriptionPlan
+from django.utils import timezone
 
 class StationSetupEnforcementTest(TestCase):
     def setUp(self):
@@ -9,6 +11,17 @@ class StationSetupEnforcementTest(TestCase):
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.station = Station.objects.create(name='Test Station')
         self.profile = Profile.objects.create(user=self.user, station=self.station)
+        
+        # Create a valid subscription
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        StationSubscription.objects.create(
+            station=self.station,
+            plan=self.plan,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timezone.timedelta(days=30),
+            is_active=True
+        )
+
         self.client.login(username='testuser', password='testpassword')
 
     def test_redirect_when_incomplete(self):

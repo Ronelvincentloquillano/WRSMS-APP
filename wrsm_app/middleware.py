@@ -17,12 +17,6 @@ class SubscriptionMiddleware:
                 'wrsm_app:subscription_expired',
                 'wrsm_app:initiate_payment',
                 'wrsm_app:payment_callback',
-                'wrsm_app:customers',
-                'wrsm_app:customer-detail',
-                'wrsm_app:update-customer',
-                'wrsm_app:add-customer',
-                'wrsm_app:customer-map',
-                'wrsm_app:get_customer_data',
                 'wrsm_app:profile',
                 'admin:index',
                 'admin:login',
@@ -30,6 +24,12 @@ class SubscriptionMiddleware:
             ]
 
             # Determine current view name
+            if not getattr(request, 'resolver_match', None):
+                try:
+                    request.resolver_match = resolve(request.path)
+                except:
+                    pass
+
             current_view_name = None
             if request.resolver_match:
                 current_view_name = request.resolver_match.view_name
@@ -96,7 +96,7 @@ class SubscriptionMiddleware:
                 
                 # Admin check (allow all admin sub-urls if user has access)
                 if current_view_name and current_view_name.startswith('admin:'):
-                    pass
+                    is_allowed = True
 
                 if not is_allowed:
                     messages.warning(request, "Subscription expired. Access restricted.")
