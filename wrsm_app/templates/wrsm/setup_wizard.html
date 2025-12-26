@@ -27,7 +27,7 @@
             </ul>
             {% endif %}
 
-            <form method="post" class="space-y-4">
+            <form method="post" class="space-y-4 setup-form">
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="jug_size">
                 
@@ -44,7 +44,7 @@
                     {{ jug_size_form.unit_price|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Jug Size</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full disabled:opacity-50 disabled:cursor-not-allowed submit-btn" disabled>Add Jug Size</button>
             </form>
         </div>
 
@@ -63,7 +63,7 @@
             </ul>
             {% endif %}
 
-            <form method="post" class="space-y-4">
+            <form method="post" class="space-y-4 setup-form">
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="jug_type">
                 
@@ -72,7 +72,7 @@
                     {{ jug_type_form.jug_type|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Jug Type</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full disabled:opacity-50 disabled:cursor-not-allowed submit-btn" disabled>Add Jug Type</button>
             </form>
         </div>
 
@@ -91,7 +91,7 @@
             </ul>
             {% endif %}
 
-            <form method="post" class="space-y-4">
+            <form method="post" class="space-y-4 setup-form">
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="order_type">
                 
@@ -104,7 +104,7 @@
                     {{ order_type_form.unit_price|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Order Type</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full disabled:opacity-50 disabled:cursor-not-allowed submit-btn" disabled>Add Order Type</button>
             </form>
         </div>
 
@@ -123,7 +123,7 @@
             </ul>
             {% endif %}
 
-            <form method="post" class="space-y-4">
+            <form method="post" class="space-y-4 setup-form">
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="payment_type">
                 
@@ -136,7 +136,7 @@
                     {{ payment_type_form.sort_number|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">Add Payment Type</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full disabled:opacity-50 disabled:cursor-not-allowed submit-btn" disabled>Add Payment Type</button>
             </form>
         </div>
     </div>
@@ -153,4 +153,32 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('.setup-form');
+        
+        forms.forEach(form => {
+            const btn = form.querySelector('.submit-btn');
+            const inputs = form.querySelectorAll('input:not([type="hidden"])');
+            
+            function validate() {
+                let isValid = true;
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        isValid = false;
+                    }
+                });
+                btn.disabled = !isValid;
+            }
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', validate);
+            });
+            
+            // Initial validation
+            validate();
+        });
+    });
+</script>
 {% endblock %}

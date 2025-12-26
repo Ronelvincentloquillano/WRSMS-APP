@@ -78,13 +78,14 @@ class SubscriptionMiddleware:
                     except ObjectDoesNotExist:
                         # No subscription = invalid
                         is_valid = False
+                else:
+                    # No profile or station found = invalid
+                    is_valid = False
             except Exception as e:
                 # Log unexpected errors to console
                 print(f"SubscriptionMiddleware Check Error: {e}")
-                # Fail open or closed? If we can't verify, we might block or allow.
-                # Letting it pass prevents locking out users due to bugs, but risks free access.
-                # For now, let's assume valid if checking fails, to avoid "Page not working"
-                is_valid = True
+                # Fail CLOSED: If we can't verify, we block.
+                is_valid = False
 
             if not is_valid:
                 # Check if current view is allowed
