@@ -91,12 +91,18 @@
 
   <div class="flex flex-col items-center">
     <div class="flex flex-col md:flex-row w-full max-w-3xl">
-      <div class="mt-3">
-        <a href="{% url 'wrsm_app:add-sales' %}"
-          class=""
-        >
+      <div class="mt-3 flex gap-3 items-center">
+        <a href="{% url 'wrsm_app:add-sales' %}" title="Add Sales">
           <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
         </a>
+
+        <button id="btnEdit" class="text-gray-400 cursor-not-allowed" disabled title="Edit Selected">
+            <ion-icon name="create-outline" class="text-3xl"></ion-icon>
+        </button>
+
+        <button id="btnDelete" class="text-gray-400 cursor-not-allowed" disabled title="Delete Selected">
+            <ion-icon name="trash-outline" class="text-3xl"></ion-icon>
+        </button>
       </div>
 
       <div class="mt-3 md:ml-auto text-right p-2 bg-gray-100 text-slate-800 rounded">
@@ -110,18 +116,21 @@
         
         <!-- Card Header -->
         <div class="border-b p-4">
-          <h4 class="text-xl font-semibold">
-            {% if sale.customer %}
-            <a 
-              href="{% url 'wrsm_app:customer-detail' pk=sale.customer.pk %}" 
-              class="text-blue-600 hover:underline"
-            >
-              {{ sale.customer.name }}
-            </a>
-            {% else %}
-              {{ sale.customer.name }}
-            {% endif %}
-          </h4>
+          <div class="flex items-center gap-2">
+            <input type="radio" name="selected_sale" value="{{ sale.id|cut:',' }}" class="sale-selector w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer">
+            <h4 class="text-xl font-semibold m-0">
+                {% if sale.customer %}
+                <a 
+                href="{% url 'wrsm_app:customer-detail' pk=sale.customer.pk %}" 
+                class="text-blue-600 hover:underline"
+                >
+                {{ sale.customer.name }}
+                </a>
+                {% else %}
+                {{ sale.customer.name }}
+                {% endif %}
+            </h4>
+          </div>
 
           <div class="mt-1 text-gray-600">
             <div class="flex flex-row justify-between items-center">
@@ -244,6 +253,24 @@
             content.height('');
         }, 300); // Match transition duration
     }
+  });
+
+  const updateUrlTemplate = "{% url 'wrsm_app:update-sales' pk=0 %}";
+  const deleteUrlTemplate = "{% url 'wrsm_app:delete-sales' pk=0 %}";
+
+  $(document).on('change', '.sale-selector', function() {
+      const saleId = $(this).val();
+      
+      $('#btnEdit').removeClass('text-gray-400 cursor-not-allowed').addClass('text-blue-500 hover:text-blue-700').prop('disabled', false);
+      $('#btnDelete').removeClass('text-gray-400 cursor-not-allowed').addClass('text-red-500 hover:text-red-700').prop('disabled', false);
+
+      $('#btnEdit').off('click').on('click', function() {
+          window.location.href = updateUrlTemplate.replace('0', saleId);
+      });
+
+      $('#btnDelete').off('click').on('click', function() {
+          window.location.href = deleteUrlTemplate.replace('0', saleId);
+      });
   });
 </script>
 {% endblock %}

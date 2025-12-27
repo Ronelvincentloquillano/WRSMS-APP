@@ -73,7 +73,7 @@
   <div class="bg-white text-slate-700 shadow-md rounded w-full md:w-2/3 mt-10">
 
     <div class="text-center border-b p-4">
-      <h2 class="text-2xl font-semibold">Add Sales</h2>
+      <h2 class="text-2xl font-semibold">{% if is_update %}Update Sales #{{ form.instance.id }}{% else %}Add Sales{% endif %}</h2>
     </div>
 
     <div class="p-5">

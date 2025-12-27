@@ -95,4 +95,6 @@ urlpatterns = [
     path('manage-articles/', views.ManageArticlesView.as_view(), name='manage-articles'),
     path('add-article/', views.AddArticleView.as_view(), name='add-article'),
     path('update-article/<int:pk>/', views.UpdateArticleView.as_view(), name='update-article'),
+    path('update-sales/<int:pk>/', views.update_sales, name='update-sales'),
+    path('delete-sales/<int:pk>/', views.delete_sales, name='delete-sales'),
 ] + static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")

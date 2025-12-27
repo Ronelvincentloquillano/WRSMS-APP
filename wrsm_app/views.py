@@ -1,8 +1,11 @@
 import json
+import logging
 from django.shortcuts import render
 
 # Create your views here.
 from django.shortcuts import render, get_object_or_404, redirect
+
+logger = logging.getLogger(__name__)
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
@@ -2263,5 +2266,135 @@ class ArticleDetailView(DetailView):
     model = models.Article
     template_name = 'wrsm_app/article_detail.html'
     context_object_name = 'article'
+
+
+@login_required
+def delete_sales(request, pk):
+    # Authorization: Ensure user is linked to a station and is in the 'station owner/admin' group
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+    
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:sales')
+
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+    
+    # Allow superusers to delete any sale, otherwise filter by station
+    if request.user.is_superuser:
+        sale = get_object_or_404(models.Sales, pk=pk)
+    else:
+        # Still enforce station boundary even for group members
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:sales')
+        sale = get_object_or_404(models.Sales, pk=pk, station=station)
+
+    if request.method == 'POST':
+        # Audit Logging
+        logger.info(f"User {request.user.username} (ID: {request.user.id}) initiated deletion of Sales ID: {sale.pk}")
+
+        try:
+            # Manual Cascade for Weakly Linked Records (Payment -> AccountsReceivable)
+            ar_records = sale.ar_records.all()
+            for ar in ar_records:
+                payment_items = ar.ar_payment_items.all()
+                for item in payment_items:
+                    payment = item.payment
+                    item.delete() # Delete the link
+                    
+                    # If payment has no other items, delete the payment record itself
+                    if not payment.payment_items.exists():
+                        payment.delete()
+                        logger.info(f"Deleted orphaned Payment ID: {payment.pk}")
+
+            # Delete the Sales record (cascades to SalesItems, AR)
+            sale.delete()
+            messages.success(request, 'Sales record and related payments deleted successfully.')
+            logger.info(f"Successfully deleted Sales ID: {pk}")
+        except Exception as e:
+            logger.error(f"Error deleting Sales ID {pk}: {e}")
+            messages.error(request, "An error occurred while deleting the record.")
+            
+        return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+        
+    return render(request, 'wrsm/sales_confirm_delete.html', {'object': sale})
+
+
+@login_required
+def update_sales(request, pk):
+    # Authorization: Ensure user is linked to a station and is in the 'station owner/admin' group
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:sales')
+
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+    
+    # Allow superusers to update any sale, otherwise filter by station
+    if request.user.is_superuser:
+        sale = get_object_or_404(models.Sales, pk=pk)
+    else:
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:sales')
+        sale = get_object_or_404(models.Sales, pk=pk, station=station)
+    
+    station_settings = models.StationSetting.objects.get(station=sale.station)
+
+    if request.method == 'POST':
+        logger.info(f"User {request.user.username} (ID: {request.user.id}) updating Sales ID: {sale.pk}")
+        sales_form = forms.CreateSalesForm(request.POST, instance=sale, station=sale.station)
+        item_formset = forms.SalesItemFormSet(request.POST, instance=sale, form_kwargs={'station': sale.station})
+
+        if sales_form.is_valid() and item_formset.is_valid():
+            instance = sales_form.save()
+            items = item_formset.save(commit=False)
+            
+            # Handle deleted items
+            for deleted_item in item_formset.deleted_objects:
+                deleted_item.delete()
+
+            subtotal = 0
+            for item in items:
+                item.sales = instance
+                item.total = item.unit_price * item.quantity
+                # Note: Inventory reversal for REFILL/SEAL is complex on update. 
+                # For this implementation, we focus on saving the record.
+                subtotal += item.total
+                item.save()
+            
+            # Update existing AR record if it exists
+            ar_obj = instance.ar_records.first()
+            if ar_obj:
+                ar_obj.total_amount = subtotal
+                ar_obj.customer = instance.customer
+                ar_obj.status = "Paid" if instance.is_paid else "Pending"
+                ar_obj.save()
+                logger.info(f"Updated AR ID: {ar_obj.pk} for Sales ID: {instance.pk}")
+            else:
+                # Create AR if missing for some reason
+                ar_status = "Paid" if instance.is_paid else "Pending"
+                models.AccountsReceivable.objects.create(
+                    station=instance.station,
+                    customer=instance.customer,
+                    sales=instance,
+                    total_amount=subtotal,
+                    status=ar_status
+                )
+            
+            messages.success(request, 'Sales record updated successfully.')
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+    else:
+        sales_form = forms.CreateSalesForm(instance=sale, station=sale.station)
+        item_formset = forms.SalesItemFormSet(instance=sale, form_kwargs={'station': sale.station})
+        
+    return render(request, 'wrsm/add_sales.html', {
+        'form': sales_form,
+        'item_formset': item_formset,
+        'station': sale.station,
+        'station_settings': station_settings,
+        'is_update': True
+    })
 
 
