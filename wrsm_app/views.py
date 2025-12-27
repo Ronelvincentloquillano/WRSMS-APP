@@ -2342,10 +2342,19 @@ def update_sales(request, pk):
     
     station_settings = models.StationSetting.objects.get(station=sale.station)
 
+    # Use extra=0 for updates to prevent empty forms from appearing/validating
+    SalesItemUpdateFormSet = inlineformset_factory(
+        models.Sales, 
+        models.SalesItem, 
+        form=forms.SalesItemForm, 
+        extra=0, 
+        can_delete=True
+    )
+
     if request.method == 'POST':
         logger.info(f"User {request.user.username} (ID: {request.user.id}) updating Sales ID: {sale.pk}")
         sales_form = forms.CreateSalesForm(request.POST, instance=sale, station=sale.station)
-        item_formset = forms.SalesItemFormSet(request.POST, instance=sale, form_kwargs={'station': sale.station})
+        item_formset = SalesItemUpdateFormSet(request.POST, instance=sale, form_kwargs={'station': sale.station})
 
         if sales_form.is_valid() and item_formset.is_valid():
             instance = sales_form.save()
@@ -2387,7 +2396,7 @@ def update_sales(request, pk):
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
     else:
         sales_form = forms.CreateSalesForm(instance=sale, station=sale.station)
-        item_formset = forms.SalesItemFormSet(instance=sale, form_kwargs={'station': sale.station})
+        item_formset = SalesItemUpdateFormSet(instance=sale, form_kwargs={'station': sale.station})
         
     return render(request, 'wrsm/add_sales.html', {
         'form': sales_form,

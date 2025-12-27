@@ -112,6 +112,9 @@
           <div id="formset-container">
             {% for fs in item_formset %}
             <div class="form-row w-full bg-blue-200 rounded p-3 mb-3">
+              {% for hidden in fs.hidden_fields %}
+              {{ hidden }}
+              {% endfor %}
 
               <!-- PRODUCT -->
               <div class="flex flex-nowrap gap-2 mb-3 items-center">
