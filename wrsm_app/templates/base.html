@@ -218,10 +218,10 @@
       {% else %} <!-- User is unauthenticated -->
         <!-- Left links (flex-grow pushes login to the right) -->
         <div class="flex flex-1 space-x-6">
-          <a href="{% url 'pricing' %}" class="hover:opacity-90">Pricing</a>
-          <a href="{% url 'wrsm_app:documentation' %}" class="hover:opacity-90">Documentation</a>
-          <a href="#" class="hover:opacity-90">Contact Us</a>
-          <a href="{% url 'about' %}" class="hover:opacity-90">About Us</a>
+          <a href="/pricing/" class="hover:opacity-90">Pricing</a>
+          <a href="/documentation/" class="hover:opacity-90">Documentation</a>
+          <a href="/contact-us/" class="hover:opacity-90">Contact Us</a>
+          <a href="/about/" class="hover:opacity-90">About Us</a>
         </div>
 
         <!-- Login aligned right -->
@@ -363,10 +363,10 @@
           </div>
         </div>
       {% else %} <!-- User is unauthenticated -->
-        <a href="{% url 'pricing' %}" class="hover:opacity-90 mb-5">Pricing</a>
-        <a href="{% url 'wrsm_app:documentation' %}" class="hover:opacity-90 mb-5">Documentation</a>
-        <a href="https://wrsms.online/#contact" class="hover:opacity-90 mb-5">Contact Us</a>
-        <a href="{% url 'about' %}" class="hover:opacity-90 mb-5">About Us</a>
+        <a href="/pricing/" class="hover:opacity-90 mb-5">Pricing</a>
+        <a href="/documentation/" class="hover:opacity-90 mb-5">Documentation</a>
+        <a href="/contact-us/" class="hover:opacity-90 mb-5">Contact Us</a>
+        <a href="/about/" class="hover:opacity-90 mb-5">About Us</a>
 
         <!-- Login aligned right -->
         <div>

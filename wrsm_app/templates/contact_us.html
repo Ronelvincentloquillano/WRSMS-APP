@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}WRSMS{% endblock %}
+
+{% block content %}
+
+<!-- Contact -->
+<section id="contact" class="py-10">
+  <div class="max-w-4xl mx-auto px-4 shadow-md rounded-md p-6 bg-blue-200 dark:bg-slate-500">
+    <div class="text-center text-blue-600 dark:text-blue-200 font-bold text-4xl mb-5">
+      <h2>Get in Touch</h2>
+    </div>
+
+    <form action="https://formspree.io/f/xanbbldz" method="POST" class="mx-auto max-w-lg space-y-2">
+      <input
+        type="text"
+        name="name"
+        required
+        class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+        placeholder="Your Name"
+      />
+
+      <input
+        type="email"
+        name="email"
+        required
+        class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+        placeholder="Your Email"
+      />
+
+      <textarea
+        name="message"
+        rows="4"
+        required
+        class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+        placeholder="Your Message"
+      ></textarea>
+
+      <div class="text-center">
+        <button
+          type="submit"
+          class="bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-3 rounded-lg"
+        >
+          Send Message
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% endblock %}
