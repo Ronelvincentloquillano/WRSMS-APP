@@ -3,8 +3,8 @@
 {% load widget_tweaks %}
 
 {% block links %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <style>
     /* Basic dark mode overrides for SimpleMDE */
     .dark .CodeMirror {
@@ -68,9 +68,10 @@
 </div>
 
 <script>
-    var simplemde = new SimpleMDE({ 
+    var easyMDE = new EasyMDE({ 
         element: document.getElementById("markdown-editor"),
         spellChecker: false,
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "table", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
     });
 </script>
 {% endblock %}
