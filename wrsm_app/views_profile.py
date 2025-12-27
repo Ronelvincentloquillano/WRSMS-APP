@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms_profile import UserProfileUpdateForm, StationProfileUpdateForm
 from account.models import StationSubscription
+from . import models
 
 @login_required
 def profile_view(request):
@@ -27,10 +28,21 @@ def profile_view(request):
     subscription = None
     if hasattr(station, 'subscription'):
         subscription = station.subscription
+    
+    # Check Setup Completeness
+    setup_complete = False
+    if station:
+        setup_complete = (
+            models.JugSize.objects.filter(station=station).exists() and
+            models.JugType.objects.filter(station=station).exists() and
+            models.OrderType.objects.filter(station=station).exists() and
+            models.PaymentType.objects.filter(station=station).exists()
+        )
         
     context = {
         'user_form': user_form,
         'station_form': station_form,
         'subscription': subscription,
+        'setup_complete': setup_complete,
     }
     return render(request, 'wrsm_app/profile.html', context)
