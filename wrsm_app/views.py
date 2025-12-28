@@ -22,6 +22,7 @@ from django.views.generic import TemplateView, CreateView, ListView, UpdateView,
 from django.forms import inlineformset_factory
 from . import models
 from . import forms
+from account.models import StationSubscription, SubscriptionPlan
 
 # global variables
 today = timezone.now()
@@ -151,7 +152,17 @@ def switch_station(request, station_id):
 def dashboard(request):
     user = request.user
     station = getattr(user.profile, 'station', None)
-    station_settings = models.StationSetting.objects.get(station=station)
+    
+    if not station:
+         messages.warning(request, "Please select or register a station first.")
+         return redirect('wrsm_app:station-list')
+
+    try:
+        station_settings = models.StationSetting.objects.get(station=station)
+    except models.StationSetting.DoesNotExist:
+        messages.warning(request, "Station settings not found. Please complete the setup.")
+        return redirect('wrsm_app:setup-wizard')
+
     last_backwash = models.Maintenance.objects.filter(
         station=station,
         maintenance_type='backwash'
@@ -712,7 +723,8 @@ def process_shortcut(request, pk):
                     station=station,
                     order_type=shortcut.order_type,
                     is_paid=shortcut.is_paid,
-                    note=note
+                    note=note,
+                    created_by=request.user.profile
                 )
                 models.SalesItem.objects.create(
                     sales=sales_obj,
@@ -1476,6 +1488,19 @@ class OrderUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         context.update({
             'station': station,
         })
+        return context
+
+
+class StationListView(LoginRequiredMixin, ListView):
+    template_name = 'wrsm/station_list.html'
+    context_object_name = 'stations'
+
+    def get_queryset(self):
+        return self.request.user.profile.allowed_stations.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
         return context
 
 
@@ -2550,5 +2575,58 @@ class StationUserEnableView(LoginRequiredMixin, SuccessMessageMixin, UpdateView)
         context = super().get_context_data(**kwargs)
         context['station'] = self.request.user.profile.station
         return context
+
+
+@login_required
+def register_new_station(request):
+    if request.method == 'POST':
+        form = forms.NewStationRegistrationForm(request.POST)
+        if form.is_valid():
+            station = form.save()
+            plan = form.cleaned_data['plan']
+            
+            # Link station to owner's profile
+            profile = request.user.profile
+            profile.allowed_stations.add(station)
+            
+            # Create subscription
+            StationSubscription.objects.create(
+                station=station,
+                plan=plan,
+                start_date=timezone.now().date(),
+                is_active=True
+            )
+            
+            messages.success(request, f"Station '{station.name}' registered successfully!")
+            return redirect('wrsm_app:station-list')
+    else:
+        form = forms.NewStationRegistrationForm()
+    
+    return render(request, 'wrsm/register_new_station.html', {'form': form})
+
+
+@login_required
+def delete_customer(request, pk):
+    customer = get_object_or_404(models.Customer, pk=pk)
+    # Security check: ensure customer belongs to user's station
+    if customer.station != request.user.profile.station:
+        messages.error(request, "Unauthorized action.")
+        return redirect('wrsm_app:customers')
+
+    if request.method == 'POST':
+        # Manually cascade for SET_NULL fields if "delete related data" is strict
+        models.Sales.objects.filter(customer=customer).delete()
+        models.Order.objects.filter(customer=customer).delete()
+        models.Forecast.objects.filter(customer=customer).delete()
+        models.ContainerInventory.objects.filter(customer=customer).delete()
+        models.AccountsReceivable.objects.filter(customer=customer).delete()
+        models.CustomerCredit.objects.filter(customer=customer).delete()
+        models.Payment.objects.filter(customer=customer).delete()
+        
+        customer.delete()
+        messages.success(request, f"Customer '{customer.name}' and related data deleted.")
+        return redirect('wrsm_app:customers')
+    
+    return redirect('wrsm_app:customer-detail', pk=pk)
 
 

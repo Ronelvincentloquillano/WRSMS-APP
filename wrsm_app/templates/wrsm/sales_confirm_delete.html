@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_tags %}
 
 {% block title %}Delete Sale{% endblock %}
 
@@ -9,7 +10,7 @@
         <p class="mb-6 text-gray-700">
             Are you sure you want to delete the sale for 
             <strong>{{ object.customer.name|default:"Guest" }}</strong> 
-            (ID: {{ object.id }})?
+            (ID: {{ object.id|cut:',' }})?
             <br>
             <span class="text-sm text-gray-500">This action cannot be undone.</span>
         </p>

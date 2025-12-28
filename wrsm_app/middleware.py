@@ -18,6 +18,10 @@ class SubscriptionMiddleware:
                 'wrsm_app:initiate_payment',
                 'wrsm_app:payment_callback',
                 'wrsm_app:profile',
+                'wrsm_app:register-new-station',
+                'wrsm_app:station-list',
+                'wrsm_app:switch-station',
+                'wrsm_app:setup-wizard',
                 'admin:index',
                 'admin:login',
                 'account:login', # Just in case

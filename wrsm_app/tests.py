@@ -158,3 +158,62 @@ class UserManagementTest(TestCase):
         # Verify Audit Log
         from wrsm_app.models import AuditLog
         self.assertTrue(AuditLog.objects.filter(action='EDIT', details__contains='Enabled', target_model='User', station=self.station).exists())
+
+
+class StationRegistrationTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='reguser', password='password')
+        self.profile = Profile.objects.create(user=self.user) # No station initially
+        self.plan = SubscriptionPlan.objects.create(name='Basic', price=100)
+        self.client.login(username='reguser', password='password')
+
+    def test_register_new_station(self):
+        url = reverse('wrsm_app:register-new-station')
+        data = {
+            'name': 'My New Station',
+            'branch': 'Main Branch',
+            'plan': self.plan.id
+        }
+        
+        response = self.client.post(url, data)
+        self.assertRedirects(response, reverse('wrsm_app:station-list'))
+        
+        # Verify Station Created
+        station = Station.objects.get(name='My New Station')
+        self.assertEqual(station.branch, 'Main Branch')
+        
+        # Verify Profile Linked
+        self.profile.refresh_from_db()
+        self.assertIn(station, self.profile.allowed_stations.all())
+        
+        # Verify Subscription
+        sub = StationSubscription.objects.get(station=station)
+        self.assertEqual(sub.plan, self.plan)
+        self.assertTrue(sub.is_active)
+
+class StationListTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='listuser', password='password')
+        self.station1 = Station.objects.create(name='Station 1', branch='Branch A')
+        self.station2 = Station.objects.create(name='Station 2', branch='Branch B')
+        self.profile = Profile.objects.create(user=self.user, station=self.station1)
+        self.profile.allowed_stations.add(self.station1)
+        self.profile.allowed_stations.add(self.station2)
+        
+        # Add subscription for template logic
+        self.plan = SubscriptionPlan.objects.create(name='Basic', price=100)
+        StationSubscription.objects.create(station=self.station1, plan=self.plan)
+        StationSubscription.objects.create(station=self.station2, plan=self.plan)
+        
+        self.client.login(username='listuser', password='password')
+
+    def test_station_list_view(self):
+        url = reverse('wrsm_app:station-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Station 1')
+        self.assertContains(response, 'Station 2')
+        self.assertContains(response, 'Branch A')
+        self.assertContains(response, 'Branch B')

@@ -20,6 +20,7 @@ def station_image_upload_path(instance, filename):
 
 class Station(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
+    branch = models.CharField(max_length=100, null=True, blank=True, help_text="Location of this branch")
     address = models.CharField(max_length=100, null=True, blank=True)
     contact_number = models.CharField(max_length=15, null=True, blank=True)
     station_code = models.CharField(max_length=10, unique=True, null=True, blank=True)

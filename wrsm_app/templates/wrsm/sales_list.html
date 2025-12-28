@@ -139,11 +139,7 @@
                   #<span class="font-bold">{{ sale.id|cut:"," }}</span> | {{ sale.created_date }} | {{ sale.order_type }}
                 </h6>
               </div>
-              <div>
-                <h6 class="font-light text-xs">
-                  Created by: {{ sale.created_by.user.first_name|default:sale.created_by.user.username }}
-                </h6>
-              </div>
+              
             </div>
             <div class="flex items-center gap-5">
               <div>
@@ -219,6 +215,11 @@
               </tr>
             </tbody>
           </table>
+          <div>
+            <h6 class="font-light text-xs">
+              Added by: {{ sale.created_by.user.first_name|default:sale.created_by.user.username }}
+            </h6>
+          </div>
         </div>
       </div>
       {% endfor %}

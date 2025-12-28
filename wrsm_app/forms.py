@@ -5,6 +5,33 @@ from datetime import datetime, timedelta
 # from django.utils import timezone
 from . import models
 from django.contrib.auth.models import User, Group
+from account.models import SubscriptionPlan
+
+
+class NewStationRegistrationForm(forms.ModelForm):
+    plan = forms.ModelChoiceField(
+        queryset=SubscriptionPlan.objects.all(), 
+        empty_label="Select Plan",
+        widget=forms.Select(attrs={
+            'class': 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'
+        })
+    )
+
+    class Meta:
+        model = models.Station
+        fields = ['name', 'branch']
+        labels = {
+            'name': 'Station Name',
+            'branch': 'Branch',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'
+            }),
+            'branch': forms.TextInput(attrs={
+                'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'
+            }),
+        }
 
 
 class SalesUpdateForm(forms.Form):
@@ -60,7 +87,30 @@ class SalesItemForm(forms.ModelForm):
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
 
-SalesItemFormSet = inlineformset_factory(models.Sales, models.SalesItem, form=SalesItemForm, extra=1, can_delete=True)
+class MandatoryInlineFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        # Check if there is at least one non-deleted form with a product
+        non_deleted_forms = 0
+        for form in self.forms:
+            if not form.cleaned_data.get('DELETE', False) and form.cleaned_data.get('product'):
+                non_deleted_forms += 1
+        
+        if non_deleted_forms < 1:
+            raise forms.ValidationError("You must add at least one item.")
+
+
+SalesItemFormSet = inlineformset_factory(
+    models.Sales, 
+    models.SalesItem, 
+    form=SalesItemForm, 
+    extra=1, 
+    can_delete=True,
+    formset=MandatoryInlineFormSet
+)
 
 
 class CreateSalesFromOrderForm(forms.ModelForm):
@@ -96,7 +146,14 @@ class SalesItemFromOrderForm(forms.ModelForm):
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
 
-SalesItemFromOrderFormSet = inlineformset_factory(models.Sales, models.SalesItem, form=SalesItemFromOrderForm, extra=1, can_delete=True)
+SalesItemFromOrderFormSet = inlineformset_factory(
+    models.Sales, 
+    models.SalesItem, 
+    form=SalesItemFromOrderForm, 
+    extra=1, 
+    can_delete=True,
+    formset=MandatoryInlineFormSet
+)
 
 
 class CreateStationSettingForm(forms.ModelForm):
@@ -466,6 +523,11 @@ class StationUserCreationForm(forms.ModelForm):
     email = forms.EmailField(required=True)
     password = forms.CharField(widget=forms.PasswordInput)
     role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+    allowed_stations = forms.ModelMultipleChoiceField(
+        queryset=models.Station.objects.none(), 
+        required=False, 
+        widget=forms.CheckboxSelectMultiple
+    )
 
     class Meta:
         model = User
@@ -473,7 +535,13 @@ class StationUserCreationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        if user and hasattr(user, 'profile'):
+             self.fields['allowed_stations'].queryset = user.profile.allowed_stations.all()
+             if station:
+                 self.fields['allowed_stations'].initial = [station]
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -496,6 +564,11 @@ class StationUserUpdateForm(forms.ModelForm):
     last_name = forms.CharField(max_length=30, required=True)
     email = forms.EmailField(required=True)
     role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+    allowed_stations = forms.ModelMultipleChoiceField(
+        queryset=models.Station.objects.none(), 
+        required=False, 
+        widget=forms.CheckboxSelectMultiple
+    )
 
     class Meta:
         model = User
@@ -503,11 +576,18 @@ class StationUserUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
         if self.instance.pk:
             current_groups = self.instance.groups.all()
             if current_groups:
                 self.fields['role'].initial = current_groups[0]
+            if hasattr(self.instance, 'profile'):
+                self.fields['allowed_stations'].initial = self.instance.profile.allowed_stations.all()
+
+        if user and hasattr(user, 'profile'):
+             self.fields['allowed_stations'].queryset = user.profile.allowed_stations.all()
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -522,4 +602,12 @@ class StationUserUpdateForm(forms.ModelForm):
             user.save()
             user.groups.clear()
             user.groups.add(self.cleaned_data["role"])
+            if hasattr(user, 'profile'):
+                user.profile.allowed_stations.set(self.cleaned_data['allowed_stations'])
         return user
+
+
+class CreateStationForm(forms.ModelForm):
+    class Meta:
+        model = models.Station
+        fields = ['name', 'address', 'contact_number']

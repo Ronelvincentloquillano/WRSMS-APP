@@ -162,7 +162,9 @@
               <div
                 class="absolute top-full right-0 hidden group-hover:block hover:block
                       bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My Stations</a>
                 <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
+                <a href="{% url 'wrsm_app:register-new-station' %}" class="block px-4 py-2 hover:bg-blue-400">Register New Station</a>
                 <a href="{% url 'wrsm_app:station-users' %}" class="block px-4 py-2 hover:bg-blue-400">Station Users</a>
                 <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
                 <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
@@ -348,7 +350,9 @@
               <div
                 class="absolute top-full hidden group-hover:block hover:block
                       bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My Stations</a>
                 <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
+                <a href="{% url 'wrsm_app:register-new-station' %}" class="block px-4 py-2 hover:bg-blue-400">Register New Station</a>
                 <a href="{% url 'wrsm_app:station-users' %}" class="block px-4 py-2 hover:bg-blue-400">Station Users</a>
                 <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
                 <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
@@ -451,7 +455,9 @@
   </section>
 
   <main class="mx-auto flex-grow min-h-screen">
-
+    <div class="flex justify-center mt-2">
+      <h5 class="text-lg">{{ station }} {% if station.branch %} - {{ station.branch }}{% endif %}</h5>
+    </div>
     {% block content %}
     {% endblock %}
 

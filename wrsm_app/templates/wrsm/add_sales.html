@@ -108,6 +108,11 @@
 
         <div>
           <h2 class="text-xl font-semibold mb-3">Items</h2>
+          {% if item_formset.non_form_errors %}
+            <div class="text-red-600 font-bold mb-3">
+              {{ item_formset.non_form_errors }}
+            </div>
+          {% endif %}
 
           <div id="formset-container">
             {% for fs in item_formset %}

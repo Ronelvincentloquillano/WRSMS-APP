@@ -210,4 +210,9 @@ $(document).ready(function () {
       bindEventsToForm(formCount); // rebind calc for new form
     });
 
+    // Disable submit button after first click to prevent multiple submissions
+    $('#add_sales_form').on('submit', function() {
+      $(this).find('button[type="submit"]').prop('disabled', true).addClass('opacity-50 cursor-not-allowed').text('Submitting...');
+    });
+
   });
