@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Station{% endblock %}
+
+{% block content %}
+<div class="min-w-full flex flex-col items-center mb-10 pt-10 px-4">
+  <div class="bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-md rounded-lg w-72 md:w-96">
+    <div class="text-center border-b dark:border-slate-600 p-4">
+      <h2 class="text-2xl font-semibold">Update Station</h2>
+    </div>
+    <div class="p-5">
+      <form action="" method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        
+        <div class="flex items-center justify-between mt-6">
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md transition-colors" 
+              type="submit">
+              Save Changes
+            </button>
+            <a href="{% url 'wrsm_app:station-detail' object.pk %}" 
+              class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 shadow-md transition-colors">
+              Cancel
+            </a>
+        </div>
+      </form>
+    </div>    
+  </div>
+</div>
+{% endblock %}

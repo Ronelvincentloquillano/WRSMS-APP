@@ -608,6 +608,49 @@ class StationUserUpdateForm(forms.ModelForm):
 
 
 class CreateStationForm(forms.ModelForm):
+
+
     class Meta:
+
+
         model = models.Station
+
+
         fields = ['name', 'address', 'contact_number']
+
+
+
+
+
+
+
+
+class UpdateStationForm(forms.ModelForm):
+
+
+    class Meta:
+
+
+        model = models.Station
+
+
+        fields = ['name', 'address', 'branch', 'contact_number']
+
+
+        widgets = {
+
+
+            'name': forms.TextInput(attrs={'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'}),
+
+
+            'address': forms.TextInput(attrs={'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'}),
+
+
+            'branch': forms.TextInput(attrs={'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'}),
+
+
+            'contact_number': forms.TextInput(attrs={'class': 'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-slate-600 dark:border-slate-500 dark:text-gray-200'}),
+
+
+        }
+

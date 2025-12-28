@@ -1504,6 +1504,29 @@ class StationListView(LoginRequiredMixin, ListView):
         return context
 
 
+class StationDetailView(LoginRequiredMixin, DetailView):
+    model = models.Station
+    template_name = 'wrsm/station_detail.html'
+    context_object_name = 'station_obj'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
+class StationUpdateView(LoginRequiredMixin, UpdateView):
+    model = models.Station
+    form_class = forms.UpdateStationForm
+    template_name = 'wrsm/station_form.html'
+    success_url = reverse_lazy('wrsm_app:station-list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
 class OrderListView(LoginRequiredMixin, ListView):
     model = models.Order
     template_name = 'wrsm/orders.html'
