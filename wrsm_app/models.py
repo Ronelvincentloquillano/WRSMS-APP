@@ -107,11 +107,11 @@ class Product(models.Model):
     jug_type = models.ForeignKey(to=JugType, null=True, blank=True, on_delete=models.CASCADE)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     quantity = models.IntegerField(null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='products_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='product_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         if self.product_name != '':
@@ -158,7 +158,7 @@ class StationSetting(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='stationsetting_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.station.name}"
@@ -173,7 +173,7 @@ class NetTerms(models.Model):
     terms_in_days = models.PositiveIntegerField(default=0)
     terms_description = models.CharField(max_length=200, null=True, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='netterms_created')
 
     def __str__(self):
         return self.terms_label
@@ -193,11 +193,11 @@ class Customer(models.Model):
     promo_code = models.ForeignKey(to=Promo, null=True, blank=True, on_delete=models.SET_NULL)
     discount_code = models.ForeignKey(to=Discount, null=True, blank=True, on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='customers_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='customer_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
     contact_number = models.CharField(max_length=15, null=True, blank=True)
     net_terms = models.ForeignKey(to=NetTerms, null=True, blank=True, on_delete=models.SET_NULL)
     latitude = models.FloatField(null=True, blank=True)
@@ -234,7 +234,7 @@ class Order(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='order_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
     
 
 class Sales(models.Model):
@@ -244,11 +244,11 @@ class Sales(models.Model):
     note = models.CharField(max_length=100, null=True, blank=True)
     customer = models.ForeignKey(Customer, blank=True, null=True, on_delete=models.SET_NULL)
     is_paid = models.BooleanField(null=True, default=False)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='sales_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='sales_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return '{} - {}'.format(self.created_date, self.customer)
@@ -277,11 +277,11 @@ class CustomerGeneric(models.Model):
     sales = models.ForeignKey(to=Sales, null=True, on_delete=models.CASCADE)
     note = models.CharField(max_length=100)
     created_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='customer_generic_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='customergeneric_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return F"{self.created_date}"
@@ -299,11 +299,11 @@ class Maintenance(models.Model):
     date = models.DateField()
     maintenance_type = models.CharField(max_length=20, choices=MAINTENANCE_TYPE_CHOICES)
     note = models.CharField(max_length=300, null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='maintenance_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='maintenance_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.maintenance_type
@@ -318,7 +318,7 @@ class Expense(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='expense_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"Expense #{self.pk} on {self.date}"
@@ -380,11 +380,11 @@ class ContainerInventory(models.Model):
     returned_empty_container = models.IntegerField(default=0)
     new_balance = models.IntegerField(default=0)
     note = models.CharField(max_length=100, null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='container_inventory_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='containerinventory_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.customer.name} - {self.balance_from_last_visit}"
@@ -404,11 +404,11 @@ class AccountsReceivable(models.Model):
                     default='Pending')
     issued_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='ar_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='ar_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.sales.pk} - Balance: {self.total_amount}, Status: {self.status}"
@@ -423,11 +423,11 @@ class Payment(models.Model):
     total_paid = models.DecimalField(max_digits=10, decimal_places=2)
     payment_type = models.ForeignKey(to=PaymentType, null=True, on_delete=models.SET_NULL)
     note = models.CharField(max_length=100, null=True, blank=True)
-    received_by = models.ForeignKey(to=Profile, on_delete=models.CASCADE)
+    received_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='payments_received')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='payment_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.customer.name} - {self.total_paid} on {self.payment_date}"
@@ -442,11 +442,11 @@ class PaymentGeneric(models.Model):
     total_paid = models.DecimalField(max_digits=10, decimal_places=2)
     payment_type = models.ForeignKey(to=PaymentType, null=True, on_delete=models.SET_NULL)
     note = models.CharField(max_length=100, null=True, blank=True)
-    received_by = models.ForeignKey(to=Profile, on_delete=models.CASCADE)
+    received_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='generic_payments_received')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='paymentgeneric_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.sales_id} - {self.total_paid} on {self.payment_date}"
@@ -470,11 +470,11 @@ class CustomerCredit(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     source_of_payment = models.ForeignKey(to=Payment, null=True, blank=True, on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='credits_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='customercredit_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.customer.name} - Credit: {self.amount} on {self.created_date}"
@@ -497,11 +497,11 @@ class ShortCut(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     is_visible = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(to=Profile, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='shortcuts_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='shortcut_modified_by', 
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
