@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth import login
 from django.core.mail import send_mail
 from django.conf import settings
@@ -84,6 +84,10 @@ def activate_account(request, key):
     user.password = pending_reg.password
     user.save()
 
+    # Grant Permissions
+    group, _ = Group.objects.get_or_create(name='station owner/admin')
+    user.groups.add(group)
+
     # 2. Create Station
     station = Station.objects.create(
         name=pending_reg.station_name,
@@ -122,15 +126,20 @@ def activate_account(request, key):
     # 6. Cleanup
     pending_reg.delete()
 
-    # 7. Send Welcome Email
+    # 7. Send Welcome Email & Notify Admin
     try:
         subject = "Welcome to SmartDynamic Refilling!"
         message = render_to_string('account/welcome_email.txt', {'user': user})
         from_email = settings.DEFAULT_FROM_EMAIL
         recipient_list = [user.email]
         send_mail(subject, message, from_email, recipient_list)
+
+        # Notify Admin
+        admin_subject = f"New Station Activation: {station.name}"
+        admin_message = f"New station activated!\n\nUser: {user.first_name} {user.last_name} ({user.email})\nStation: {station.name}\nContact: {station.contact_number}\nTime: {datetime.datetime.now()}"
+        send_mail(admin_subject, admin_message, from_email, ['admin@wrsms.online'])
     except Exception as e:
-        print(f"Welcome Email Error: {e}")
+        print(f"Email Error: {e}")
 
     # 8. Login and Redirect
     # We need to authenticate. Since we have the user object:
