@@ -271,14 +271,22 @@
       const tbody = $('#tableBody');
       tbody.empty();
       
-      // Update header
+      // Update Title
       const headerTitle = searchedCustomer ? `${searchedCustomer} Record` : 'Container Inventory';
-      // We need to target the header element carefully
       const headerEl = $('h6.text-center');
       if (searchedCustomer) {
         headerEl.removeClass('hidden').text(`${headerTitle} (Offline)`);
       } else {
         headerEl.addClass('hidden');
+      }
+
+      // Update Column Visibility
+      const ths = $('thead tr th');
+      // Index 1 is Customer
+      if (searchedCustomer) {
+          $(ths[1]).addClass('hidden');
+      } else {
+          $(ths[1]).removeClass('hidden');
       }
 
       if (data.length === 0) {
