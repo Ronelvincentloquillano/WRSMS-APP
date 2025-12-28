@@ -19,9 +19,9 @@
     <table class="min-w-full text-sm text-left">
       <thead class="bg-gray-100 uppercase text-gray-700">
         <tr>
-          <th class="px-6 py-3">Username</th>
+          <th class="px-6 py-3 hidden md:table-cell">Username</th>
           <th class="px-6 py-3">Name</th>
-          <th class="px-6 py-3">Email</th>
+          <th class="px-6 py-3 hidden md:table-cell">Email</th>
           <th class="px-6 py-3">Role</th>
           <th class="px-6 py-3">Actions</th>
         </tr>
@@ -29,9 +29,9 @@
       <tbody>
         {% for profile in profiles %}
         <tr class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 font-medium text-gray-900">{{ profile.user.username }}</td>
+          <td class="px-6 py-4 font-medium text-gray-900 hidden md:table-cell">{{ profile.user.username }}</td>
           <td class="px-6 py-4">{{ profile.user.get_full_name }}</td>
-          <td class="px-6 py-4">{{ profile.user.email }}</td>
+          <td class="px-6 py-4 hidden md:table-cell">{{ profile.user.email }}</td>
           <td class="px-6 py-4">
             {% for group in profile.user.groups.all %}
               {{ group.name }}{% if not forloop.last %}, {% endif %}
