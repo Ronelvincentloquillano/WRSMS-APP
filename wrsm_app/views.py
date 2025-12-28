@@ -2490,25 +2490,61 @@ class StationUserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView)
         return context
 
 
-class StationUserDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+class StationUserDisableView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = models.User
-    template_name = 'wrsm/station_user_confirm_delete.html'
+    fields = []
+    template_name = 'wrsm/station_user_confirm_disable.html'
     success_url = reverse_lazy('wrsm_app:station-users')
-    success_message = "User deleted successfully!"
+    success_message = "User disabled successfully!"
 
-    def delete(self, request, *args, **kwargs):
-        obj = self.get_object()
-        station = request.user.profile.station
+    def form_valid(self, form):
+        user = form.instance
+        if user == self.request.user:
+             messages.error(self.request, "You cannot disable your own account.")
+             return redirect('wrsm_app:station-users')
+        
+        user.is_active = False
+        user.save()
+        
+        station = self.request.user.profile.station
         models.AuditLog.objects.create(
             station=station,
-            action='DELETE',
+            action='EDIT',
             target_model='User',
-            target_object_id=obj.pk,
-            details=f"Deleted user {obj.username}",
-            performed_by=request.user.profile
+            target_object_id=user.pk,
+            details=f"Disabled user {user.username}",
+            performed_by=self.request.user.profile
         )
-        messages.success(self.request, self.success_message)
-        return super().delete(request, *args, **kwargs)
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
+class StationUserEnableView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = models.User
+    fields = []
+    template_name = 'wrsm/station_user_confirm_enable.html'
+    success_url = reverse_lazy('wrsm_app:station-users')
+    success_message = "User enabled successfully!"
+
+    def form_valid(self, form):
+        user = form.instance
+        user.is_active = True
+        user.save()
+        
+        station = self.request.user.profile.station
+        models.AuditLog.objects.create(
+            station=station,
+            action='EDIT',
+            target_model='User',
+            target_object_id=user.pk,
+            details=f"Enabled user {user.username}",
+            performed_by=self.request.user.profile
+        )
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

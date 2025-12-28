@@ -129,16 +129,32 @@ class UserManagementTest(TestCase):
         from wrsm_app.models import AuditLog
         self.assertTrue(AuditLog.objects.filter(action='EDIT', target_model='User', station=self.station).exists())
 
-    def test_delete_station_user(self):
-        user_to_delete = User.objects.create_user(username='deleteuser', password='password')
-        Profile.objects.create(user=user_to_delete, station=self.station)
+    def test_disable_station_user(self):
+        user_to_disable = User.objects.create_user(username='disableuser', email='disable@test.com', password='password')
+        Profile.objects.create(user=user_to_disable, station=self.station)
         
-        url = reverse('wrsm_app:delete-station-user', kwargs={'pk': user_to_delete.pk})
+        url = reverse('wrsm_app:disable-station-user', kwargs={'pk': user_to_disable.pk})
         response = self.client.post(url)
         self.assertRedirects(response, reverse('wrsm_app:station-users'))
         
-        self.assertFalse(User.objects.filter(pk=user_to_delete.pk).exists())
+        user_to_disable.refresh_from_db()
+        self.assertFalse(user_to_disable.is_active)
         
         # Verify Audit Log
         from wrsm_app.models import AuditLog
-        self.assertTrue(AuditLog.objects.filter(action='DELETE', target_model='User', station=self.station).exists())
+        self.assertTrue(AuditLog.objects.filter(action='EDIT', details__contains='Disabled', target_model='User', station=self.station).exists())
+
+    def test_enable_station_user(self):
+        user_to_enable = User.objects.create_user(username='enableuser', email='enable@test.com', password='password', is_active=False)
+        Profile.objects.create(user=user_to_enable, station=self.station)
+        
+        url = reverse('wrsm_app:enable-station-user', kwargs={'pk': user_to_enable.pk})
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse('wrsm_app:station-users'))
+        
+        user_to_enable.refresh_from_db()
+        self.assertTrue(user_to_enable.is_active)
+        
+        # Verify Audit Log
+        from wrsm_app.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(action='EDIT', details__contains='Enabled', target_model='User', station=self.station).exists())

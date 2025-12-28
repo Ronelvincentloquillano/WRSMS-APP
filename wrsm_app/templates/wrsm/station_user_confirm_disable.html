@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Disable User{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center pt-20">
+  <div class="bg-white text-slate-700 shadow-md rounded w-full md:w-1/3 p-6 text-center">
+    <h2 class="text-xl font-semibold mb-4">Are you sure you want to disable user "{{ object.username }}"?</h2>
+    <p class="mb-6 text-gray-600">The user will no longer be able to log in, but their data will be retained.</p>
+    
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">Disable</button>
+      <a href="{% url 'wrsm_app:station-users' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 ml-3">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

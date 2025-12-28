@@ -100,5 +100,6 @@ urlpatterns = [
     path('station-users/', views.StationUserListView.as_view(), name='station-users'),
     path('add-station-user/', views.StationUserCreateView.as_view(), name='add-station-user'),
     path('update-station-user/<int:pk>/', views.StationUserUpdateView.as_view(), name='update-station-user'),
-    path('delete-station-user/<int:pk>/', views.StationUserDeleteView.as_view(), name='delete-station-user'),
+    path('disable-station-user/<int:pk>/', views.StationUserDisableView.as_view(), name='disable-station-user'),
+    path('enable-station-user/<int:pk>/', views.StationUserEnableView.as_view(), name='enable-station-user'),
 ] + static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")
