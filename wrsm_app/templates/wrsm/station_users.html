@@ -15,24 +15,69 @@
     </a>
   </div>
 
-  <div class="mt-6 overflow-x-auto bg-white shadow rounded-md">
+  <!-- Mobile View (Cards) -->
+  <div class="md:hidden mt-6 space-y-4">
+    {% for profile in profiles %}
+    <div class="bg-white shadow rounded-lg p-4 {% if not profile.user.is_active %}bg-gray-100 text-gray-500{% endif %}">
+      <div class="flex justify-between items-start">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-lg font-bold truncate {% if profile.user.is_active %}text-gray-900{% endif %}">
+            {{ profile.user.get_full_name|default:profile.user.username }}
+          </h3>
+          <p class="text-sm text-gray-500 truncate">{{ profile.user.email }}</p>
+        </div>
+        <div class="ml-2">
+          {% if profile.user.is_active %}
+            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold whitespace-nowrap">Active</span>
+          {% else %}
+            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">Disabled</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-2">
+        <p class="text-sm">
+          <span class="font-medium text-gray-500">Role:</span> 
+          {% for group in profile.user.groups.all %}
+            {{ group.name }}{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+        <p class="text-xs text-gray-400 mt-1 italic">Username: {{ profile.user.username }}</p>
+      </div>
+      <div class="mt-4 pt-4 border-t flex gap-4">
+        <a href="{% url 'wrsm_app:update-station-user' pk=profile.user.pk %}" class="text-blue-600 font-medium hover:underline">Edit</a>
+        {% if profile.user.is_active %}
+          <a href="{% url 'wrsm_app:disable-station-user' pk=profile.user.pk %}" class="text-yellow-600 font-medium hover:underline">Disable</a>
+        {% else %}
+          <a href="{% url 'wrsm_app:enable-station-user' pk=profile.user.pk %}" class="text-green-600 font-medium hover:underline">Enable</a>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
+      No other users found.
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Desktop View (Table) -->
+  <div class="hidden md:block mt-6 overflow-x-auto bg-white shadow rounded-md">
     <table class="min-w-full text-sm text-left">
       <thead class="bg-gray-100 uppercase text-gray-700">
         <tr>
-          <th class="px-6 py-3 hidden md:table-cell">Username</th>
+          <th class="px-6 py-3">Username</th>
           <th class="px-6 py-3">Name</th>
-          <th class="px-6 py-3 hidden md:table-cell">Email</th>
+          <th class="px-6 py-3">Email</th>
           <th class="px-6 py-3">Role</th>
           <th class="px-6 py-3">Status</th>
-          <th class="px-6 py-3">Actions</th>
+          <th class="px-6 py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for profile in profiles %}
         <tr class="border-b hover:bg-gray-50 {% if not profile.user.is_active %}bg-gray-100 text-gray-500{% endif %}">
-          <td class="px-6 py-4 font-medium {% if profile.user.is_active %}text-gray-900{% else %}text-gray-500{% endif %} hidden md:table-cell">{{ profile.user.username }}</td>
+          <td class="px-6 py-4 font-medium {% if profile.user.is_active %}text-gray-900{% endif %}">{{ profile.user.username }}</td>
           <td class="px-6 py-4">{{ profile.user.get_full_name }}</td>
-          <td class="px-6 py-4 hidden md:table-cell">{{ profile.user.email }}</td>
+          <td class="px-6 py-4">{{ profile.user.email }}</td>
           <td class="px-6 py-4">
             {% for group in profile.user.groups.all %}
               {{ group.name }}{% if not forloop.last %}, {% endif %}
@@ -40,12 +85,12 @@
           </td>
           <td class="px-6 py-4">
             {% if profile.user.is_active %}
-              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
+              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold whitespace-nowrap">Active</span>
             {% else %}
-              <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Disabled</span>
+              <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold whitespace-nowrap">Disabled</span>
             {% endif %}
           </td>
-          <td class="px-6 py-4 flex gap-3">
+          <td class="px-6 py-4 flex justify-end gap-3">
             <a href="{% url 'wrsm_app:update-station-user' pk=profile.user.pk %}" class="text-blue-600 hover:underline">Edit</a>
             {% if profile.user.is_active %}
               <a href="{% url 'wrsm_app:disable-station-user' pk=profile.user.pk %}" class="text-yellow-600 hover:underline">Disable</a>
