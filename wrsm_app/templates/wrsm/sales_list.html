@@ -210,7 +210,9 @@
               {% endfor %}
 
               <tr class="font-bold bg-gray-50">
-                <td colspan="4" class="px-3 py-2 text-right border-b">Subtotal:</td>
+                <td colspan="2" class="px-3 py-2 text-right border-b">Total QTY:</td>
+                <td class="px-3 py-2 border-b">{{ quantities_by_product|get_item:sale.id }}</td>
+                <td class="px-3 py-2 text-right border-b">Subtotal:</td>
                 <td class="px-3 py-2 border-b">
                   {{ totals_by_product|get_item:sale.id|intcomma|floatformat:2 }}
                 </td>

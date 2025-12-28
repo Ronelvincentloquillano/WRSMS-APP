@@ -152,6 +152,17 @@ $(document).ready(function () {
         }
       });
 
+      // Remove button handler
+      let $row = $(`#id_sales_items-${i}-product`).closest('.form-row');
+      let $deleteBtn = $row.find('.remove-form');
+      $deleteBtn.off('click').on('click', function() {
+           let $deleteInput = $row.find('input[name$="-DELETE"]');
+           if ($deleteInput.length) {
+               $deleteInput.prop('checked', true);
+           }
+           $row.hide();
+      });
+
     }
 
     // Initial bind
@@ -166,6 +177,8 @@ $(document).ready(function () {
       let formCount = parseInt(totalFormsInput.val());
       let $lastForm = $('#formset-container .form-row:last');
       let $newForm = $lastForm.clone(false); // clone without events
+      
+      $newForm.show(); // Ensure visibility if last form was hidden
 
       // Update all input fields
       $newForm.find(':input').each(function () {
@@ -174,6 +187,9 @@ $(document).ready(function () {
           let newName = name.replace(/-\d+-/, `-${formCount}-`);
           let newId = 'id_' + newName;
           $(this).attr({ 'name': newName, 'id': newId }).val('');
+          if ($(this).attr('type') === 'checkbox') {
+             $(this).prop('checked', false);
+          }
         }
       });
 

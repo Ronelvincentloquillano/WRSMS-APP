@@ -1704,10 +1704,11 @@ class SalesListView(LoginRequiredMixin, ListView):
         # Calculate totals per sales_id
         product_expr = ExpressionWrapper(F('quantity') * F('unit_price'), output_field=DecimalField())
         product_totals = models.SalesItem.objects.filter(sales__station=station).values('sales_id') \
-            .annotate(total=Sum(product_expr)).order_by('sales_id')
+            .annotate(total=Sum(product_expr), total_qty=Sum('quantity')).order_by('sales_id')
 
         # Convert to dictionary { sales_id: total_amount }
         context['totals_by_product'] = {item['sales_id']: item['total'] for item in product_totals}
+        context['quantities_by_product'] = {item['sales_id']: item['total_qty'] for item in product_totals}
         context['selected_date'] = self.request.GET.get('date', '')
         context['entered_customer'] = self.request.GET.get('customer', '')
         context['products'] = products.count() if products else 0

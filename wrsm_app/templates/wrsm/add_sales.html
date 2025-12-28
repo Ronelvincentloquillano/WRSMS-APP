@@ -115,6 +115,9 @@
               {% for hidden in fs.hidden_fields %}
               {{ hidden }}
               {% endfor %}
+              <div class="hidden">
+                {{ fs.DELETE }}
+              </div>
 
               <!-- PRODUCT -->
               <div class="flex flex-nowrap gap-2 mb-3 items-center">
@@ -122,13 +125,16 @@
                   <span>{{fs.product.errors}}</span>
                   {{ fs.product|add_class:"w-full border rounded px-2 py-1" }}
                 </div>
-                <div class="p-1 flex items-center">
+                <div class="p-1 flex items-center gap-2">
                   <button 
                     class="free-button px-3 py-1 rounded shadow-inner text-sm border border-1"
                     type="button"
                     data-id="free{{ forloop.counter0 }}"
                   >
                     <span class="font-light text-slate-600">free</span>
+                  </button>
+                  <button type="button" class="remove-form text-red-500 hover:text-red-700" title="Remove item">
+                    <ion-icon name="trash-outline" class="text-xl align-middle"></ion-icon>
                   </button>
                 </div>
               </div>
