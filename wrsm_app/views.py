@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import TemplateView, CreateView, ListView, UpdateView, DetailView
+from django.views.generic import TemplateView, CreateView, ListView, UpdateView, DetailView, DeleteView
 from django.forms import inlineformset_factory
 from . import models
 from . import forms
@@ -2406,5 +2406,111 @@ def update_sales(request, pk):
         'station_settings': station_settings,
         'is_update': True
     })
+
+
+class StationUserListView(LoginRequiredMixin, ListView):
+    template_name = 'wrsm/station_users.html'
+    model = models.Profile
+    context_object_name = 'profiles'
+
+    def get_queryset(self):
+        station = self.request.user.profile.station
+        return models.Profile.objects.filter(station=station).exclude(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
+class StationUserCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    form_class = forms.StationUserCreationForm
+    template_name = 'wrsm/station_user_form.html'
+    success_message = "User created successfully!"
+    success_url = reverse_lazy('wrsm_app:station-users')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['station'] = self.request.user.profile.station
+        return kwargs
+
+    def form_valid(self, form):
+        station = self.request.user.profile.station
+        response = super().form_valid(form)
+        models.Profile.objects.create(
+            user=self.object,
+            station=station,
+        )
+        models.AuditLog.objects.create(
+            station=station,
+            action='ADD',
+            target_model='User',
+            target_object_id=self.object.pk,
+            details=f"Added user {self.object.username} with role {form.cleaned_data['role']}",
+            performed_by=self.request.user.profile
+        )
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
+class StationUserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = models.User
+    form_class = forms.StationUserUpdateForm
+    template_name = 'wrsm/station_user_form.html'
+    success_message = "User updated successfully!"
+    success_url = reverse_lazy('wrsm_app:station-users')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['station'] = self.request.user.profile.station
+        return kwargs
+
+    def form_valid(self, form):
+        station = self.request.user.profile.station
+        response = super().form_valid(form)
+        models.AuditLog.objects.create(
+            station=station,
+            action='EDIT',
+            target_model='User',
+            target_object_id=self.object.pk,
+            details=f"Updated user {self.object.username}",
+            performed_by=self.request.user.profile
+        )
+        return response
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
+
+
+class StationUserDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    model = models.User
+    template_name = 'wrsm/station_user_confirm_delete.html'
+    success_url = reverse_lazy('wrsm_app:station-users')
+    success_message = "User deleted successfully!"
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        station = request.user.profile.station
+        models.AuditLog.objects.create(
+            station=station,
+            action='DELETE',
+            target_model='User',
+            target_object_id=obj.pk,
+            details=f"Deleted user {obj.username}",
+            performed_by=request.user.profile
+        )
+        messages.success(self.request, self.success_message)
+        return super().delete(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['station'] = self.request.user.profile.station
+        return context
 
 

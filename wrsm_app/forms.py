@@ -4,6 +4,7 @@ from django.forms import formset_factory
 from datetime import datetime, timedelta
 # from django.utils import timezone
 from . import models
+from django.contrib.auth.models import User, Group
 
 
 class SalesUpdateForm(forms.Form):
@@ -457,3 +458,68 @@ class ArticleForm(forms.ModelForm):
         widgets = {
             'body': forms.Textarea(attrs={'id': 'markdown-editor'}),
         }
+
+
+class StationUserCreationForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    email = forms.EmailField(required=True)
+    password = forms.CharField(widget=forms.PasswordInput)
+    role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password']
+
+    def __init__(self, *args, **kwargs):
+        station = kwargs.pop('station', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("A user with this email address already exists.")
+        return email
+        
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = self.cleaned_data["email"]
+        user.set_password(self.cleaned_data["password"])
+        if commit:
+            user.save()
+            user.groups.add(self.cleaned_data["role"])
+        return user
+
+
+class StationUserUpdateForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    email = forms.EmailField(required=True)
+    role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+
+    def __init__(self, *args, **kwargs):
+        station = kwargs.pop('station', None)
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            current_groups = self.instance.groups.all()
+            if current_groups:
+                self.fields['role'].initial = current_groups[0]
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+             raise forms.ValidationError("A user with this email address already exists.")
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = self.cleaned_data["email"]
+        if commit:
+            user.save()
+            user.groups.clear()
+            user.groups.add(self.cleaned_data["role"])
+        return user

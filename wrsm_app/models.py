@@ -521,3 +521,21 @@ class Article(models.Model):
     
     class Meta:
         verbose_name_plural = "articles"
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('ADD', 'Add'),
+        ('EDIT', 'Edit'),
+        ('DELETE', 'Delete'),
+    )
+    station = models.ForeignKey(to=Station, on_delete=models.CASCADE)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    target_model = models.CharField(max_length=50)
+    target_object_id = models.CharField(max_length=50)
+    details = models.TextField(blank=True, null=True)
+    performed_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.action} {self.target_model} by {self.performed_by} on {self.timestamp}"

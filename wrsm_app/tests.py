@@ -64,3 +64,81 @@ class StationSetupEnforcementTest(TestCase):
         # Access Station Setting Update
         response = self.client.get(reverse('wrsm_app:station-setting-update'))
         self.assertEqual(response.status_code, 200)
+
+
+class UserManagementTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='owner', password='password')
+        self.station = Station.objects.create(name='Test Station')
+        self.profile = Profile.objects.create(user=self.user, station=self.station)
+        
+        from django.contrib.auth.models import Group
+        self.group = Group.objects.create(name='Operator')
+        
+        self.client.login(username='owner', password='password')
+
+    def test_add_station_user(self):
+        url = reverse('wrsm_app:add-station-user')
+        data = {
+            'first_name': 'New',
+            'last_name': 'User',
+            'email': 'new@test.com',
+            'password': 'password123',
+            'role': self.group.id
+        }
+        response = self.client.post(url, data)
+        self.assertRedirects(response, reverse('wrsm_app:station-users'))
+        
+        # Verify User Created (username should be email)
+        new_user = User.objects.get(username='new@test.com')
+        self.assertTrue(new_user.check_password('password123'))
+        self.assertEqual(new_user.email, 'new@test.com')
+        
+        # Verify Profile Created
+        self.assertTrue(Profile.objects.filter(user=new_user, station=self.station).exists())
+        
+        # Verify Group
+        self.assertIn(self.group, new_user.groups.all())
+        
+        # Verify Audit Log
+        from wrsm_app.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(action='ADD', target_model='User', station=self.station).exists())
+
+    def test_update_station_user(self):
+        # Create user to update
+        user_to_update = User.objects.create_user(username='updateuser', email='old@test.com', password='password')
+        Profile.objects.create(user=user_to_update, station=self.station)
+        
+        url = reverse('wrsm_app:update-station-user', kwargs={'pk': user_to_update.pk})
+        data = {
+            'first_name': 'Updated',
+            'last_name': 'Name',
+            'email': 'updated@test.com',
+            'role': self.group.id
+        }
+        response = self.client.post(url, data)
+        self.assertRedirects(response, reverse('wrsm_app:station-users'))
+        
+        user_to_update.refresh_from_db()
+        self.assertEqual(user_to_update.first_name, 'Updated')
+        self.assertEqual(user_to_update.email, 'updated@test.com')
+        self.assertEqual(user_to_update.username, 'updated@test.com')
+        
+        # Verify Audit Log
+        from wrsm_app.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(action='EDIT', target_model='User', station=self.station).exists())
+
+    def test_delete_station_user(self):
+        user_to_delete = User.objects.create_user(username='deleteuser', password='password')
+        Profile.objects.create(user=user_to_delete, station=self.station)
+        
+        url = reverse('wrsm_app:delete-station-user', kwargs={'pk': user_to_delete.pk})
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse('wrsm_app:station-users'))
+        
+        self.assertFalse(User.objects.filter(pk=user_to_delete.pk).exists())
+        
+        # Verify Audit Log
+        from wrsm_app.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(action='DELETE', target_model='User', station=self.station).exists())

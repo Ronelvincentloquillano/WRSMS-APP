@@ -2,8 +2,8 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Account Profile</h1>
+<div class="max-w-4xl mx-auto py-8 md:px-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center dark:text-slate-200">Account Profile</h1>
 
     {% if not setup_complete %}
         <div class="rounded-md bg-yellow-50 p-4 mb-8">
@@ -31,21 +31,21 @@
         </div>
     {% endif %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Subscription Status Card -->
-        <div class="md:col-span-2 bg-white overflow-hidden shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Subscription Status</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] md:gap-8">
+        <!-- 1. Subscription Station (Left Column) -->
+        <div class="bg-white overflow-hidden shadow rounded-lg h-full">
+            <div class="px-4 py-5 sm:p-6 flex flex-col h-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Subscription Station</h3>
                 
                 {% if subscription %}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="p-4 bg-gray-50 rounded-md">
+                    <div class="flex-grow space-y-4">
+                        <div class="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                             <span class="text-sm font-medium text-gray-500">Plan</span>
-                            <p class="mt-1 text-lg font-semibold text-gray-900">{{ subscription.plan.name|default:"Trial" }}</p>
+                            <span class="text-base font-semibold text-gray-900">{{ subscription.plan.name|default:"Trial" }}</span>
                         </div>
-                        <div class="p-4 bg-gray-50 rounded-md">
+                        <div class="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                             <span class="text-sm font-medium text-gray-500">Status</span>
-                            <div class="mt-1 flex items-center">
+                            <div class="flex items-center">
                                 {% if subscription.is_valid %}
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                         Active
@@ -62,17 +62,15 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="p-4 bg-gray-50 rounded-md">
+                        <div class="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                             <span class="text-sm font-medium text-gray-500">Expires On</span>
-                            <p class="mt-1 text-lg font-semibold text-gray-900">{{ subscription.end_date }}</p>
+                            <span class="text-base font-semibold text-gray-900">{{ subscription.end_date }}</span>
                         </div>
                     </div>
 
                     {% if not subscription.is_valid or subscription.end_date < today|date:"Y-m-d" %} 
-                    <!-- Simple logic to show renew button if expired or close to expiry could go here. 
-                         For now, showing if invalid. -->
                         <div class="mt-6">
-                            <a href="{% url 'wrsm_app:subscription_expired' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <a href="{% url 'wrsm_app:subscription_expired' %}" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Renew Subscription
                             </a>
                         </div>
@@ -83,21 +81,49 @@
             </div>
         </div>
 
-        <!-- Personal Info -->
-        <div class="bg-white shadow rounded-lg">
+        <!-- 2. Account Security (Right Column) -->
+        <div class="bg-white shadow rounded-lg h-full">
+            <div class="px-4 py-5 sm:p-6 flex flex-col h-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Account Security</h3>
+                
+                <div class="flex-grow space-y-4">
+                    <p class="text-sm text-gray-500">Manage your password and account access.</p>
+                    
+                    <a href="{% url 'account:password_change' %}" class="block w-full text-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Change Password
+                    </a>
+                </div>
+
+                <div class="mt-6">
+                    <form action="{% url 'account:logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Log Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Personal Information (Bottom Row, Full Width) -->
+        <div class="md:col-span-2 bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Personal Information</h3>
                 <form method="post">
                     {% csrf_token %}
-                    {{ user_form|crispy }}
-                    <!-- We need to render station form here too if we want one big save button, 
-                         or split them. The view handles both in one POST. -->
-                    
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mt-8 mb-4">Station Information</h3>
-                    {{ station_form|crispy }}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-700 mb-2">User Details</h4>
+                            {{ user_form|crispy }}
+                        </div>
+                        <div>
+                            <h4 class="text-md font-medium text-gray-700 mb-2">Station Details</h4>
+                            {{ station_form|crispy }}
+                        </div>
+                    </div>
 
-                    <div class="mt-6">
-                        <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <div class="mt-6 flex justify-end">
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Save Changes
                         </button>
                     </div>
@@ -105,23 +131,6 @@
             </div>
         </div>
 
-        <!-- Account Actions (Change Password / Logout) -->
-        <div class="bg-white shadow rounded-lg h-fit">
-            <div class="px-4 py-5 sm:p-6 space-y-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Account Security</h3>
-                
-                <a href="{% url 'account:password_change' %}" class="block w-full text-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Change Password
-                </a>
-
-                <form action="{% url 'account:logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Log Out
-                    </button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
