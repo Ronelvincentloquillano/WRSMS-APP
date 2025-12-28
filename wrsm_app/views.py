@@ -124,6 +124,8 @@ def setup_wizard(request):
 
 
 def index(request):
+    if request.user.is_authenticated:
+        return redirect('wrsm_app:dashboard')
     return render(request, 'index.html')
 
 
