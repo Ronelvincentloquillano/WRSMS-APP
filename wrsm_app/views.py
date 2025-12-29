@@ -2195,91 +2195,130 @@ def update_forecast(request):
 def monthly_financial_report(request):
     station = request.user.profile.station
     customers = models.Customer.objects.filter(station=station)
-    # Group sales by month
-    monthly_sales = (
+
+    # Daily Sales
+    daily_sales = (
         models.SalesItem.objects.filter(sales__station=station)
-        .annotate(month=TruncMonth('sales__created_date__date'))
-        .values('month')
+        .annotate(date=TruncDate('sales__created_date'))
+        .values('date')
         .annotate(total_sales=Sum('total'))
-        .order_by('month')
+        .order_by('date')
     )
 
-    # Group expenses by month
-    monthly_expenses = (
+    # Daily Expenses
+    daily_expenses = (
         models.ExpenseItem.objects.filter(expense__station=station)
-        .annotate(month=TruncMonth('expense__date'))
-        .values('month')
+        .annotate(date=TruncDate('expense__date'))
+        .values('date')
         .annotate(total_expenses=Sum('total_amount'))
-        .order_by('month')
+        .order_by('date')
     )
 
-    monthly_liters = (
+    # Daily Liters
+    daily_liters = (
         models.SalesItem.objects.filter(sales__station=station)
-        .annotate(month=TruncMonth('sales__created_date__date'))
-        .values('month')
+        .annotate(date=TruncDate('sales__created_date'))
+        .values('date')
         .annotate(total_liters=Sum('total_liters'))
-        .order_by('month')
+        .order_by('date')
     )
     
-    monthly_transactions = (
+    # Daily Transactions
+    daily_transactions = (
         models.Sales.objects.filter(station=station)
-        .annotate(month=TruncMonth('created_date__date'))
-        .values('month').annotate(total_transactions=Count('id'))
-        .order_by('month')
+        .annotate(date=TruncDate('created_date'))
+        .values('date')
+        .annotate(total_transactions=Count('id'))
+        .order_by('date')
     )
 
-    # Combine the data by month
     report = {}
-    for sale in monthly_sales:
-        report[sale['month']] = {
-            'month': sale['month'],
-            'total_sales': sale['total_sales'],
-            'total_expenses': 0,
-            'total_liters': 0,
-            'total_transactions': 0
-        }
-    
-    for expense in monthly_expenses:
-        if expense['month'] in report:
-            report[expense['month']]['total_expenses'] = expense['total_expenses']
-        else:
-            report[expense['month']] = {
-                'month': expense['month'],
-                'total_sales': 0,
-                'total_expenses': expense['total_expenses'],
-                'total_liters': 0,
-                'total_transactions': 0
-            }
 
-    for liter in monthly_liters:
-        if liter['month'] in report:
-            report[liter['month']]['total_liters'] = liter['total_liters']
-        else:
-            report[liter['month']] = {
-                'month': liter['month'],
-                'total_sales': 0,
-                'total_expenses': 0,
-                'total_liters': liter['total_liters'],
-                'total_transactions': 0
-            }
-    
-    for transaction in monthly_transactions:
-        if transaction['month'] in report:
-            report[transaction['month']]['total_transactions'] = transaction['total_transactions']
-        else:
-            report[transaction['month']] = {
-                'month': transaction['month'],
+    def get_month_key(d):
+        return d.replace(day=1)
+
+    def init_month(month_date):
+        if month_date not in report:
+            report[month_date] = {
+                'month': month_date,
                 'total_sales': 0,
                 'total_expenses': 0,
                 'total_liters': 0,
-                'total_transactions': transaction['total_transactions']
+                'total_transactions': 0,
+                'daily_data': {}
             }
+    
+    def init_day(month_date, day_date):
+        init_month(month_date)
+        if day_date not in report[month_date]['daily_data']:
+             report[month_date]['daily_data'][day_date] = {
+                'date': day_date,
+                'total_sales': 0,
+                'total_expenses': 0,
+                'total_liters': 0,
+                'total_transactions': 0
+             }
 
-    # Sort by month
-    monthly_report = sorted(report.values(), key=lambda x: x['month'])
+    # Process Sales
+    for item in daily_sales:
+        if item['date']:
+            d = item['date']
+            m = get_month_key(d)
+            init_day(m, d)
+            report[m]['total_sales'] += item['total_sales'] or 0
+            report[m]['daily_data'][d]['total_sales'] += item['total_sales'] or 0
 
-    return render(request, 'wrsm/financial_report.html', {'monthly_report': monthly_report, 
-                                                        'station': station, 'customers': customers})
+    # Process Expenses
+    for item in daily_expenses:
+        if item['date']:
+            d = item['date']
+            m = get_month_key(d)
+            init_day(m, d)
+            report[m]['total_expenses'] += item['total_expenses'] or 0
+            report[m]['daily_data'][d]['total_expenses'] += item['total_expenses'] or 0
+
+    # Process Liters
+    for item in daily_liters:
+        if item['date']:
+            d = item['date']
+            m = get_month_key(d)
+            init_day(m, d)
+            report[m]['total_liters'] += item['total_liters'] or 0
+            report[m]['daily_data'][d]['total_liters'] += item['total_liters'] or 0
+
+    # Process Transactions
+    for item in daily_transactions:
+        if item['date']:
+            d = item['date']
+            m = get_month_key(d)
+            init_day(m, d)
+            report[m]['total_transactions'] += item['total_transactions'] or 0
+            report[m]['daily_data'][d]['total_transactions'] += item['total_transactions'] or 0
+
+    # Sort and structure
+    monthly_report = []
+    for m in sorted(report.keys()):
+        data = report[m]
+        # Sort daily data
+        data['daily_data'] = sorted(data['daily_data'].values(), key=lambda x: x['date'])
+        monthly_report.append(data)
+
+    annual_sales = sum(item['total_sales'] for item in monthly_report)
+    annual_expenses = sum(item['total_expenses'] for item in monthly_report)
+    annual_liters = sum(item['total_liters'] for item in monthly_report)
+    annual_transactions = sum(item['total_transactions'] for item in monthly_report)
+
+    context = {
+        'monthly_report': monthly_report,
+        'station': station,
+        'customers': customers,
+        'annual_sales': annual_sales,
+        'annual_expenses': annual_expenses,
+        'annual_liters': annual_liters,
+        'annual_transactions': annual_transactions,
+    }
+
+    return render(request, 'wrsm/financial_report.html', context)
 
 
 def documentation(request):

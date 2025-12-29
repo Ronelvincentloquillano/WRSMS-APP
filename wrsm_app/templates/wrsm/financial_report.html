@@ -27,28 +27,105 @@
     <tbody>
       {% if monthly_report %}
       {% for report in monthly_report %}
-      <tr>
-        <td class="border px-4 py-2">{{ report.month|date:"F Y" }}</td>
+      <tr class="hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+        <td class="border px-4 py-2">
+            <button type="button" class="flex items-center gap-2 focus:outline-none w-full text-left font-semibold" 
+                    onclick="toggleDaily('daily-{{ forloop.counter }}')">
+                <ion-icon name="chevron-forward-outline" id="icon-daily-{{ forloop.counter }}" class="transition-transform"></ion-icon>
+                {{ report.month|date:"F Y" }}
+            </button>
+        </td>
         <td class="border px-4 py-2">{{ report.total_sales|intcomma }}</td>
-        <td class="border px-4 py-2">{{ report.total_expenses }}</td>
-        <td class="border px-4 py-2">{{ report.total_sales|subtract:report.total_expenses }}</td>
+        <td class="border px-4 py-2">{{ report.total_expenses|intcomma }}</td>
+        <td class="border px-4 py-2">{{ report.total_sales|subtract:report.total_expenses|intcomma }}</td>
         <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">
           {% if report.total_liters %}
           {{ report.total_liters|intcomma }}
           <small style="font-size: small;">
-          ({{ report.total_liters|divide:20 }})
+          ({{ report.total_liters|divide:20|floatformat:0 }})
           </small>
           {% endif %}
         </td>
         <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ report.total_transactions|intcomma }}</td>
       </tr>
+      
+      <!-- Daily Details -->
+      <tr id="daily-{{ forloop.counter }}" class="hidden bg-gray-50 dark:bg-slate-700/50">
+        <td colspan="6" class="p-0 border-b">
+            <div class="p-4 pl-10 overflow-x-auto">
+                <h4 class="text-sm font-semibold mb-2 text-slate-500 uppercase tracking-wider">Daily Breakdown</h4>
+                <table class="w-full text-sm text-left border border-slate-300">
+                    <thead class="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 uppercase text-xs">
+                        <tr>
+                            <th class="px-3 py-2 border-b">Date</th>
+                            <th class="px-3 py-2 border-b">Sales</th>
+                            <th class="px-3 py-2 border-b">Expenses</th>
+                            <th class="px-3 py-2 border-b">Net</th>
+                            <th class="px-3 py-2 border-b">Liters</th>
+                            <th class="px-3 py-2 border-b">Txns</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200">
+                        {% for day in report.daily_data %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700">
+                            <td class="px-3 py-2 font-medium whitespace-nowrap">
+                                {{ day.date|date:"d (D)" }}
+                            </td>
+                            <td class="px-3 py-2">{{ day.total_sales|intcomma }}</td>
+                            <td class="px-3 py-2 text-red-500">{{ day.total_expenses|intcomma }}</td>
+                            <td class="px-3 py-2 font-medium">
+                                {{ day.total_sales|subtract:day.total_expenses|intcomma }}
+                            </td>
+                            <td class="px-3 py-2">
+                                {{ day.total_liters|intcomma }}
+                            </td>
+                            <td class="px-3 py-2">{{ day.total_transactions }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </td>
+      </tr>
       {% endfor %}
+      
+      <tr class="font-bold bg-slate-200 dark:bg-slate-600 border-t-2 border-slate-400">
+        <td class="border px-4 py-2 text-right">Annual Total:</td>
+        <td class="border px-4 py-2">{{ annual_sales|floatformat:2|intcomma }}</td>
+        <td class="border px-4 py-2">{{ annual_expenses|floatformat:2|intcomma }}</td>
+        <td class="border px-4 py-2">{{ annual_sales|subtract:annual_expenses|floatformat:2|intcomma }}</td>
+        <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">
+          {% if annual_liters %}
+            {{ annual_liters|intcomma }}
+            <small style="font-size: small;">
+            ({{ annual_liters|divide:20|floatformat:0 }})
+            </small>
+          {% endif %}
+        </td>
+        <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ annual_transactions|intcomma }}</td>
+      </tr>
       {% else %}
       <tr>
-        <td colspan="6">No data available.</td>
+        <td colspan="6" class="p-4 text-center">No data available.</td>
       </tr>
       {% endif %}
     </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleDaily(id) {
+        const row = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            icon.setAttribute('name', 'chevron-down-outline');
+        } else {
+            row.classList.add('hidden');
+            icon.setAttribute('name', 'chevron-forward-outline');
+        }
+    }
+</script>
 {% endblock %}
