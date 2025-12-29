@@ -1742,11 +1742,13 @@ class SalesListView(LoginRequiredMixin, ListView):
             customers = models.Customer.objects.filter(station=station) or None
         except ValueError:
             pass
-        grand_total = self.get_queryset().aggregate(
-                grand_total=Sum(ExpressionWrapper(F('sales_items__quantity') * F('sales_items__unit_price'), output_field=DecimalField()))
-            )['grand_total'] or 0
+        totals = self.get_queryset().aggregate(
+                grand_total=Sum(ExpressionWrapper(F('sales_items__quantity') * F('sales_items__unit_price'), output_field=DecimalField())),
+                grand_total_qty=Sum('sales_items__quantity')
+            )
 
-        context['grand_total'] = grand_total
+        context['grand_total'] = totals['grand_total'] or 0
+        context['grand_total_qty'] = totals['grand_total_qty'] or 0
         context['station'] = station
         if customers != None:
             context['customers'] = customers.order_by('name')
