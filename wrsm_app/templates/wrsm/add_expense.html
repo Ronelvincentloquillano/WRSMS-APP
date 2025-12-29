@@ -41,9 +41,15 @@
 
           <div id="expense-item-list" class="expense-item-form">
             {% for fs in item_formset %}
-              <div class="form-row w-full bg-blue-200 rounded p-3 mb-3 flex flex-col">
+              <div class="form-row w-full bg-blue-200 rounded p-3 mb-3 flex flex-col relative">
+                {{ fs.id }}
+                <div class="hidden">{{ fs.DELETE }}</div>
                 
-                <div class="flex flex-nowrap gap-2 mb-3 items-center">
+                <button type="button" class="delete-row absolute top-2 right-2 text-red-500 hover:text-red-700" title="Remove item">
+                  <ion-icon name="trash-outline" class="text-xl"></ion-icon>
+                </button>
+                
+                <div class="flex flex-nowrap gap-2 mb-3 items-center pr-8">
                   <div class="flex w-1/2">
                     <span>{{fs.category.errors}}</span>
                     {{ fs.category|add_class:"w-full border rounded px-2 py-1" }}
@@ -139,7 +145,10 @@
     // Add new item row
     $('#add-item').click(function () {
       let formIndex = parseInt($totalForms.val());
-      let $newRow = $('.expense-item-form:first').clone(false);
+      let $newRow = $('.form-row:first').clone(false);
+      
+      // Ensure the cloned row is visible (in case first row was deleted/hidden)
+      $newRow.removeClass('hidden');
 
       $newRow.find('input, select').each(function () {
         let name = $(this).attr('name');
@@ -148,9 +157,14 @@
           let newId = 'id_' + newName;
           $(this).attr({ name: newName, id: newId });
 
-          // Clear non-readonly inputs
-          if (!$(this).is('[readonly]')) {
-            $(this).val('');
+          // Clear values
+          if ($(this).attr('type') === 'checkbox') {
+             $(this).prop('checked', false);
+          } else if ($(this).attr('type') !== 'hidden' && !$(this).is('[readonly]')) {
+             $(this).val('');
+          } else if (name.endsWith('-id')) {
+             // Explicitly clear ID field
+             $(this).val('');
           }
         }
       });
@@ -159,6 +173,17 @@
       $totalForms.val(formIndex + 1);
 
       bindEventsToForm(formIndex);
+    });
+
+    // Delete item row
+    $(document).on('click', '.delete-row', function() {
+        let $row = $(this).closest('.form-row');
+        let $deleteInput = $row.find('input[name$="-DELETE"]');
+        
+        if ($deleteInput.length) {
+            $deleteInput.prop('checked', true);
+            $row.addClass('hidden');
+        }
     });
   });
 </script>

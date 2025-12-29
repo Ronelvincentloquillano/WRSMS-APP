@@ -218,6 +218,9 @@ class CreateExpenseForm(forms.ModelForm):
         model = models.Expense
         fields = '__all__'
         exclude = ['station','recorded_by']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
@@ -234,7 +237,7 @@ class ExpenseItemForm(forms.ModelForm):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
 
-ExpenseItemFormSet = inlineformset_factory(models.Expense, models.ExpenseItem, form=ExpenseItemForm, extra=1, can_delete=False)
+ExpenseItemFormSet = inlineformset_factory(models.Expense, models.ExpenseItem, form=ExpenseItemForm, extra=1, can_delete=True)
 
 
 class CreateCustomerForm(forms.ModelForm):
