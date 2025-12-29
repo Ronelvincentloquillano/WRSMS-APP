@@ -1281,7 +1281,10 @@ def add_order(request):
 
     else:
         form = forms.CreateOrderForm(station=station, 
-                                     initial={'order_type':station_setting.default_order_type})
+                                     initial={
+                                         'order_type':station_setting.default_order_type,
+                                         'created_date': timezone.now()
+                                     })
         
     return render(request,'wrsm/add_order.html',{'form':form,'station':station, 'customers':customers})
 

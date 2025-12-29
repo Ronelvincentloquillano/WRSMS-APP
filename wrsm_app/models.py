@@ -2,6 +2,7 @@ from random import random
 import string
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
 from datetime import timedelta
 
 
@@ -221,7 +222,7 @@ class Order(models.Model):
         ('Cancelled', 'Cancelled'),
     )
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
-    created_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
     order_type = models.ForeignKey(OrderType, null=True, on_delete=models.SET_NULL, default='Delivery')
     quantity = models.IntegerField(null=True, blank=True)

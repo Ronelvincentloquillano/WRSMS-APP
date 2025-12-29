@@ -415,8 +415,9 @@ class CreateOrderForm(forms.ModelForm):
     class Meta:
         model = models.Order
         fields = '__all__'
-        exclude = ['station','created_date','created_by','modified_by']
+        exclude = ['station','created_by','modified_by']
         widgets = {
+            'created_date': forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}),
             'is_paid' : forms.CheckboxInput(attrs={'type':'checkbox'}),
             'payment_type': forms.RadioSelect(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'}),
             'payment_note': forms.Textarea(attrs={'rows': '2','cols':'auto'}),
@@ -425,6 +426,8 @@ class CreateOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
+
+        self.fields['created_date'].required = True
 
         settings = models.StationSetting.objects.get(station=station)
         self.fields['customer'].queryset = models.Customer.objects.filter(station=station.pk).order_by('name')
