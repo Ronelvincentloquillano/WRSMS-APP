@@ -415,7 +415,7 @@ class CreateOrderForm(forms.ModelForm):
     class Meta:
         model = models.Order
         fields = '__all__'
-        exclude = ['station','created_date','created_by',]
+        exclude = ['station','created_date','created_by','modified_by']
         widgets = {
             'is_paid' : forms.CheckboxInput(attrs={'type':'checkbox'}),
             'payment_type': forms.RadioSelect(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'}),
@@ -434,7 +434,7 @@ class CreateOrderForm(forms.ModelForm):
         self.fields['payment_type'].initial = settings.default_payment_type
 
 
-class UpdateOrderForm(forms.ModelForm):
+class UpdateOrderForm(CreateOrderForm):
     class Meta(CreateOrderForm.Meta):
         fields = '__all__'
 

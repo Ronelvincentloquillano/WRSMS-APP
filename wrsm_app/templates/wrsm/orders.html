@@ -49,7 +49,11 @@
       <div class="flex justify-between items-center p-2 bg-gray-500 rounded-t-lg text-sm">
         <div class="flex flex-col text-left text-slate-100">
           <p>
-            Order#: <span class="font-medium text-md">{{ item.pk }}</span> | <span>{{ item.created_date }}</span>
+            Order#: <span class="font-medium text-md">{{ item.pk }}</span>
+            <a href="{% url 'wrsm_app:update-order' pk=item.pk %}" class="ml-1 text-slate-100 hover:text-blue-200">
+              <ion-icon name="create-outline" class="align-middle"></ion-icon>
+            </a>
+            | <span>{{ item.created_date }}</span>
           </p>
           {% if item.customer.brgy %}
           <p class="font-medium text-lg">{{ item.customer.name }} - {{ item.customer.brgy }}</p>

@@ -1011,7 +1011,7 @@ def delivery_map(request):
             'order_type': str(o.order_type),
             'quantity': o.quantity,
             'note': o.note or o.payment_note,
-            'url': reverse('wrsm_app:update-order', args=[o.pk, o.pk]) # Assuming update-order takes pk and order_id based on urls.py
+            'url': reverse('wrsm_app:update-order', args=[o.pk]) # Assuming update-order takes pk based on urls.py
         })
     
     context = {
@@ -1514,6 +1514,11 @@ class OrderUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     
     def get_queryset(self, **kwargs):
         return models.Order.objects.filter(pk=self.kwargs['pk'])
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['station'] = self.request.user.profile.station
+        return kwargs
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
