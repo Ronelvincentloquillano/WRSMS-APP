@@ -2110,7 +2110,9 @@ class ARListView(LoginRequiredMixin, ListView):
         selected_filters = self.request.GET.getlist('filter')
         searched_customer = self.request.GET.get('customer')
         if selected_filters:
-            ar_items = models.AccountsReceivable.objects.filter(status__in=selected_filters)
+            ar_items = models.AccountsReceivable.objects.filter(
+                station=station,
+                status__in=selected_filters)
         if searched_customer:
             ar_items = models.AccountsReceivable.objects.filter(
                 station=station,
