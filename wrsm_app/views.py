@@ -724,7 +724,7 @@ def process_shortcut(request, pk):
                     order_type=shortcut.order_type,
                     is_paid=shortcut.is_paid,
                     note=note,
-                    created_by=request.user.profile
+                    created_by=request.user.profile,
                 )
                 models.SalesItem.objects.create(
                     sales=sales_obj,
@@ -781,6 +781,7 @@ def add_product(request):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
+            instance.created_by = request.user.profile
             instance.save()
             return HttpResponseRedirect(reverse_lazy('wrsm_app:products'))
     else:
@@ -809,6 +810,14 @@ def add_jug_type(request):
 def delete_promo(request, pk):
     promo = models.Promo.objects.get(id=pk)
     models.Promo.objects.get(id=promo.pk).delete()
+    models.AuditLog.objects.create(
+        station = promo.station,
+        action = 'DELETE',
+        target_model = 'Promo',
+        target_object_id = promo.pk,
+        details = "promo code: "+promo.promo_code,
+        performed_by = request.user.profile
+    )
     messages.success(request, 'Promo has been deleted!')
     return HttpResponseRedirect(reverse_lazy('wrsm_app:promos'))
 
@@ -1020,6 +1029,7 @@ def add_customer(request):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
+            instance.created_by = request.user.profile
             instance.save()
             models.Forecast.objects.create(
                 customer=instance,
@@ -1148,6 +1158,14 @@ def add_net_terms(request):
 def delete_size(request, pk):
     size = models.JugSize.objects.get(id=pk)
     models.JugSize.objects.get(id=size.pk).delete()
+    models.AuditLog.objects.create(
+        station = size.station,
+        action = 'DELETE',
+        target_model = 'JugSize',
+        target_object_id = size.pk,
+        details = "size label: "+size.size_label,
+        performed_by = request.user.profile
+    )
     messages.success(request, 'Size has been deleted!')
     return HttpResponseRedirect(reverse_lazy('wrsm_app:sizes'))
 
@@ -1195,6 +1213,7 @@ def add_maintenance(request):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
+            instance.created_by = request.user.profile
             instance.save()
             return HttpResponseRedirect(reverse_lazy('wrsm_app:maintenance'))
     else:
@@ -1276,6 +1295,7 @@ def add_container_inventory(request):
             instance = form.save(commit=False)
             instance.station = station
             instance.created_by = request.user.profile
+            instance.modified_by = request.user.profile
             instance.save()
             return HttpResponseRedirect(reverse_lazy('wrsm_app:container-inventory-list'))
     else:
@@ -1346,6 +1366,15 @@ def add_payment(request, customer_id):
                 instance.customer = customer
                 instance.received_by = request.user.profile
                 instance.save()
+                
+                models.AuditLog.objects.create(
+                    station = request.user.profile.station,
+                    action = 'ADD',
+                    target_model = 'Payment',
+                    target_object_id = instance.pk,
+                    details = "",
+                    performed_by = request.user.profile
+                )
 
                 payment_obj = models.Payment.objects.get(pk=instance.pk)
                 payment_balance = payment_obj.total_paid
@@ -1475,6 +1504,10 @@ class OrderUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = forms.UpdateOrderForm
     success_message = 'successfully updated!'
     template_name = 'wrsm/update_order.html'
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('wrsm_app:orders')
@@ -1654,6 +1687,10 @@ class ProductUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = forms.UpdateProductForm
     success_message = 'successfully updated!'
     template_name = 'wrsm/update_product.html'
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('wrsm_app:products')
@@ -1993,6 +2030,10 @@ class CustomerUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_message = 'successfully updated!'
     template_name = 'wrsm/update_customer.html'
 
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
+
     def get_success_url(self):
         return reverse_lazy('wrsm_app:customer-detail', kwargs={'pk' : self.object.pk})
 
@@ -2014,6 +2055,10 @@ class StationSettingUpdateView(StationSetupRequiredMixin, SuccessMessageMixin, U
     form_class = forms.UpdateStationSettingForm
     success_message = 'Station Settings successfully updated!'
     template_name = 'wrsm/update_station_setting.html'
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('wrsm_app:station-setting-detail')
@@ -2136,6 +2181,10 @@ class ShortcutUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = forms.UpdateShortcutForm
     success_message = 'successfully updated!'
     template_name = 'wrsm/update_shortcut.html'
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('wrsm_app:shortcuts')
