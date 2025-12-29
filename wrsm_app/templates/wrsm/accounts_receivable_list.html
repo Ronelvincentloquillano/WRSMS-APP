@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_tags %}
 
 {% block title %}Account Receivable{% endblock %}
 
@@ -53,9 +54,13 @@
       <tbody>
         {% for ar_item in ar_items %}
         <tr>
-          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ ar_item.sales.id }}</td>
+          <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ ar_item.sales.id|cut:',' }}</td>
           <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.sales.created_date.date }}</td>
-          <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.customer|default:'' }}</td>
+          <td class="border px-4 py-2 md:table-cell lg:table-cell">
+            <a href="{% url 'wrsm_app:customer-detail' pk=ar_item.customer.pk %}" class="text-blue-700">
+              {{ ar_item.customer|default:'' }}
+            </a>
+          </td>
           <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ ar_item.sales.note|default:'' }}</td>
           <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.total_amount }}</td>
           <td class="border px-4 py-2 md:table-cell lg:table-cell">{{ ar_item.status }}</td>
