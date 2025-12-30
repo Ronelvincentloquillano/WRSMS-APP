@@ -94,3 +94,36 @@ class OfflineSyncTest(TestCase):
         item = sales.sales_items.first()
         self.assertEqual(item.quantity, 2)
         self.assertEqual(item.total, 50.00)
+
+    def test_add_order_offline_payload(self):
+        """
+        Test if the server accepts the offline payload for adding orders.
+        """
+        from wrsm_app.models import Order
+        url = reverse('wrsm_app:add-order')
+
+        # Payload mimicking what syncOfflineRequests constructs for add_order_form
+        data = {
+            'customer': self.customer.id,
+            'order_type': self.order_type.id,
+            'quantity': '5',
+            'note': 'Offline Order',
+            'status': 'Pending',
+            'created_date': timezone.now().strftime('%Y-%m-%dT%H:%M'),
+            # 'is_paid': 'on', # Optional
+            # 'payment_type': ... # Optional if paid
+        }
+
+        response = self.client.post(url, data)
+
+        # Expect redirect on success (302)
+        if response.status_code != 302:
+             print("Order Form Errors:", response.context['form'].errors if 'form' in response.context else "No form context")
+
+        self.assertEqual(response.status_code, 302)
+
+        # Verify Order Created
+        order = Order.objects.filter(customer=self.customer, note='Offline Order').first()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.quantity, 5)
+        self.assertEqual(order.status, 'Pending')
