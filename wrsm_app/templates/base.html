@@ -89,7 +89,7 @@
                 {% for s in available_stations %}
                   {% if s.id != station.id %}
                   <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:bg-blue-400">
-                    {{ s.name }}
+                    {% if station.branch %}{{ s.name }} - {{ s.branch }}{% else %}{{ s.name }}{% endif %}
                   </a>
                   {% endif %}
                 {% endfor %}
@@ -276,7 +276,7 @@
             {% for s in available_stations %}
               {% if s.id != station.id %}
               <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:opacity-60">
-                {{ s.name }}
+                {% if station.branch %}{{ s.name }} - {{ s.branch }}{% else %}{{ s.name }}{% endif %}
               </a>
               {% endif %}
             {% endfor %}
