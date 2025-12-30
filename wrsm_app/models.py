@@ -74,7 +74,7 @@ class JugType(models.Model):
     jug_type = models.CharField(max_length=50, null=True, blank=True, default='round')
 
     def __str__(self):
-        return self.jug_type
+        return self.jug_type or "Unnamed Jug Type"
     
     class Meta:
         verbose_name_plural = "Jug Type"
@@ -87,7 +87,7 @@ class JugSize(models.Model):
     unit_price = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return self.size_label
+        return f"{self.size_label} ({self.size_in_liters}L)"
     
     class Meta:
         verbose_name_plural = "Jug Size"
