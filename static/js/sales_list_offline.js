@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Only run if we are on the sales list page
-    const container = document.querySelector('.flex.flex-col.items-center');
+    const container = document.getElementById('sales-list-container');
     if (!container) return;
 
     // Load Master Data (from SW Cache if offline)
