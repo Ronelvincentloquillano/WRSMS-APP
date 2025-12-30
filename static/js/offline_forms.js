@@ -186,23 +186,117 @@ function setupOfflineForm(formId) {
     if (!form) return;
 
     form.addEventListener('submit', async function(e) {
-        if (!navigator.onLine) {
-            e.preventDefault();
-            
-            const formData = new FormData(form);
-            const url = form.action || window.location.href;
-            const method = form.method || 'POST';
+        e.preventDefault(); // Always intercept to handle Network First strategy
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : 'Submit';
 
-            try {
-                await saveOfflineRequest(url, method, formData);
-                showToast('Offline! Record saved locally. Will sync when online.', 'warning');
-                form.reset();
-                // Optional: Redirect to list view or show success state
-            } catch (error) {
-                showToast('Error saving offline record.', 'error');
+        if (submitBtn) {
+             submitBtn.disabled = true;
+             submitBtn.textContent = 'Submitting...';
+             // Visual feedback for user
+             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        const formData = new FormData(form);
+        const url = form.action || window.location.href;
+        const method = form.method || 'POST';
+
+        // Helper to reset button
+        const resetButton = () => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
+        };
+
+        // 1. Check explicit offline status first
+        if (!navigator.onLine) {
+             await handleOfflineSave(url, method, formData, form);
+             resetButton();
+             return;
+        }
+
+        // 2. Try Network
+        try {
+            const response = await fetch(url, {
+                method: method,
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            if (response.ok || response.redirected) {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    // If returns 200 OK (no redirect), it usually means validation errors (re-rendering form)
+                    // or a success message in JSON (if API).
+                    // For Django Template Views, it returns HTML.
+                    const text = await response.text();
+                    
+                    // Naive check: does it look like JSON?
+                    try {
+                        const json = JSON.parse(text);
+                        // If JSON success
+                        if (json.success) {
+                            showToast('Saved successfully!', 'success');
+                            form.reset();
+                            resetButton();
+                            return; 
+                        }
+                    } catch (e) {
+                        // Not JSON, assume HTML
+                    }
+
+                    // Replace document to show validation errors or success page
+                    document.open();
+                    document.write(text);
+                    document.close();
+                }
+            } else {
+                // Server Error (5xx) -> Fallback to Offline
+                if (response.status >= 500) {
+                     console.warn('Server error 5xx, saving offline.');
+                     await handleOfflineSave(url, method, formData, form);
+                } else {
+                     // 400 Bad Request (Validation Error)
+                     // Render the response to show errors
+                     const text = await response.text();
+                     document.open();
+                     document.write(text);
+                     document.close();
+                }
+            }
+        } catch (error) {
+            // 3. Network Error (Fetch failed completely) -> Save Offline
+            console.log('Network request failed, saving offline:', error);
+            await handleOfflineSave(url, method, formData, form);
+        } finally {
+             // In case of document.write, this finally block might not run on the old document, 
+             // but if we are staying on page (offline save), it will.
+             if (document.body.contains(form)) {
+                 resetButton();
+             }
         }
     });
+}
+
+async function handleOfflineSave(url, method, formData, form) {
+    try {
+        await saveOfflineRequest(url, method, formData);
+        showToast('Offline! Record saved locally. Will sync when online.', 'warning');
+        form.reset();
+        
+        // Optional: We might want to redirect the user to the list page 
+        // to mimic success, or stay on page.
+        // For add_sales, staying on page to add another is good.
+    } catch (error) {
+        showToast('Error saving offline record.', 'error');
+        console.error(error);
+    }
 }
 
 // Initialization
