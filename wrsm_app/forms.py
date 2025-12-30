@@ -172,6 +172,9 @@ class CreateMaintenanceForm(forms.ModelForm):
         model = models.Maintenance
         fields = '__all__'
         exclude = ['station','created_by','modified_by','modified_date',]
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
