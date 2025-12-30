@@ -41,7 +41,7 @@
     </a>
   </div>
 
-  <div class="flex flex-col items-center">
+  <div id="orders-list-container" class="flex flex-col items-center">
    
     {% for item in orders %}
     <div class="bg-white text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl">
@@ -154,4 +154,8 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/order_list_offline.js' %}"></script>
 {% endblock %}
