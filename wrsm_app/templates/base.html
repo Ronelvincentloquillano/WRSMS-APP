@@ -80,7 +80,7 @@
             <!-- Station Switcher -->
             <div class="relative group">
               <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-                {{ station.name }}
+                {% if station.branch %}{{ station.name }} - {{ station.branch }}{% else %}{{ station.name }}{% endif %}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -267,7 +267,7 @@
         <!-- Mobile Station Switcher -->
         <div class="relative group mb-5">
           <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-            {{ station.name }}
+            {% if station.branch %}{{ station.name }} - {{ station.branch }}{% else %}{{ station.name }}{% endif %}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
