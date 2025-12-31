@@ -80,7 +80,7 @@
             <!-- Station Switcher -->
             <div class="relative group">
               <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-                {% if station.branch %}{{ station.name }} - {{ station.branch }}{% else %}{{ station.name }}{% endif %}
+                {{ station }}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -89,7 +89,7 @@
                 {% for s in available_stations %}
                   {% if s.id != station.id %}
                   <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:bg-blue-400">
-                    {% if station.branch %}{{ s.name }} - {{ s.branch }}{% else %}{{ s.name }}{% endif %}
+                    {{ s }}
                   </a>
                   {% endif %}
                 {% endfor %}
@@ -267,7 +267,7 @@
         <!-- Mobile Station Switcher -->
         <div class="relative group mb-5">
           <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-            {% if station.branch %}{{ station.name }} - {{ station.branch }}{% else %}{{ station.name }}{% endif %}
+            {{ station }}
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -276,7 +276,7 @@
             {% for s in available_stations %}
               {% if s.id != station.id %}
               <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:opacity-60">
-                {% if station.branch %}{{ s.name }} - {{ s.branch }}{% else %}{{ s.name }}{% endif %}
+                {{ s }}
               </a>
               {% endif %}
             {% endfor %}
@@ -456,7 +456,7 @@
 
   <main class="mx-auto flex-grow min-h-screen">
     <div class="flex justify-center mt-2">
-      <h5 class="text-lg">{{ station }} {% if station.branch %} - {{ station.branch }}{% endif %}</h5>
+      <h5 class="text-lg">{{ station }}</h5>
     </div>
     {% block content %}
     {% endblock %}
