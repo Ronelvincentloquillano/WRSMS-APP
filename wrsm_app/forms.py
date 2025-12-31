@@ -188,7 +188,7 @@ class CreateJugTypeForm(forms.ModelForm):
         exclude = ['station',]
         widgets = {
             'jug_type':forms.TextInput(attrs={
-                'placeholder':'example: slim jug with faucet, or round jug'
+                'placeholder':'example: slim, or round jug'
             }),
         }
     
