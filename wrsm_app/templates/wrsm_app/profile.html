@@ -81,13 +81,24 @@
             </div>
         </div>
 
-        <!-- 2. Account Security (Right Column) -->
+        <!-- 2. Account Details (Right Column) -->
         <div class="bg-white shadow rounded-lg h-full">
             <div class="px-4 py-5 sm:p-6 flex flex-col h-full">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Account Security</h3>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Account Details</h3>
                 
                 <div class="flex-grow space-y-4">
-                    <p class="text-sm text-gray-500">Manage your password and account access.</p>
+                    <div class="p-3 bg-gray-50 rounded-md flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-500">User Role</span>
+                        <span class="text-base font-semibold text-gray-900">
+                            {% for group in user.groups.all %}
+                                {{ group.name }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                No Role Assigned
+                            {% endfor %}
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-gray-500 border-t pt-4">Manage your password and account access.</p>
                     
                     <a href="{% url 'account:password_change' %}" class="block w-full text-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         Change Password
