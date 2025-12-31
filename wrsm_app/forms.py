@@ -68,6 +68,21 @@ class CreateSalesForm(forms.ModelForm):
                 pass
 
 
+class CreateSalesRetroForm(CreateSalesForm):
+    created_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        label="Date"
+    )
+
+    class Meta(CreateSalesForm.Meta):
+        exclude = ['station', 'total_liters']  # removed created_date from exclude
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['created_date'].initial = datetime.now().strftime('%Y-%m-%dT%H:%M')
+
+
+
 class SalesItemForm(forms.ModelForm):
     class Meta:
         model = models.SalesItem

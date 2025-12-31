@@ -352,7 +352,8 @@ def add_sales(request):
                 sales=sales_obj,
                 total_amount=subtotal,
                 status=ar_status,
-                issued_date=today
+                issued_date=today,
+                created_by=user
             )
             if ar_status == "Paid":
                 payment_obj = models.Payment.objects.create(
@@ -468,9 +469,201 @@ def add_sales(request):
     return render(request,'wrsm/add_sales.html',{
         'form':sales_form,
         'item_formset': item_formset,
-        'station':station,
-        'station_settings':station_settings
-        })
+    })
+
+
+@login_required
+def add_sales_retro(request):
+    station = request.user.profile.station
+    station_settings = models.StationSetting.objects.get(station=station)
+    user = models.Profile.objects.get(user=request.user)
+    
+
+    if request.method == 'POST':
+        sales_form = forms.CreateSalesRetroForm(request.POST, station=station)
+        item_formset = forms.SalesItemFormSet(request.POST, form_kwargs={'station': station})
+
+        if sales_form.is_valid() and item_formset.is_valid():
+            instance = sales_form.save(commit=False)
+            instance.station = station
+            instance.created_by = user
+            instance.save()
+
+            # Retroactive date update
+            retro_date = sales_form.cleaned_data['created_date']
+            models.Sales.objects.filter(pk=instance.pk).update(created_date=retro_date)
+            # Update instance to have the new date for further logic if needed (though instance.created_date might be stale)
+            instance.created_date = retro_date 
+
+            items = item_formset.save(commit=False)
+            subtotal = 0
+            for item in items:
+                item.sales = instance
+                item.total = item.unit_price * item.quantity
+                if item.product.product_type == "REFILL":
+                    slim_seal_product = models.Product.objects.filter(
+                        station=station,
+                        product_type='SEAL',
+                        ).exclude(jug_type__jug_type__in=['round'])
+                    round_seal_product = models.Product.objects.filter(
+                        station=station,
+                        product_type='SEAL',
+                        ).exclude(jug_type__jug_type__in=['slim','slim with faucet'])
+                    item.total_liters = item.product.jug_size.size_in_liters * item.quantity
+                    if item.product.jug_size.size_in_liters >= 10 and item.product.jug_type.jug_type in ['slim','slim with faucet']:
+                        for seal in slim_seal_product:
+                            seal.quantity -= item.quantity
+                            seal.save()
+                    if item.product.jug_size.size_in_liters >= 20 and item.product.jug_type.jug_type in ['round']:
+                        for seal in round_seal_product:
+                            seal.quantity -= item.quantity
+                            seal.save()
+                subtotal += item.total
+                item.save()
+            sales_obj = models.Sales.objects.get(pk=instance.pk)
+
+            # no selected customer
+            if instance.customer == None:
+                return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+            ar_status = "Paid" if instance.is_paid else "Pending"
+            ar_obj = models.AccountsReceivable.objects.create(
+                station=instance.station,
+                customer=instance.customer,
+                sales=sales_obj,
+                total_amount=subtotal,
+                status=ar_status,
+                issued_date=today,
+                created_by=user
+            )
+            models.AccountsReceivable.objects.filter(pk=ar_obj.pk).update(issued_date=retro_date)
+
+            if ar_status == "Paid":
+                payment_obj = models.Payment.objects.create(
+                    customer = sales_obj.customer,
+                    total_paid = subtotal,
+                    payment_type = None,
+                    received_by = request.user.profile,
+                )
+                models.Payment.objects.filter(pk=payment_obj.pk).update(payment_date=retro_date)
+
+                models.PaymentItem.objects.create(
+                    payment = payment_obj,
+                    accounts_receivable = ar_obj,
+                    amount_applied = subtotal
+                )
+
+            try:
+                customer_credit = models.CustomerCredit.objects.filter(
+                    customer = sales_obj.customer
+                ).latest('created_date')
+
+                if not customer_credit:
+                    cc_obj = models.CustomerCredit.objects.create(
+                        customer = sales_obj.customer,
+                        amount = 0,
+                        created_by = request.user.profile,
+                        source_of_payment = None
+                    )
+                    models.CustomerCredit.objects.filter(pk=cc_obj.pk).update(created_date=retro_date)
+
+                else:
+                    if customer_credit.amount > 0 and customer_credit.amount > subtotal:
+                        cc_balance = customer_credit.amount - subtotal
+                        sales_obj.is_paid = True
+                        sales_obj.save()
+                        ar_obj.status = "Paid"
+                        ar_obj.save()
+                        payment_obj = models.Payment.objects.create(
+                            customer = sales_obj.customer,
+                            total_paid = subtotal,
+                            payment_type = None,
+                            note = "Full payment using customer credit",
+                            received_by = request.user.profile,
+                        )
+                        models.Payment.objects.filter(pk=payment_obj.pk).update(payment_date=retro_date)
+
+                        models.PaymentItem.objects.create(
+                            payment = payment_obj,
+                            accounts_receivable = ar_obj,
+                            amount_applied = subtotal
+                        )
+                        cc_obj = models.CustomerCredit.objects.create(
+                            customer = sales_obj.customer,
+                            amount = cc_balance,
+                            source_of_payment = payment_obj,
+                            created_by = request.user.profile
+                        )
+                        models.CustomerCredit.objects.filter(pk=cc_obj.pk).update(created_date=retro_date)
+                        messages.success(request, "Payment successfully posted using customer credit!")
+                    elif customer_credit.amount > 0 and customer_credit.amount < subtotal:
+                        cc_balance = 0
+                        sales_amount_balance = subtotal - customer_credit.amount
+                        ar_obj.status = "Partially Paid"
+                        ar_obj.save()
+                        sales_obj.is_paid = False
+                        sales_obj.save()
+                        payment_obj = models.Payment.objects.create(
+                            customer = sales_obj.customer,
+                            total_paid = customer_credit.amount,
+                            payment_type = None,
+                            note = "Partial payment using customer credit",
+                            received_by = request.user.profile,
+                        )
+                        models.Payment.objects.filter(pk=payment_obj.pk).update(payment_date=retro_date)
+
+                        models.PaymentItem.objects.create(
+                            payment = payment_obj,
+                            accounts_receivable = ar_obj,
+                            amount_applied = customer_credit.amount
+                        )
+                        cc_obj = models.CustomerCredit.objects.create(
+                            customer = sales_obj.customer,
+                            amount = cc_balance,
+                            source_of_payment = payment_obj,
+                            created_by = request.user.profile
+                        )
+                        models.CustomerCredit.objects.filter(pk=cc_obj.pk).update(created_date=retro_date)
+                        messages.info(request, F"Payment posted using customer credit balance. Remaining sales amount: {sales_amount_balance}")
+                    elif customer_credit.amount > 0 and customer_credit.amount == subtotal:
+                        ar_obj.status = "Paid"
+                        ar_obj.save()
+                        sales_obj.is_paid = True
+                        sales_obj.save()
+                        payment_obj = models.Payment.objects.create(
+                            customer = sales_obj.customer,
+                            total_paid = subtotal,
+                            payment_type = None,
+                            note = "Full payment using customer credit",
+                            received_by = request.user.profile,
+                        )
+                        models.Payment.objects.filter(pk=payment_obj.pk).update(payment_date=retro_date)
+
+                        models.PaymentItem.objects.create(
+                            payment = payment_obj,
+                            accounts_receivable = ar_obj,
+                            amount_applied = subtotal
+                        )
+                        cc_obj = models.CustomerCredit.objects.create(
+                            customer = sales_obj.customer,
+                            amount = 0,
+                            source_of_payment = payment_obj,
+                            created_by = request.user.profile
+                        )
+                        models.CustomerCredit.objects.filter(pk=cc_obj.pk).update(created_date=retro_date)
+                        messages.success(request, "Payment successfully posted using customer credit!")
+            except models.CustomerCredit.DoesNotExist:
+                pass
+
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+            
+    else:
+        sales_form = forms.CreateSalesRetroForm(station=station)
+        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station})
+        
+    return render(request,'wrsm/add_sales_retro.html',{
+        'form':sales_form,
+        'item_formset': item_formset,
+    })
 
 
 @login_required
