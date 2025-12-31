@@ -261,7 +261,7 @@ class CreateCustomerForm(forms.ModelForm):
         self.fields['discount_code'].queryset = models.Discount.objects.filter(station=station)
 
 
-class UpdateCustomerForm(forms.ModelForm):
+class UpdateCustomerForm(CreateCustomerForm):
     class Meta(CreateCustomerForm.Meta):
         fields = '__all__'
 

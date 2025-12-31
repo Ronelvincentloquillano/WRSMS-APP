@@ -2038,6 +2038,11 @@ class CustomerUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_message = 'successfully updated!'
     template_name = 'wrsm/update_customer.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['station'] = self.request.user.profile.station
+        return kwargs
+
     def form_valid(self, form):
         form.instance.modified_by = self.request.user.profile
         return super().form_valid(form)
