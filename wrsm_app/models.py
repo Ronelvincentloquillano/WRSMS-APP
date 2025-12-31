@@ -27,6 +27,8 @@ class Station(models.Model):
     station_code = models.CharField(max_length=10, unique=True, null=True, blank=True)
 
     def __str__(self):
+        if self.branch:
+            return f"{self.name} [{self.branch}]"
         return self.name
 
 
