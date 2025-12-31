@@ -132,7 +132,15 @@
                     {{ payment_type_form.name|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Sort Number</label>
+                    <label class="block text-sm font-medium mb-1 flex items-center gap-1">
+                        Sort Number
+                        <ion-icon 
+                            name="information-circle-outline" 
+                            class="text-blue-500 cursor-pointer text-lg align-middle" 
+                            title="Click for more info"
+                            onclick="document.getElementById('sortNumberModal').classList.remove('hidden')"
+                        ></ion-icon>
+                    </label>
                     {{ payment_type_form.sort_number|add_class:"w-full rounded border border-gray-300 dark:border-slate-600 dark:bg-slate-800 p-2" }}
                 </div>
                 
@@ -151,6 +159,41 @@
             Finish Setup (Complete all sections)
         </button>
         {% endif %}
+    </div>
+</div>
+
+<!-- Sort Number Info Modal -->
+<div id="sortNumberModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden" onclick="if(event.target === this) this.classList.add('hidden')">
+    <div class="bg-white dark:bg-slate-700 rounded-lg shadow-xl max-w-md w-full mx-4 p-6 relative">
+        <button onclick="document.getElementById('sortNumberModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <div class="flex items-center gap-3 mb-4">
+            <ion-icon name="information-circle" class="text-blue-500 text-3xl"></ion-icon>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Sort Number Guide</h3>
+        </div>
+        
+        <p class="text-gray-600 dark:text-gray-300 mb-4">
+            This determines the display order of your payment type options.
+        </p>
+        
+        <div class="bg-blue-50 dark:bg-slate-800 p-4 rounded-md border border-blue-100 dark:border-slate-600">
+            <p class="font-medium text-gray-800 dark:text-gray-200 mb-2">Example:</p>
+            <ul class="list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <li>Sort Number <strong>1</strong> will appear <strong>first</strong>.</li>
+                <li>Sort Number <strong>2</strong> will appear <strong>second</strong>.</li>
+                <li>And so on...</li>
+            </ul>
+        </div>
+
+        <div class="mt-6 text-right">
+            <button onclick="document.getElementById('sortNumberModal').classList.add('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                Got it
+            </button>
+        </div>
     </div>
 </div>
 
