@@ -733,6 +733,25 @@ def process_shortcut(request, pk):
                     unit_price=shortcut.unit_price,
                     total=quantity * shortcut.unit_price
                 )
+                
+                if shortcut.product.product_type == "REFILL":
+                    slim_seal_product = models.Product.objects.filter(
+                        station=station,
+                        product_type='SEAL',
+                        ).exclude(jug_type__jug_type__in=['round'])
+                    round_seal_product = models.Product.objects.filter(
+                        station=station,
+                        product_type='SEAL',
+                        ).exclude(jug_type__jug_type__in=['slim','slim with faucet'])
+                    if shortcut.product.jug_size.size_in_liters >= 10 and shortcut.product.jug_type.jug_type in ['slim','slim with faucet']:
+                        for seal in slim_seal_product:
+                            seal.quantity -= quantity
+                            seal.save()
+                    if shortcut.product.jug_size.size_in_liters >= 20 and shortcut.product.jug_type.jug_type in ['round']:
+                        for seal in round_seal_product:
+                            seal.quantity -= quantity
+                            seal.save()
+
                 messages.success(request, 'Added successfully!')
                 return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
         else:
@@ -753,6 +772,25 @@ def process_shortcut(request, pk):
             unit_price=shortcut.unit_price,
             total=shortcut.quantity * shortcut.unit_price
         )
+
+        if shortcut.product.product_type == "REFILL":
+            slim_seal_product = models.Product.objects.filter(
+                station=station,
+                product_type='SEAL',
+                ).exclude(jug_type__jug_type__in=['round'])
+            round_seal_product = models.Product.objects.filter(
+                station=station,
+                product_type='SEAL',
+                ).exclude(jug_type__jug_type__in=['slim','slim with faucet'])
+            if shortcut.product.jug_size.size_in_liters >= 10 and shortcut.product.jug_type.jug_type in ['slim','slim with faucet']:
+                for seal in slim_seal_product:
+                    seal.quantity -= shortcut.quantity
+                    seal.save()
+            if shortcut.product.jug_size.size_in_liters >= 20 and shortcut.product.jug_type.jug_type in ['round']:
+                for seal in round_seal_product:
+                    seal.quantity -= shortcut.quantity
+                    seal.save()
+
         messages.success(request, 'Added successfully!')
         return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
 
