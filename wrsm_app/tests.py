@@ -76,6 +76,16 @@ class UserManagementTest(TestCase):
         from django.contrib.auth.models import Group
         self.group = Group.objects.create(name='Operator')
         
+        # Create a valid subscription
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        StationSubscription.objects.create(
+            station=self.station,
+            plan=self.plan,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timezone.timedelta(days=30),
+            is_active=True
+        )
+        
         self.client.login(username='owner', password='password')
 
     def test_add_station_user(self):

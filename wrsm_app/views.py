@@ -2582,6 +2582,7 @@ class StationUserCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView)
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['station'] = self.request.user.profile.station
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):
@@ -2617,6 +2618,7 @@ class StationUserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView)
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['station'] = self.request.user.profile.station
+        kwargs['user'] = self.request.user
         return kwargs
 
     def form_valid(self, form):
