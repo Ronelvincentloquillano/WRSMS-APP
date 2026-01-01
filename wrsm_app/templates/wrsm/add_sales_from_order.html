@@ -81,7 +81,11 @@
       </div>
       {% endif %}
 
-      <form method="post" autocomplete="off" id="add_sales_form">
+      <form method="post" autocomplete="off" id="add_sales_form"
+        data-url-customer="{% url 'wrsm_app:get_customer_data' %}"
+        data-url-ordertype="{% url 'wrsm_app:get_ordertype_data' %}"
+        data-url-product="{% url 'wrsm_app:get_product_data' %}"
+      >
         {% csrf_token %}
 
         <div class="mt-3 flex">

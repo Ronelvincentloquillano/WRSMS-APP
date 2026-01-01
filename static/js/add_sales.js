@@ -4,8 +4,14 @@ $(document).ready(function () {
     let orderTypeData = {};
 
     // Selectors
+    const $form = $("#add_sales_form");
     const $customerSelect = $("#id_customer");
     const $ordertypeSelect = $("#id_order_type");
+    
+    // AJAX URLs
+    const urlCustomer = $form.data("url-customer");
+    const urlOrdertype = $form.data("url-ordertype");
+    const urlProduct = $form.data("url-product");
     
     // Customer Info UI
     const $promo_code = $("#id_promo_code");
@@ -100,7 +106,7 @@ $(document).ready(function () {
       clearCustomerInfo();
 
       if (customerId) {
-        $.getJSON(`/ajax/get-customer-data/?id_customer=${customerId}`)
+        $.getJSON(`${urlCustomer}?id_customer=${customerId}`)
           .done(function (data) {
             $orderTypeDisplay.text(data.default_ot || '');
             
@@ -137,7 +143,7 @@ $(document).ready(function () {
       const ordertypeID = $(this).val();
 
       if (ordertypeID) {
-        $.getJSON(`/ajax/get-ordertype-data/?id_order_type=${ordertypeID}`)
+        $.getJSON(`${urlOrdertype}?id_order_type=${ordertypeID}`)
           .done(function (data) {
             orderTypeData = data;
             $otUnitPriceDisplay.text(data.ot_unit_price || '');
@@ -175,7 +181,7 @@ $(document).ready(function () {
         $qty.val(''); // Clear quantity
         
         if (productID) {
-          $.getJSON(`/ajax/get-product-data/?id_product=${productID}`)
+          $.getJSON(`${urlProduct}?id_product=${productID}`)
             .done(function (data) {
               // Attach data to element for global access
               $product.data('product-info', data);
@@ -267,7 +273,7 @@ $(document).ready(function () {
         const customerId = fixedCustomerDiv.data("customer-id");
         
         if (customerId) {
-            $.getJSON(`/ajax/get-customer-data/?id_customer=${customerId}`)
+            $.getJSON(`${urlCustomer}?id_customer=${customerId}`)
               .done(function (data) {
                 $orderTypeDisplay.text(data.default_ot || '');
                 customerData = data;
