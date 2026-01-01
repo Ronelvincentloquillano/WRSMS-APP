@@ -247,7 +247,7 @@ class CreateExpenseForm(forms.ModelForm):
 
 class ExpenseItemForm(forms.ModelForm):
     class Meta:
-        model = models.SalesItem
+        model = models.ExpenseItem
         fields = '__all__'
         exclude = ['expense',]
     

@@ -957,6 +957,7 @@ def process_shortcut(request, pk):
             station=station,
             order_type=shortcut.order_type,
             is_paid=shortcut.is_paid,
+            created_by=request.user.profile,
         )
         models.SalesItem.objects.create(
             sales=sales_obj,
@@ -1473,8 +1474,81 @@ def add_expense(request):
         form = forms.CreateExpenseForm(station=station, initial={'date':datetime.now().strftime('%Y-%m-%d')})
         item_formset = forms.ExpenseItemFormSet()
         
-    return render(request,'wrsm/add_expense.html',{'form':form, 'item_formset':item_formset,
-                                                   'station':station})
+    return render(request, 'wrsm/add_expense.html', {
+        'form': form,
+        'item_formset': item_formset
+    })
+
+
+@login_required
+def update_expense(request, pk):
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:expenses')
+
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+    
+    if request.user.is_superuser:
+        expense = get_object_or_404(models.Expense, pk=pk)
+    else:
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:expenses')
+        expense = get_object_or_404(models.Expense, pk=pk, station=station)
+
+    # Use extra=0 for updates
+    ExpenseItemUpdateFormSet = inlineformset_factory(
+        models.Expense, 
+        models.ExpenseItem, 
+        form=forms.ExpenseItemForm, 
+        extra=0, 
+        can_delete=True
+    )
+
+    if request.method == 'POST':
+        form = forms.CreateExpenseForm(request.POST, instance=expense, station=expense.station)
+        item_formset = ExpenseItemUpdateFormSet(request.POST, instance=expense, form_kwargs={'station': expense.station})
+        
+        if form.is_valid() and item_formset.is_valid():
+            form.save()
+            item_formset.save()
+            messages.success(request, 'Expense updated successfully.')
+            return redirect('wrsm_app:expenses')
+    else:
+        form = forms.CreateExpenseForm(instance=expense, station=expense.station)
+        item_formset = ExpenseItemUpdateFormSet(instance=expense, form_kwargs={'station': expense.station})
+
+    return render(request, 'wrsm/add_expense.html', {
+        'form': form,
+        'item_formset': item_formset,
+        'is_update': True
+    })
+
+
+@login_required
+def delete_expense(request, pk):
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:expenses')
+    
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+
+    if request.user.is_superuser:
+        expense = get_object_or_404(models.Expense, pk=pk)
+    else:
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:expenses')
+        expense = get_object_or_404(models.Expense, pk=pk, station=station)
+
+    if request.method == 'POST':
+        expense.delete()
+        messages.success(request, 'Expense deleted successfully.')
+        return redirect('wrsm_app:expenses')
+    
+    return render(request, 'wrsm/expense_confirm_delete.html', {'object': expense})
 
 
 @login_required
