@@ -1137,6 +1137,7 @@ def get_ordertype_data(request):
             'ot_unit_price': order_type.unit_price if order_type else None,
             'order_type': order_type.type if order_type else None,
             'sys_default_ot': station_setting.default_order_type.type if station_setting else None,
+            'default_delivery_rate': station_setting.default_delivery_rate if station_setting else None,
         }
         return JsonResponse(data)
     except models.OrderType.DoesNotExist:

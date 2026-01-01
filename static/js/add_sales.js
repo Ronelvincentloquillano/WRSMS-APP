@@ -1,16 +1,22 @@
 $(document).ready(function () {
-    // Customer selection
+    // Global State
+    let customerData = {};
+    let orderTypeData = {};
+
+    // Selectors
     const $customerSelect = $("#id_customer");
+    const $ordertypeSelect = $("#id_order_type");
+    
+    // Customer Info UI
     const $promo_code = $("#id_promo_code");
     const $promo_description = $("#id_promo_description");
     const $discount_code = $("#id_discount_code");
     const $discount_description = $("#id_discount_description");
     const $discount_rate = $("#id_discount_rate");
     const $customer_info = $("#customer-info");
-    const $unit_price = $("#id_unit_price");
-    const $id_order_type = $("#id_order_type");
-    const $default_order_type = $("#id_default_order_type");
-    const $station_default_order_type = $("#id_station_default_order_type");
+    const $orderTypeDisplay = $("#order_type");
+    const $otUnitPriceDisplay = $("#ot_unit_price");
+    const $sysDefaultOtDisplay = $("#sys_default_ot");
 
     function clearCustomerInfo() {
       $promo_code.text('');
@@ -18,80 +24,142 @@ $(document).ready(function () {
       $discount_code.text('');
       $discount_description.text('');
       $discount_rate.text('');
-      $unit_price.text('');
+      customerData = {};
     }
 
+    function recalculateRowPrice(i) {
+        const $productSelect = $(`#id_sales_items-${i}-product`);
+        const $unitPriceInput = $(`#id_sales_items-${i}-unit_price`);
+        const $qtyInput = $(`#id_sales_items-${i}-quantity`);
+        const $totalInput = $(`#id_sales_items-${i}-total`);
+        const $freeButton = $(`.free-button[data-id="free${i}"]`);
+
+        // Check if free
+        if ($freeButton.hasClass('bg-yellow-200')) {
+            $unitPriceInput.val(0);
+            let qty = parseFloat($qtyInput.val()) || 0;
+            $totalInput.val(0);
+            return;
+        }
+
+        const productData = $productSelect.data('product-info'); 
+        if (!productData) return;
+
+        let finalPrice = parseFloat(productData.unit_price) || 0;
+
+        // Logic Scope: 20L Jug
+        const is20LRefill = (productData.jug_size_in_liters === 20.0 && productData.product_type === 'REFILL');
+        
+        if (is20LRefill) {
+            const orderTypeName = (orderTypeData.order_type || "").toLowerCase();
+            const hasCustomer = !!$customerSelect.val();
+            const defaultDeliveryRate = parseFloat(orderTypeData.default_delivery_rate) || 0;
+            const otUnitPrice = parseFloat(orderTypeData.ot_unit_price) || 0;
+            const customerDiscount = parseFloat(customerData.discount_rate) || 0;
+
+            if (orderTypeName === 'delivery') {
+                if (hasCustomer) {
+                    // If customer selected + delivery
+                    if (customerDiscount > 0) {
+                        finalPrice = customerDiscount;
+                    } else {
+                        // Empty discount code -> Station Default Delivery Rate
+                        finalPrice = defaultDeliveryRate;
+                    }
+                } else {
+                    // No customer + delivery -> Station Default Delivery Rate
+                    finalPrice = defaultDeliveryRate;
+                }
+            } else if (orderTypeName === 'pickup') {
+                if (!hasCustomer) {
+                    // No customer + pickup -> Station Default Pickup Rate (Assuming OT Unit Price)
+                    finalPrice = otUnitPrice;
+                }
+                // If customer selected + pickup, fallback to default product price or specific logic?
+                // Prompt didn't specify. Defaulting to product base price (initial finalPrice).
+            }
+        }
+
+        $unitPriceInput.val(finalPrice);
+        
+        // Recalc total
+        let qty = parseFloat($qtyInput.val()) || 0;
+        $totalInput.val((qty * finalPrice).toFixed(2));
+    }
+
+    function recalculateAllRows() {
+        let totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val());
+        for (let i = 0; i < totalForms; i++) {
+            recalculateRowPrice(i);
+        }
+    }
+
+    // Customer Change Handler
     $customerSelect.on("change", function () {
       const customerId = $(this).val();
-
       clearCustomerInfo();
 
       if (customerId) {
         $.getJSON(`/ajax/get-customer-data/?id_customer=${customerId}`)
           .done(function (data) {
-            $("#order_type").text(data.default_ot || '');
-            if (data.error) {
-              clearCustomerInfo();
-              $customer_info.hide();
-            } else if (data.discount_rate != null) {
+            $orderTypeDisplay.text(data.default_ot || '');
+            
+            // Store Data
+            customerData = data;
+
+            if (data.discount_rate != null) {
               $customer_info.show();
               $promo_code.text(data.promo_code || '');
               $promo_description.text(data.promo_description || '');
               $discount_code.text(data.discount_code || '');
               $discount_description.text(data.discount_description || '');
               $discount_rate.text(data.discount_rate || '');
-              $id_order_type.val(data.default_order_type);
+              
+              // Update Order Type dropdown if customer has default
+              if (data.default_order_type) {
+                  $ordertypeSelect.val(data.default_order_type).trigger('change');
+              }
             } else {
-              clearCustomerInfo();
               $customer_info.hide();
-              console.log(data.promo_code);
             }
-          })
-          .fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("Error fetching customer data:", errorThrown);
-            clearCustomerInfo();
-            $customer_info.hide();
+            recalculateAllRows();
           });
       } else {
-        clearCustomerInfo();
         $customer_info.hide();
-        $id_order_type.val(data.station_default_order_type);
+        // Reset order type to station default if available in previous data? 
+        // Or just let it be.
+        recalculateAllRows();
       }
     });
 
-    // Order type selection
-    const $ordertypeSelect = $("#id_order_type");
-    const $ot_unit_price = $("#ot_unit_price");
-    const $sys_default_ot = $("#sys_default_ot");
-    const $orderType = $("#order_type");
-
+    // Order Type Change Handler
     $ordertypeSelect.on("change", function () {
       const ordertypeID = $(this).val();
 
       if (ordertypeID) {
         $.getJSON(`/ajax/get-ordertype-data/?id_order_type=${ordertypeID}`)
           .done(function (data) {
-            $ot_unit_price.text(data.ot_unit_price || '');
-            $unit_price.val(data.ot_unit_price || '');
-            $sys_default_ot.text(data.sys_default_ot || '');
-            $orderType.text(data.order_type || '');
-          })
-          .fail(function (jqXHR, textStatus, errorThrown) {
-            console.error("Error fetching ordertype data:", errorThrown);
+            orderTypeData = data;
+            $otUnitPriceDisplay.text(data.ot_unit_price || '');
+            $sysDefaultOtDisplay.text(data.sys_default_ot || '');
+            $orderTypeDisplay.text(data.order_type || '');
+            
+            recalculateAllRows();
           });
       } else {
-        $ot_unit_price.text('');
-        $sys_default_ot.text('');
-        console.log("else");
+        orderTypeData = {};
+        $otUnitPriceDisplay.text('');
+        $sysDefaultOtDisplay.text('');
+        recalculateAllRows();
       }
     });
-  });
 
-  $(document).ready(function () {
+    // Formset Handling
     function bindEventsToForm(i) {
       let $qty = $(`#id_sales_items-${i}-quantity`);
       let $unit_price = $(`#id_sales_items-${i}-unit_price`);
       let $total = $(`#id_sales_items-${i}-total`);
+      let $product = $(`#id_sales_items-${i}-product`);
 
       function calculateTotal() {
         var qty = parseFloat($qty.val()) || 0;
@@ -102,58 +170,44 @@ $(document).ready(function () {
       $qty.on('input', calculateTotal);
       $unit_price.on('input', calculateTotal);
 
-      // Product selection
-      const $product = $(`#id_sales_items-${i}-product`);
       $product.on("change", function () {
         const productID = $(this).val();
-        const discountRate = $('#id_discount_rate');
-        const otUnitPrice = $("#ot_unit_price").text();
-        const orderType = $("#order_type").text();
-        const sysOrderType = $("#sys_default_ot").text();
-
-        // Clear quantity whenever product changes
-        $qty.val('');
-        calculateTotal();
-
+        $qty.val(''); // Clear quantity
+        
         if (productID) {
           $.getJSON(`/ajax/get-product-data/?id_product=${productID}`)
             .done(function (data) {
-              // Apply discount logic for 20 liters REFILL products
-              if (discountRate.text() !== '' && orderType !== sysOrderType && data.jug_size_in_liters === 20 && data.product_type === 'REFILL') {
-                $unit_price.val(discountRate.text());
-              } else {
-                $unit_price.val(data.unit_price || '');
-              }
-            })
-            .fail(function (jqXHR, textStatus, errorThrown) {
-              console.error("Error fetching product data:", errorThrown);
+              // Attach data to element for global access
+              $product.data('product-info', data);
+              recalculateRowPrice(i);
             });
         } else {
+          $product.removeData('product-info');
           $unit_price.val('');
+          calculateTotal();
         }
       });
 
       let $freeButton = $(`.free-button[data-id="free${i}"]`);
-      $freeButton.on('click', function () {
+      $freeButton.off('click').on('click', function () {
         $(this).toggleClass('bg-yellow-200');
-        if (!$(this).hasClass('bg-yellow-200')) {
-          $(`#id_sales_items-${i}-product`).trigger('change');
+        const isFree = $(this).hasClass('bg-yellow-200');
+        
+        if (isFree) {
+            $qty.val(1);
+            $unit_price.val(0);
+            $unit_price.attr("readonly", true);
+            $total.attr("readonly", true);
         } else {
-          $qty.val(1);
+            $unit_price.attr("readonly", false);
+            $total.attr("readonly", false);
+            recalculateRowPrice(i); // Revert to logic price
         }
-        $unit_price.val(0);
         calculateTotal();
-        if (!$(this).hasClass('bg-yellow-200')) {
-          $(`#id_sales_items-${i}-unit_price`).attr("readonly",false);
-          $(`#id_sales_items-${i}-total`).attr("readonly",false);
-        } else {
-          $(`#id_sales_items-${i}-unit_price`).attr("readonly",true);
-          $(`#id_sales_items-${i}-total`).attr("readonly",true);
-        }
       });
 
       // Remove button handler
-      let $row = $(`#id_sales_items-${i}-product`).closest('.form-row');
+      let $row = $product.closest('.form-row');
       let $deleteBtn = $row.find('.remove-form');
       $deleteBtn.off('click').on('click', function() {
            let $deleteInput = $row.find('input[name$="-DELETE"]');
@@ -162,52 +216,47 @@ $(document).ready(function () {
            }
            $row.hide();
       });
-
     }
 
-    // Initial bind
+    // Initial Bind
     let totalFormsInput = $('#id_sales_items-TOTAL_FORMS');
     let initialForms = parseInt(totalFormsInput.val());
     for (let i = 0; i < initialForms; i++) {
       bindEventsToForm(i);
     }
 
-    // Add new form on button click
+    // Add Form
     $('#add-form').click(function () {
       let formCount = parseInt(totalFormsInput.val());
       let $lastForm = $('#formset-container .form-row:last');
-      let $newForm = $lastForm.clone(false); // clone without events
+      let $newForm = $lastForm.clone(false);
       
-      $newForm.show(); // Ensure visibility if last form was hidden
+      $newForm.show();
 
-      // Update all input fields
       $newForm.find(':input').each(function () {
         let name = $(this).attr('name');
         if (name) {
           let newName = name.replace(/-\d+-/, `-${formCount}-`);
           let newId = 'id_' + newName;
           $(this).attr({ 'name': newName, 'id': newId }).val('');
-          if ($(this).attr('type') === 'checkbox') {
-             $(this).prop('checked', false);
-          }
+          if ($(this).attr('type') === 'checkbox') $(this).prop('checked', false);
         }
       });
 
-      // Update any labels (important for accessibility)
       $newForm.find('label').each(function () {
         let newFor = $(this).attr('for')?.replace(/-\d+-/, `-${formCount}-`);
         if (newFor) $(this).attr('for', newFor);
       });
 
-      // Update Free button data-id
       $newForm.find('.free-button').each(function () {
-        $(this).attr('data-id', `free${formCount}`);
+        $(this).attr('data-id', `free${formCount}`).removeClass('bg-yellow-200');
       });
+      
+      $newForm.find('[readonly]').attr('readonly', false); // Reset readonly
 
       $('#formset-container').append($newForm);
       totalFormsInput.val(formCount + 1);
 
-      bindEventsToForm(formCount); // rebind calc for new form
+      bindEventsToForm(formCount);
     });
-
-  });
+});
