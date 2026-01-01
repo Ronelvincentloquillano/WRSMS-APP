@@ -1,9 +1,11 @@
 from .models import StationSetting
+from .utils import is_transaction_limit_reached
 
 def global_context(request):
     has_station_settings = False
     settings_complete = False
     station = {'name':'Admin Water Refilling Station','id':0}
+    limit_reached = False
 
     if not request.user.is_authenticated:
         return {
@@ -15,6 +17,7 @@ def global_context(request):
 
     if profile:
         station = profile.station
+        limit_reached = is_transaction_limit_reached(station)
         try:
             station_settings = StationSetting.objects.get(station=station)
             has_station_settings = True
@@ -41,4 +44,5 @@ def global_context(request):
         'has_station_settings': has_station_settings,
         'settings_complete': settings_complete,
         'available_stations': available_stations,
+        'limit_reached': limit_reached,
     }

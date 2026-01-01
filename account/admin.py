@@ -3,7 +3,7 @@ from .models import SubscriptionPlan, StationSubscription, PendingRegistration
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'transaction_limit')
+    list_display = ('name', 'price_monthly', 'price_annual', 'transaction_limit')
 
 @admin.register(StationSubscription)
 class StationSubscriptionAdmin(admin.ModelAdmin):

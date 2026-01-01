@@ -35,24 +35,34 @@
         </div>
 
         <div class="mt-8 space-y-6">
-            <form action="{% url 'wrsm_app:initiate_payment' %}" method="POST">
+            <form action="{% url 'wrsm_app:initiate_payment' %}" method="POST" id="subscriptionForm">
                 {% csrf_token %}
+                <input type="hidden" name="billing_cycle" id="billing_cycle" value="monthly">
                 
+                <!-- Billing Cycle Toggle -->
+                <div class="flex justify-center mb-6">
+                    <div class="bg-gray-100 p-1 rounded-lg flex items-center relative">
+                        <button type="button" id="btnMonthly" class="w-24 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 transition-all duration-200">Monthly</button>
+                        <button type="button" id="btnAnnual" class="w-24 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all duration-200">Annual</button>
+                    </div>
+                </div>
+
                 <div class="space-y-4 mb-6">
                     <label class="block text-sm font-medium text-gray-700">Select a Subscription Plan:</label>
                     {% for plan in plans %}
-                    <div class="relative flex items-center p-4 border rounded-lg hover:border-blue-500 cursor-pointer transition-colors duration-200">
+                    <div class="relative flex items-center p-4 border rounded-lg hover:border-blue-500 cursor-pointer transition-colors duration-200" onclick="document.getElementById('plan_{{ plan.id }}').click()">
                         <div class="flex items-center h-5">
                             <input id="plan_{{ plan.id }}" name="plan_id" type="radio" value="{{ plan.id }}" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" {% if forloop.first %}checked{% endif %}>
                         </div>
                         <div class="ml-3 text-sm">
-                            <label for="plan_{{ plan.id }}" class="font-medium text-gray-700">
+                            <label for="plan_{{ plan.id }}" class="font-medium text-gray-700 cursor-pointer">
                                 {{ plan.name }}
                                 <span class="block text-gray-500 text-xs mt-1">{{ plan.description }}</span>
                             </label>
                         </div>
                         <div class="ml-auto font-bold text-gray-900">
-                            ₱{{ plan.price }}
+                            <span class="price-display" data-monthly="{{ plan.price_monthly }}" data-annual="{{ plan.price_annual }}">₱{{ plan.price_monthly }}</span>
+                            <span class="text-xs font-normal text-gray-500 cycle-label">/mo</span>
                         </div>
                     </div>
                     {% empty %}
@@ -78,4 +88,38 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnMonthly = document.getElementById('btnMonthly');
+        const btnAnnual = document.getElementById('btnAnnual');
+        const billingInput = document.getElementById('billing_cycle');
+        const prices = document.querySelectorAll('.price-display');
+        const cycleLabels = document.querySelectorAll('.cycle-label');
+
+        function setCycle(cycle) {
+            billingInput.value = cycle;
+            if (cycle === 'monthly') {
+                btnMonthly.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                btnMonthly.classList.remove('text-gray-500');
+                btnAnnual.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                btnAnnual.classList.add('text-gray-500');
+                
+                prices.forEach(el => el.textContent = '₱' + el.dataset.monthly);
+                cycleLabels.forEach(el => el.textContent = '/mo');
+            } else {
+                btnAnnual.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                btnAnnual.classList.remove('text-gray-500');
+                btnMonthly.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                btnMonthly.classList.add('text-gray-500');
+                
+                prices.forEach(el => el.textContent = '₱' + el.dataset.annual);
+                cycleLabels.forEach(el => el.textContent = '/yr');
+            }
+        }
+
+        btnMonthly.addEventListener('click', () => setCycle('monthly'));
+        btnAnnual.addEventListener('click', () => setCycle('annual'));
+    });
+</script>
 {% endblock %}

@@ -3,14 +3,10 @@ from django.utils import timezone
 from wrsm_app.models import Station
 
 class SubscriptionPlan(models.Model):
-    PLAN_CHOICES = (
-        ('Sediment', 'Sediment'),
-        ('Carbon', 'Carbon'),
-        ('RO', 'RO'),
-    )
-    name = models.CharField(max_length=50, choices=PLAN_CHOICES, unique=True)
+    name = models.CharField(max_length=50, unique=True)
     transaction_limit = models.PositiveIntegerField(null=True, blank=True, help_text="Null for unlimited")
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price_monthly = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    price_annual = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     description = models.TextField(blank=True)
 
     def __str__(self):

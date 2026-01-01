@@ -23,6 +23,7 @@ from django.forms import inlineformset_factory
 from . import models
 from . import forms
 from account.models import StationSubscription, SubscriptionPlan
+from .utils import check_transaction_limit, is_transaction_limit_reached
 
 # global variables
 today = timezone.now()
@@ -307,6 +308,11 @@ def add_sales(request):
     
 
     if request.method == 'POST':
+        if is_transaction_limit_reached(station):
+            check_transaction_limit(station, request)
+            messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+
         sales_form = forms.CreateSalesForm(request.POST, station=station)
         item_formset = forms.SalesItemFormSet(request.POST, form_kwargs={'station': station})
 
@@ -460,11 +466,15 @@ def add_sales(request):
             except models.CustomerCredit.DoesNotExist:
                 pass
 
+            # Check transaction limit
+            check_transaction_limit(station, request)
+
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
             
     else:
-        sales_form = forms.CreateSalesForm(station=station)
-        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station})
+        limit_reached = is_transaction_limit_reached(station)
+        sales_form = forms.CreateSalesForm(station=station, is_disabled=limit_reached)
+        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
         
     return render(request,'wrsm/add_sales.html',{
         'form':sales_form,
@@ -480,6 +490,11 @@ def add_sales_retro(request):
     
 
     if request.method == 'POST':
+        if is_transaction_limit_reached(station):
+            check_transaction_limit(station, request)
+            messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+
         sales_form = forms.CreateSalesRetroForm(request.POST, station=station)
         item_formset = forms.SalesItemFormSet(request.POST, form_kwargs={'station': station})
 
@@ -654,11 +669,15 @@ def add_sales_retro(request):
             except models.CustomerCredit.DoesNotExist:
                 pass
 
+            # Check transaction limit
+            check_transaction_limit(station, request)
+
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
             
     else:
-        sales_form = forms.CreateSalesRetroForm(station=station)
-        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station})
+        limit_reached = is_transaction_limit_reached(station)
+        sales_form = forms.CreateSalesRetroForm(station=station, is_disabled=limit_reached)
+        item_formset = forms.SalesItemFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
         
     return render(request,'wrsm/add_sales_retro.html',{
         'form':sales_form,
@@ -675,6 +694,11 @@ def add_sales_from_order(request, order_id):
     customer = models.Customer.objects.get(id=order_obj.customer.id) if order_obj.customer else None
 
     if request.method == 'POST':
+        if is_transaction_limit_reached(station):
+            check_transaction_limit(station, request)
+            messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
+
         sales_form = forms.CreateSalesFromOrderForm(request.POST, station=station)
         item_formset = forms.SalesItemFromOrderFormSet(request.POST, form_kwargs={'station': station})
         if sales_form.is_valid() and item_formset.is_valid():
@@ -856,6 +880,9 @@ def add_sales_from_order(request, order_id):
             # Update order status to completed
             order_obj.status = "Completed"
             order_obj.save()
+
+            check_transaction_limit(station, request)
+
             messages.success(request, "Order successfully completed and added to sales list.")
             return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
 
@@ -867,12 +894,13 @@ def add_sales_from_order(request, order_id):
                 note = f"Order#: {order_obj.id} - {order_obj.note}" or f"Order#: {order_obj.id} - {order_obj.payment_note}" or f"Order#: {order_obj.id}"
             else:
                 note = ""
-        sales_form = forms.CreateSalesFromOrderForm(station=station, initial={
+        limit_reached = is_transaction_limit_reached(station)
+        sales_form = forms.CreateSalesFromOrderForm(station=station, is_disabled=limit_reached, initial={
             'order_type': order_obj.order_type,
             'note': note,
             'is_paid': order_obj.is_paid,
         })
-        item_formset = forms.SalesItemFromOrderFormSet(form_kwargs={'station': station})
+        item_formset = forms.SalesItemFromOrderFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
 
     return render(request,'wrsm/add_sales_from_order.html',{
         'form':sales_form,
@@ -908,6 +936,11 @@ def process_shortcut(request, pk):
     shortcut = models.ShortCut.objects.get(id=pk, station=station)
     if shortcut.prompt_note or shortcut.prompt_quantity:
         if request.method == 'POST':
+            if is_transaction_limit_reached(station):
+                check_transaction_limit(station, request)
+                messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
+                return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+
             form = forms.SalesUpdateForm(request.POST)
             if form.is_valid():
                 note = form.cleaned_data['note']
@@ -945,6 +978,7 @@ def process_shortcut(request, pk):
                             seal.quantity -= quantity
                             seal.save()
 
+                check_transaction_limit(station, request)
                 messages.success(request, 'Added successfully!')
                 return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
         else:
@@ -953,6 +987,11 @@ def process_shortcut(request, pk):
         return render(request,'wrsm/sales_update_form.html',{'form':form, 'station':station, 'is_paid':shortcut.is_paid})
     
     else:
+        if is_transaction_limit_reached(station):
+            check_transaction_limit(station, request)
+            messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+
         sales_obj = models.Sales.objects.create(
             station=station,
             order_type=shortcut.order_type,
@@ -985,6 +1024,7 @@ def process_shortcut(request, pk):
                     seal.quantity -= shortcut.quantity
                     seal.save()
 
+        check_transaction_limit(station, request)
         messages.success(request, 'Added successfully!')
         return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
 

@@ -14,9 +14,12 @@ class StationRecordAdmin(admin.ModelAdmin):
 class ProductAdmin(StationRecordAdmin):
     list_display = ('product_name', 'station')
 
+class SalesAdmin(StationRecordAdmin):
+    list_display = ('created_date', 'customer','station')
+
 admin.site.register(models.Customer)
 admin.site.register(models.CustomerGeneric)
-admin.site.register(models.Sales)
+admin.site.register(models.Sales, SalesAdmin)
 admin.site.register(models.JugSize)
 admin.site.register(models.OrderType)
 admin.site.register(models.JugType)

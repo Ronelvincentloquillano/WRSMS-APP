@@ -11,6 +11,12 @@
 <div class="min-h-screen max-w-6xl mx-auto px-4">
   <div class="text-center mt-6">
     <h2 class="text-3xl font-bold">Sales Record</h2>
+    {% if limit_reached %}
+    <div class="max-w-3xl mx-auto mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Transaction Limit Reached!</strong>
+        <span class="block sm:inline">You have reached your limit for this month. New sales creation is disabled. Please upgrade your plan.</span>
+    </div>
+    {% endif %}
     {% if products == 0 %}
     <p class="font-medium text-red-500">
       Please add products first.  
@@ -95,14 +101,21 @@
         <!-- Add Sales Group -->
         <div class="relative">
             <div class="flex items-center">
+                {% if limit_reached %}
+                <button type="button" class="text-gray-400 cursor-not-allowed" disabled title="Limit Reached">
+                  <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
+                </button>
+                {% else %}
                 <a href="{% url 'wrsm_app:add-sales' %}" title="Add Sales">
                   <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
                 </a>
                 <button type="button" id="toggleAddMenu" class="ml-0 text-gray-500 hover:text-gray-700" title="More Options">
                     <ion-icon name="caret-down-circle-outline" class="text-2xl"></ion-icon>
                 </button>
+                {% endif %}
             </div>
             
+            {% if not limit_reached %}
             <!-- Dropdown -->
             <div id="addMenu" class="hidden absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-50 w-max">
                 <a href="{% url 'wrsm_app:add-sales-retro' %}" class="flex items-center gap-2 p-3 hover:bg-gray-100 text-slate-700">
@@ -110,6 +123,7 @@
                     <span>Add Historical Sales</span>
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <button id="btnEdit" class="text-gray-400 cursor-not-allowed" disabled title="Edit Selected">

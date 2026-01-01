@@ -56,7 +56,12 @@ class CreateSalesForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        is_disabled = kwargs.pop('is_disabled', False)
         super().__init__(*args, **kwargs)
+
+        if is_disabled:
+            for field in self.fields.values():
+                field.disabled = True
 
         if station:
             try:
@@ -96,7 +101,11 @@ class SalesItemForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        is_disabled = kwargs.pop('is_disabled', False)
         super().__init__(*args, **kwargs)
+        if is_disabled:
+            for field in self.fields.values():
+                field.disabled = True
         self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
             'product_type','-jug_size__size_in_liters')
         self.fields['product'].empty_label = "SELECT PRODUCT"
@@ -136,7 +145,12 @@ class CreateSalesFromOrderForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        is_disabled = kwargs.pop('is_disabled', False)
         super().__init__(*args, **kwargs)
+
+        if is_disabled:
+            for field in self.fields.values():
+                field.disabled = True
 
         if station:
             try:
@@ -155,7 +169,11 @@ class SalesItemFromOrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
+        is_disabled = kwargs.pop('is_disabled', False)
         super().__init__(*args, **kwargs)
+        if is_disabled:
+            for field in self.fields.values():
+                field.disabled = True
         self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
             'product_type','-jug_size__size_in_liters')
         self.fields['product'].empty_label = "SELECT PRODUCT"

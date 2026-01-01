@@ -9,7 +9,7 @@ from .paymongo_config import create_gcash_source, retrieve_source, create_paymen
 
 @login_required
 def subscription_expired(request):
-    plans = SubscriptionPlan.objects.all()
+    plans = SubscriptionPlan.objects.all().order_by('id')
     # If no plans exist, maybe create default or handle gracefully
     context = {
         'plans': plans
@@ -21,12 +21,18 @@ def initiate_payment(request):
     if request.method == 'POST':
         try:
             plan_id = request.POST.get('plan_id')
+            billing_cycle = request.POST.get('billing_cycle', 'monthly')
+
             if not plan_id:
                 messages.error(request, "Please select a subscription plan.")
                 return redirect('wrsm_app:subscription_expired')
 
             plan = get_object_or_404(SubscriptionPlan, pk=plan_id)
-            amount = float(plan.price)
+            
+            if billing_cycle == 'annual':
+                amount = float(plan.price_annual)
+            else:
+                amount = float(plan.price_monthly)
             
             # Success and Fail URLs
             success_url = request.build_absolute_uri(reverse('wrsm_app:payment_callback'))
@@ -43,6 +49,7 @@ def initiate_payment(request):
                 # Save source_id to session to verify callback
                 request.session['paymongo_source_id'] = source_id
                 request.session['pending_plan_id'] = plan.id
+                request.session['pending_billing_cycle'] = billing_cycle
                 
                 return redirect(checkout_url)
             else:
@@ -79,13 +86,13 @@ def payment_callback(request):
                 station = request.user.profile.station
                 subscription, created = StationSubscription.objects.get_or_create(station=station)
                 
-                # Extend for 30 days
-                # If expired, start from today. If active, add to end_date?
-                # For simplicity, let's reset to 30 days from today if expired.
+                # Extend based on billing cycle
+                billing_cycle = request.session.get('pending_billing_cycle', 'monthly')
+                days_to_add = 365 if billing_cycle == 'annual' else 30
                 
-                new_end_date = timezone.now().date() + timedelta(days=30)
+                new_end_date = timezone.now().date() + timedelta(days=days_to_add)
                 if subscription.end_date and subscription.end_date > timezone.now().date():
-                     new_end_date = subscription.end_date + timedelta(days=30)
+                     new_end_date = subscription.end_date + timedelta(days=days_to_add)
                 
                 subscription.end_date = new_end_date
                 subscription.is_active = True
@@ -101,6 +108,8 @@ def payment_callback(request):
                 del request.session['paymongo_source_id']
                 if 'pending_plan_id' in request.session:
                     del request.session['pending_plan_id']
+                if 'pending_billing_cycle' in request.session:
+                    del request.session['pending_billing_cycle']
                 
                 messages.success(request, "Payment successful! Subscription renewed.")
                 return redirect('wrsm_app:dashboard')

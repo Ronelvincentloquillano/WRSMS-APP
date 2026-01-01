@@ -4,428 +4,434 @@
 
 <!DOCTYPE html>
 <html lang="en" class="sm:scroll-smooth">
-  
+
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="{% static 'img/SDR_thumbnail.png' %}" sizes="any">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SmartDynamic Refilling</title>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="{% static 'img/SDR_thumbnail.png' %}" sizes="any">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartDynamic Refilling</title>
 
-  <!-- PWA Meta Tags -->
-  <link rel="manifest" href="/manifest.json?v=2">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="SDR">
-  <link rel="apple-touch-icon" href="{% static 'img/SDR_thumbnail.png' %}">
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json?v=2">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SDR">
+    <link rel="apple-touch-icon" href="{% static 'img/SDR_thumbnail.png' %}">
 
-  <script type="module" src="{% static 'ionicons/ionicons.esm.js' %}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <script type="module" src="{% static 'ionicons/ionicons.esm.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/serviceworker.js")
-      .then(() => console.log("Service Worker Registered"));
-    }
-  </script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/serviceworker.js")
+                .then(() => console.log("Service Worker Registered"));
+        }
+    </script>
 
-  {% block links %}
-  {% endblock %}
+    {% block links %}
+    {% endblock %}
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-LBHLZJ4MD6"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'G-LBHLZJ4MD6');
+    gtag('config', 'G-LBHLZJ4MD6');
 </script>
 
-<body class="text-base text-slate-800 bg-slate-200 dark:bg-slate-800 scheme-light flex flex-col dark:text-slate-300 dark:scheme-dark min-h-screen min-w-full">
-  <header class="sticky top-0 z-10 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 min-w-screen">
-    <section class="mx-auto flex items-center justify-between p-4">
-      <h1 class="text-3xl font-medium">
-        {% if request.user.is_authenticated %}
-        <a href="{% url 'wrsm_app:dashboard' %}">
-          <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
-        </a>
-        {% else %}
-        <a href="{% url 'index' %}">
-          <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
-        </a>
-        {% endif %}
-      </h1>
+<body
+    class="text-base text-slate-800 bg-slate-200 dark:bg-slate-800 scheme-light flex flex-col dark:text-slate-300 dark:scheme-dark min-h-screen min-w-full">
+    <header class="sticky top-0 z-10 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 min-w-screen">
+        <section class="mx-auto flex items-center justify-between p-4">
+            <h1 class="text-3xl font-medium">
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'wrsm_app:dashboard' %}">
+                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
+                </a>
+                {% else %}
+                <a href="{% url 'index' %}">
+                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
+                </a>
+                {% endif %}
+            </h1>
 
-      <!-- Hamburger -->
-      <button id="hamburger-button" 
-        class="relative h-8 w-8 cursor-pointer text-3xl md:hidden" 
-        aria-label="Toggle mobile menu"
-      >
-        <div
-          class="absolute top-4 -mt-0.5 h-1 w-8 rounded bg-white transition-all duration-500
+            <!-- Hamburger -->
+            <button id="hamburger-button" class="relative h-8 w-8 cursor-pointer text-3xl md:hidden"
+                aria-label="Toggle mobile menu">
+                <div
+                    class="absolute top-4 -mt-0.5 h-1 w-8 rounded bg-white transition-all duration-500
           before:absolute before:h-1 before:w-8 before:-translate-x-4 before:-translate-y-3 before:rounded before:bg-white before:transition-all before:duration-500 before:content-['']
           after:absolute after:h-1 after:w-8 after:-translate-x-4 after:translate-y-3 after:rounded after:bg-white after:transition-all after:duration-500 after:content-['']">
-        </div>
-      </button>
-
-      <!-- Main Nav -->
-      <nav class="hidden mx-auto md:flex items-center space-x-6 text-xl" aria-label="main">
-      {% if request.user.is_authenticated %}
-        
-        {% if request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
-          {% if available_stations %}
-            <!-- Station Switcher -->
-            <div class="relative group">
-              <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-                {{ station }}
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <div class="absolute top-full left-0 hidden group-hover:block hover:block bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                {% for s in available_stations %}
-                  {% if s.id != station.id %}
-                  <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:bg-blue-400">
-                    {{ s }}
-                  </a>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            </div>
-          {% endif %}
-
-          {% if settings_complete %}
-            <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90">Sales</a>
-            <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90">Orders</a>
-            <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90">Container Inventory</a>
-
-            <!-- Finance dropdown -->
-            <div class="relative group">
-              <button class="flex items-center gap-1">
-                Finance
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-
-              <div
-                class="absolute top-full right-0 hidden group-hover:block hover:block
-                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                <a href="{% url 'wrsm_app:ar-list' %}" class="block px-4 py-2 hover:bg-blue-400">
-                  Accounts Receivable
-                </a>
-                <a href="{% url 'wrsm_app:monthly-financial-report' %}" class="block px-4 py-2 hover:bg-blue-400">
-                  Monthly Financial Report
-                </a>
-                <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
-                  Net Terms
-                </a>
-              </div>
-            </div>
-
-            <!-- More dropdown -->
-            <div class="relative group">
-              <button class="flex items-center gap-1">
-                More
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <div
-                class="absolute top-full right-0 hidden group-hover:block hover:block
-                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                            <a href="{% url 'wrsm_app:customers' %}" class="block px-4 py-2 hover:bg-blue-400">Customers</a>
-                            <a href="{% url 'wrsm_app:customer-map' %}" class="block px-4 py-2 hover:bg-blue-400">Customer Map</a>
-                            <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:bg-blue-400">Products</a>              <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:bg-blue-400">Order Forecast</a>
-                <a href="{% url 'wrsm_app:expenses' %}" class="block px-4 py-2 hover:bg-blue-400">Expenses</a>
-              </div>
-            </div>
-
-            {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
-            <!-- Station dropdown -->
-            <div class="relative group">
-              <button class="flex items-center gap-1">
-                Station
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <div
-                class="absolute top-full right-0 hidden group-hover:block hover:block
-                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My Stations</a>
-                <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
-                <a href="{% url 'wrsm_app:register-new-station' %}" class="block px-4 py-2 hover:bg-blue-400">Register New Station</a>
-                <a href="{% url 'wrsm_app:station-users' %}" class="block px-4 py-2 hover:bg-blue-400">Station Users</a>
-                <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
-                <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
-                <a href="{% url 'wrsm_app:backwash-monitor' %}" class="block px-4 py-2 hover:bg-blue-400">Backwash Monitor</a>
-              </div>
-            </div>
-            {% endif %}
-
-            {% if request.user.is_staff or request.user.is_superuser %}
-              <!-- Settings dropdown -->
-              <div class="relative group">
-                <button class="flex items-center gap-1">
-                  <ion-icon name="settings-outline"></ion-icon>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                      viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </button>
-                <div
-                  class="absolute top-full right-0 hidden group-hover:block hover:block
-                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                  <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
-                  <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
-                  <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
-                  <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage Articles</a>
-                  <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
                 </div>
-              </div>
-            {% endif %}
-          {% else %}
-          
-            {% if request.user.is_staff or request.user.is_superuser %}
-              <!-- Settings dropdown -->
-              <div class="relative group">
-                <button class="flex items-center gap-1">
-                  <ion-icon name="settings-outline"></ion-icon>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                      viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </button>
-                <div
-                  class="absolute top-full right-0 hidden group-hover:block hover:block
-                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                  <a href="{% url 'wrsm_app:add-station-settings' %}" class="block px-4 py-2 hover:bg-blue-400">Add Station Settings</a>
-                  <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
-                </div>
-              </div>
-            {% endif %}
-          {% endif %}
-        {% endif %}
+            </button>
 
-        <!-- Right-aligned items -->
-        <div class="relative group">
-          <button class="flex items-center gap-1">
-            {{ request.user.get_full_name }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-                      <div
-                        class="absolute top-full right-0 hidden group-hover:block hover:block
+            <!-- Main Nav -->
+            <nav class="hidden mx-auto md:flex items-center space-x-6 text-xl" aria-label="main">
+                {% if request.user.is_authenticated %}
+
+                {% if request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
+                {% if available_stations %}
+                <!-- Station Switcher -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
+                        {{ station }}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div
+                        class="absolute top-full left-0 hidden group-hover:block hover:block bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        {% for s in available_stations %}
+                        {% if s.id != station.id %}
+                        <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}"
+                            class="block px-4 py-2 hover:bg-blue-400">
+                            {{ s }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if settings_complete %}
+                <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90">Sales</a>
+                <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90">Orders</a>
+                <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90">Container Inventory</a>
+
+                <!-- Finance dropdown -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        Finance
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
+                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:ar-list' %}" class="block px-4 py-2 hover:bg-blue-400">
+                            Accounts Receivable
+                        </a>
+                        <a href="{% url 'wrsm_app:monthly-financial-report' %}"
+                            class="block px-4 py-2 hover:bg-blue-400">
+                            Monthly Financial Report
+                        </a>
+                        <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
+                            Net Terms
+                        </a>
+                    </div>
+                </div>
+
+                <!-- More dropdown -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        More
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
+                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:customers' %}" class="block px-4 py-2 hover:bg-blue-400">Customers</a>
+                        <a href="{% url 'wrsm_app:customer-map' %}" class="block px-4 py-2 hover:bg-blue-400">Customer
+                            Map</a>
+                        <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:bg-blue-400">Products</a>
+                        <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:bg-blue-400">Order
+                            Forecast</a>
+                        <a href="{% url 'wrsm_app:expenses' %}" class="block px-4 py-2 hover:bg-blue-400">Expenses</a>
+                    </div>
+                </div>
+
+                {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
+                <!-- Station dropdown -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        Station
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
+                      bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My
+                            Stations</a>
+                        <a href="{% url 'wrsm_app:station-setting-detail' %}"
+                            class="block px-4 py-2 hover:bg-blue-400">Station
+                            Settings</a>
+                        <a href="{% url 'wrsm_app:register-new-station' %}"
+                            class="block px-4 py-2 hover:bg-blue-400">Register New
+                            Station</a>
+                        <a href="{% url 'wrsm_app:station-users' %}" class="block px-4 py-2 hover:bg-blue-400">Station
+                            Users</a>
+                        <a href="{% url 'wrsm_app:maintenance' %}"
+                            class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
+                        <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
+                        <a href="{% url 'wrsm_app:backwash-monitor' %}"
+                            class="block px-4 py-2 hover:bg-blue-400">Backwash
+                            Monitor</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <!-- Settings dropdown -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        <ion-icon name="settings-outline"></ion-icon>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
+                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage
+                            Articles</a>
+                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <!-- Settings dropdown -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        <ion-icon name="settings-outline"></ion-icon>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
+                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+                {% endif %}
+
+                <!-- Right-aligned items -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        {{ request.user.get_full_name }}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full right-0 hidden group-hover:block hover:block
                               bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
                         <a href="{% url 'wrsm_app:profile' %}" class="block px-4 py-2 hover:bg-blue-400">My Profile</a>
-                        <a href="{% url 'account:password_change' %}" class="block px-4 py-2 hover:bg-blue-400">Change password</a>                          <form action="{% url 'account:logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="block w-full text-left px-4 py-2 hover:bg-blue-400">Logout</button>
-              </form>
-          </div>
-        </div>
-      
-      {% else %} <!-- User is unauthenticated -->
-        <!-- Left links (flex-grow pushes login to the right) -->
-        <div class="flex flex-1 space-x-6">
-          <a href="/pricing/" class="hover:opacity-90">Pricing</a>
-          <a href="/documentation/" class="hover:opacity-90">Documentation</a>
-          <a href="/contact-us/" class="hover:opacity-90">Contact Us</a>
-          <a href="/about/" class="hover:opacity-90">About Us</a>
-        </div>
+                        <a href="{% url 'account:password_change' %}" class="block px-4 py-2 hover:bg-blue-400">Change
+                            password</a>
+                        <form action="{% url 'account:logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="block w-full text-left px-4 py-2 hover:bg-blue-400">Logout</button>
+                        </form>
+                    </div>
+                </div>
 
-        <!-- Login aligned right -->
-        <div>
-          <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
-        </div>
-      {% endif %}
-      </nav>
-    </section>
+                {% else %} <!-- User is unauthenticated -->
+                <!-- Left links (flex-grow pushes login to the right) -->
+                <div class="flex flex-1 space-x-6">
+                    <a href="/pricing/" class="hover:opacity-90">Pricing</a>
+                    <a href="/documentation/" class="hover:opacity-90">Documentation</a>
+                    <a href="/contact-us/" class="hover:opacity-90">Contact Us</a>
+                    <a href="/about/" class="hover:opacity-90">About Us</a>
+                </div>
 
-    <section id="mobile-menu"
-      class="top-68 justify-center absolute hidden w-full origin-top animate-open-menu flex-col text-xl">
-      <nav class="flex min-h-screen flex-col items-center py-8 bg-slate-300 dark:bg-slate-900 dark:text-slate-100" aria-label="mobile">
-      {% if request.user.is_authenticated %}
-        
-        {% if request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
-        {% if available_stations %}
-        <!-- Mobile Station Switcher -->
-        <div class="relative group mb-5">
-          <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
-            {{ station }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-          <div class="absolute top-full hidden group-hover:block hover:block bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
-            {% for s in available_stations %}
-              {% if s.id != station.id %}
-              <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}" class="block px-4 py-2 hover:opacity-60">
-                {{ s }}
-              </a>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-          {% if settings_complete %}
-            <a href="{% url 'wrsm_app:home' %}" class="hover:opacity-90 mb-5"><ion-icon name="home-outline"></ion-icon> Home</a>
-            <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90 mb-5"><ion-icon name="cash-outline"></ion-icon> Sales</a>
-            <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90 mb-5">Orders</a>
-            <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90 mb-5">Container Inventory</a>
-            {% endif %}          
-        <div class="flex flex-col gap-5">
-        {% if settings_complete %}
-          <!-- Finance dropdown -->
-          <div class="relative group">
-            <button class="flex items-center gap-1">
-              Finance
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                  viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <div
-              class="absolute top-full hidden group-hover:block hover:block
-                    bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
-              <a href="{% url 'wrsm_app:ar-list' %}" class="block px-4 py-2 hover:bg-blue-400">
-                Accounts Receivable
-              </a>
-              <a href="{% url 'wrsm_app:monthly-financial-report' %}" class="block px-4 py-2 hover:bg-blue-400">
-                Monthly Financial Report
-              </a>
-              <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
-                Net Terms
-              </a>
-            </div>
-          </div>
-          <!-- More dropdown -->
-          <div class="relative group">
-            <button class="flex items-center gap-1">
-              More
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                  viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <div
-              class="absolute top-full hidden group-hover:block hover:block
-                    bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
-              <a href="{% url 'wrsm_app:customers' %}" class="block px-4 py-2 hover:opacity-60">Customers</a>
-              <a href="{% url 'wrsm_app:customer-map' %}" class="block px-4 py-2 hover:opacity-60">Customer Map</a>
-              <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:opacity-60">Products</a>
-              <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:opacity-60">Order Forecast</a>
-              <a href="{% url 'wrsm_app:expenses' %}" class="block px-4 py-2 hover:opacity-60">Expenses</a>
-            </div>
-          </div>
+                <!-- Login aligned right -->
+                <div>
+                    <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
+                </div>
+                {% endif %}
+            </nav>
+        </section>
 
-            {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
-            <!-- Station dropdown -->
-            <div class="relative group">
-              <button class="flex items-center gap-1">
-                Station
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <div
-                class="absolute top-full hidden group-hover:block hover:block
+        <section id="mobile-menu"
+            class="top-68 justify-center absolute hidden w-full origin-top animate-open-menu flex-col text-xl">
+            <nav class="flex min-h-screen flex-col items-center py-8 bg-slate-300 dark:bg-slate-900 dark:text-slate-100"
+                aria-label="mobile">
+                {% if request.user.is_authenticated %}
+
+                {% if request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
+                {% if available_stations %}
+                <!-- Mobile Station Switcher -->
+                <div class="relative group mb-5">
+                    <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
+                        {{ station }}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div
+                        class="absolute top-full hidden group-hover:block hover:block bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                        {% for s in available_stations %}
+                        {% if s.id != station.id %}
+                        <a href="{% url 'wrsm_app:switch-station' station_id=s.id %}"
+                            class="block px-4 py-2 hover:opacity-60">
+                            {{ s }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if settings_complete %}
+                <a href="{% url 'wrsm_app:home' %}" class="hover:opacity-90 mb-5"><ion-icon
+                        name="home-outline"></ion-icon>
+                    Home</a>
+                <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90 mb-5"><ion-icon
+                        name="cash-outline"></ion-icon>
+                    Sales</a>
+                <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90 mb-5">Orders</a>
+                <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90 mb-5">Container
+                    Inventory</a>
+                {% endif %}
+                {% if settings_complete %}
+                <div class="flex flex-col gap-5">
+                    <!-- Finance dropdown -->
+                    <div class="relative group">
+                        <button class="flex items-center gap-1">
+                            Finance
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute top-full hidden group-hover:block hover:block
                       bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
-                <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My Stations</a>
-                <a href="{% url 'wrsm_app:station-setting-detail' %}" class="block px-4 py-2 hover:bg-blue-400">Station Settings</a>
-                <a href="{% url 'wrsm_app:register-new-station' %}" class="block px-4 py-2 hover:bg-blue-400">Register New Station</a>
-                <a href="{% url 'wrsm_app:station-users' %}" class="block px-4 py-2 hover:bg-blue-400">Station Users</a>
-                <a href="{% url 'wrsm_app:maintenance' %}" class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
-                <a href="{% url 'wrsm_app:shortcuts' %}" class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
-                <a href="{% url 'wrsm_app:backwash-monitor' %}" class="block px-4 py-2 hover:bg-blue-400">Backwash Monitor</a>
-              </div>
-            </div>
-            {% endif %}
-          {% endif %}
-          {% if request.user.is_staff or request.user.is_superuser %}          <!-- Settings dropdown -->
-          <div class="relative group mb-5">
-            <button class="flex items-center gap-1">
-              <ion-icon name="settings-outline"></ion-icon>
-              Settings
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                  viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <div
-              class="absolute top-full hidden group-hover:block hover:block
-                    bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
-              <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage Articles</a>
-              <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
-            </div>
-          </div>
-        {% endif %}
-        </div>
-        {% endif %}
-          <!-- profile items -->
-          <div class="relative group">
-            <button class="flex items-center gap-1">
-              {{ request.user.get_full_name }}
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                  viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-            <div
-              class="absolute top-full hidden group-hover:block hover:block
+                            <a href="{% url 'wrsm_app:ar-list' %}" class="block px-4 py-2 hover:bg-blue-400">
+                                Accounts Receivable
+                            </a>
+                            <a href="{% url 'wrsm_app:monthly-financial-report' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">
+                                Monthly Financial Report
+                            </a>
+                            <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
+                                Net Terms
+                            </a>
+                        </div>
+                    </div>
+                    <!-- More dropdown -->
+                    <div class="relative group">
+                        <button class="flex items-center gap-1">
+                            More
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute top-full hidden group-hover:block hover:block
+                      bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                            <a href="{% url 'wrsm_app:customers' %}"
+                                class="block px-4 py-2 hover:opacity-60">Customers</a>
+                            <a href="{% url 'wrsm_app:customer-map' %}"
+                                class="block px-4 py-2 hover:opacity-60">Customer Map</a>
+                            <a href="{% url 'wrsm_app:products' %}"
+                                class="block px-4 py-2 hover:opacity-60">Products</a>
+                            <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:opacity-60">Order
+                                Forecast</a>
+                            <a href="{% url 'wrsm_app:expenses' %}"
+                                class="block px-4 py-2 hover:opacity-60">Expenses</a>
+                        </div>
+                    </div>
+
+                    {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
+                    <!-- Station dropdown -->
+                    <div class="relative group">
+                        <button class="flex items-center gap-1">
+                            Station
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute top-full hidden group-hover:block hover:block
+                        bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                            <a href="{% url 'wrsm_app:station-list' %}" class="block px-4 py-2 hover:bg-blue-400">My
+                                Stations</a>
+                            <a href="{% url 'wrsm_app:station-setting-detail' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Station
+                                Settings</a>
+                            <a href="{% url 'wrsm_app:register-new-station' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Register New
+                                Station</a>
+                            <a href="{% url 'wrsm_app:station-users' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Station Users</a>
+                            <a href="{% url 'wrsm_app:maintenance' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Maintenance</a>
+                            <a href="{% url 'wrsm_app:shortcuts' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Shortcuts</a>
+                            <a href="{% url 'wrsm_app:backwash-monitor' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Backwash
+                                Monitor</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    {% if request.user.is_staff or request.user.is_superuser %} <!-- Settings dropdown -->
+                    <div class="relative group mb-5">
+                        <button class="flex items-center gap-1">
+                            <ion-icon name="settings-outline"></ion-icon>
+                            Settings
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute top-full hidden group-hover:block hover:block
+                      bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                            <a href="{% url 'wrsm_app:manage-articles' %}"
+                                class="block px-4 py-2 hover:bg-blue-400">Manage
+                                Articles</a>
+                            <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <!-- profile items -->
+                <div class="relative group">
+                    <button class="flex items-center gap-1">
+                        {{ request.user.get_full_name }}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="absolute top-full hidden group-hover:block hover:block
                     bg-blue-200 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-              <a href="{% url 'wrsm_app:profile' %}" class="block px-4 py-2 hover:bg-blue-400">My Profile</a>
-              <form action="{% url 'account:logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="block w-full text-left px-4 py-2 hover:bg-blue-400">Logout</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      {% else %} <!-- User is unauthenticated -->
-        <a href="/pricing/" class="hover:opacity-90 mb-5">Pricing</a>
-        <a href="/documentation/" class="hover:opacity-90 mb-5">Documentation</a>
-        <a href="/contact-us/" class="hover:opacity-90 mb-5">Contact Us</a>
-        <a href="/about/" class="hover:opacity-90 mb-5">About Us</a>
+                        <a href="{% url 'wrsm_app:profile' %}" class="block px-4 py-2 hover:bg-blue-400">My Profile</a>
+                        <form action="{% url 'account:logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="block w-full text-left px-4 py-2 hover:bg-blue-400">Logout</button>
+                        </form>
+                    </div>
+                </div>
+                </div>
+                {% else %} <!-- User is unauthenticated -->
+                <a href="/pricing/" class="hover:opacity-90 mb-5">Pricing</a>
+                <a href="/documentation/" class="hover:opacity-90 mb-5">Documentation</a>
+                <a href="/contact-us/" class="hover:opacity-90 mb-5">Contact Us</a>
+                <a href="/about/" class="hover:opacity-90 mb-5">About Us</a>
 
-        <!-- Login aligned right -->
-        <div>
-          <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
-        </div>
-      {% endif %}
-      </nav>
-    </section>
-  </header>
+                <!-- Login aligned right -->
+                <div>
+                    <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
+                </div>
+                {% endif %}
+            </nav>
+        </section>
+    </header>
 
-  <section>
-    {% if messages %}
-    <div id="message-container" 
-        class="fixed top-16 w-full z-[9999] flex justify-center">
-      <div class="w-full max-w-3xl px-4 space-y-2">
-        {% for message in messages %}
-        <div 
-          class="message-item text-center px-4 py-3 rounded-md shadow-lg 
+    <section>
+        {% if messages %}
+        <div id="message-container" class="fixed top-16 w-full z-[9999] flex justify-center">
+            <div class="w-full max-w-3xl px-4 space-y-2">
+                {% for message in messages %}
+                <div class="message-item text-center px-4 py-3 rounded-md shadow-lg 
           text-white
           {% if message.tags == 'error' %}
             bg-red-600
@@ -436,51 +442,49 @@
           {% else %}
             bg-blue-600
           {% endif %}
-          transition-opacity duration-500 ease-in-out relative"
-          role="alert"
-        >
-          {{ message }}
-  
-          <!-- Close button -->
-          <button 
-            class="absolute top-2 right-2 text-white hover:text-gray-200"
-            onclick="this.parentElement.remove()">
-            ✕
-          </button>
+          transition-opacity duration-500 ease-in-out relative" role="alert">
+                    {{ message }}
+
+                    <!-- Close button -->
+                    <button class="absolute top-2 right-2 text-white hover:text-gray-200"
+                        onclick="this.parentElement.remove()">
+                        ✕
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </section>
+        {% endif %}
+    </section>
 
-  <main class="mx-auto flex-grow min-h-screen">
-    <div class="flex justify-center mt-2">
-      <h5 class="text-lg">{{ station }}</h5>
-    </div>
-    {% block content %}
-    {% endblock %}
+    <main class="mx-auto flex-grow min-h-screen">
+        <div class="flex justify-center mt-2">
+            <h5 class="text-lg">{{ station }}</h5>
+        </div>
+        {% block content %}
+        {% endblock %}
 
-    {% block scripts %}
-    {% endblock %}
-  </main>
+        {% block scripts %}
+        {% endblock %}
+    </main>
 
-  <footer class="bottom-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 text-sm text-center justify-center p-4 mt-4">
-    <p>&copy; 2025 SmartDynamic Refilling. All Rights Reserved.</p>
-  </footer>
+    <footer
+        class="bottom-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 text-sm text-center justify-center p-4 mt-4">
+        <p>&copy; 2025 SmartDynamic Refilling. All Rights Reserved.</p>
+    </footer>
 
-  <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
-  <script src="{% static 'js/menu.js' %}"></script>
-  <script src="{% static 'js/offline_forms.js' %}"></script>
-  <script>
-    setTimeout(function () {
-      const alerts = document.querySelectorAll('.message-item');
-      alerts.forEach(function(alert) {
-        alert.style.opacity = '0';
-        setTimeout(() => alert.remove(), 500);
-      });
-    }, 3000);
-  </script>
+    <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+    <script src="{% static 'js/menu.js' %}"></script>
+    <script src="{% static 'js/offline_forms.js' %}"></script>
+    <script>
+        setTimeout(function () {
+            const alerts = document.querySelectorAll('.message-item');
+            alerts.forEach(function (alert) {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 3000);
+    </script>
 </body>
 
 </html>
