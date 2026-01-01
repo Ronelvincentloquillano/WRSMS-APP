@@ -513,9 +513,9 @@ class CreatePaymentGenericForm(forms.ModelForm):
         self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station)
 
 
-class CreateContainerInventoryForm(forms.ModelForm):
+class CreateContainerManagementForm(forms.ModelForm):
     class Meta:
-        model = models.ContainerInventory
+        model = models.ContainerManagement
         fields = '__all__'
         exclude = ['station','created_by',]
         widgets = {

@@ -13,7 +13,7 @@ def get_offline_master_data(request):
     
     # 1. Customers & Container Balances
     # Optimize by annotating latest container balance
-    latest_inventory = models.ContainerInventory.objects.filter(
+    latest_inventory = models.ContainerManagement.objects.filter(
         customer=OuterRef('pk')
     ).order_by('-created_date')
 
@@ -42,7 +42,7 @@ def get_offline_master_data(request):
         container_balances[c.id] = c.latest_balance if c.latest_balance is not None else 0
 
         # Get last 10 records for history
-        history_qs = models.ContainerInventory.objects.filter(customer=c).order_by('-created_date')[:10]
+        history_qs = models.ContainerManagement.objects.filter(customer=c).order_by('-created_date')[:10]
         history_list = []
         for h in history_qs:
             history_list.append({

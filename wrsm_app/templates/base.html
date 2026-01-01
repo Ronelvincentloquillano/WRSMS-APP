@@ -101,7 +101,7 @@
                 {% if settings_complete %}
                 <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90">Sales</a>
                 <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90">Orders</a>
-                <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90">Container Inventory</a>
+                <a href="{% url 'wrsm_app:container-management-list' %}" class="hover:opacity-90">Container Management</a>
 
                 <!-- Finance dropdown -->
                 <div class="relative group">
@@ -290,8 +290,8 @@
                         name="cash-outline"></ion-icon>
                     Sales</a>
                 <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90 mb-5">Orders</a>
-                <a href="{% url 'wrsm_app:container-inventory-list' %}" class="hover:opacity-90 mb-5">Container
-                    Inventory</a>
+                <a href="{% url 'wrsm_app:container-management-list' %}" class="hover:opacity-90 mb-5">Container
+                    Management</a>
                 {% endif %}
                 {% if settings_complete %}
                 <div class="flex flex-col gap-5">

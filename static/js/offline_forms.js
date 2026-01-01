@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupOfflineForm('add_sales_form');
     setupOfflineForm('add_order_form');
     setupOfflineForm('add_customer_form');
-    setupOfflineForm('add_container_inventory_form');
+    setupOfflineForm('add_container_management_form');
     setupOfflineForm('add_payment_form');
     
     // Prime the Offline Master Data Cache

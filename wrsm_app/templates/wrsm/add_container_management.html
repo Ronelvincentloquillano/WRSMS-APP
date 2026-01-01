@@ -3,16 +3,16 @@
 {% load crispy_forms_tags %}
 {% load widget_tweaks %}
 
-{% block title %}Add Container Inventory{% endblock %}
+{% block title %}Add Container Management{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex flex-col items-center">
   <div class="bg-white text-slate-700 shadow-md rounded-lg w-96 mt-5">
     <div class="text-center border-b p-4">
-      <h2 class="text-2xl font-semibold">Add Container Inventory</h2>
+      <h2 class="text-2xl font-semibold">Add Container Management</h2>
     </div>
     <div class="p-5 mb-10">
-      <form method="post" autocomplete="off" id="add_container_inventory_form">
+      <form method="post" autocomplete="off" id="add_container_management_form">
         {% csrf_token %}
 
         <div class="mt-3 flex">
@@ -100,5 +100,5 @@
 
 {% block scripts %}
 <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
-<script src="{% static 'js/add_container_inventory.js' %}"></script>
+<script src="{% static 'js/add_container_management.js' %}"></script>
 {% endblock %}

@@ -204,14 +204,14 @@ def dashboard(request):
     rest_forecast_count = max(0, total_forecast_count - today_forecast_count)
 
     # 2. Container Inventory
-    inventory_qs = models.ContainerInventory.objects.filter(station=station)
+    inventory_qs = models.ContainerManagement.objects.filter(station=station)
     customers_with_inventory = inventory_qs.values_list('customer', flat=True).distinct()
     loaned_jugs = 0
     for cust_id in customers_with_inventory:
         try:
             latest = inventory_qs.filter(customer_id=cust_id).latest('created_date')
             loaned_jugs += latest.new_balance
-        except models.ContainerInventory.DoesNotExist:
+        except models.ContainerManagement.DoesNotExist:
             pass
     
     initial_jug_count = station_settings.initial_jug_count or 0
@@ -1636,10 +1636,10 @@ def add_order(request):
 
 
 @login_required
-def add_container_inventory(request):
+def add_container_management(request):
     station = request.user.profile.station
     if request.method == 'POST':
-        form = forms.CreateContainerInventoryForm(request.POST, station=station)
+        form = forms.CreateContainerManagementForm(request.POST, station=station)
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
@@ -1648,22 +1648,22 @@ def add_container_inventory(request):
             instance.save()
             return HttpResponseRedirect(reverse_lazy('wrsm_app:container-inventory-list'))
     else:
-        form = forms.CreateContainerInventoryForm(station=station)
+        form = forms.CreateContainerManagementForm(station=station)
         
-    return render(request,'wrsm/add_container_inventory.html',{'form':form,'station':station})
+    return render(request,'wrsm/add_container_management.html',{'form':form,'station':station})
 
 
 @login_required
 def get_container_balance(request):
     customer_id = request.GET.get('id_customer')
     try:
-        customer_inventory = models.ContainerInventory.objects.filter(
+        customer_inventory = models.ContainerManagement.objects.filter(
             customer_id=customer_id).latest('created_date')
         data = {
             'bflv': customer_inventory.new_balance if customer_inventory else None,
         }
         return JsonResponse(data)
-    except models.ContainerInventory.DoesNotExist:
+    except models.ContainerManagement.DoesNotExist:
         return JsonResponse({'error': 'customer inventory not found'}, status=404)
 
 
@@ -2466,15 +2466,15 @@ class ForecastListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ContainerInventoryListView(LoginRequiredMixin, ListView):
-    template_name = 'wrsm/container_inventory_list.html'
-    model = models.ContainerInventory
+class ContainerManagementListView(LoginRequiredMixin, ListView):
+    template_name = 'wrsm/container_management_list.html'
+    model = models.ContainerManagement
     # paginate_by = 10
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
         station_setting = models.StationSetting.objects.get(station=station)
-        inventory = models.ContainerInventory.objects.filter(station=station)
+        inventory = models.ContainerManagement.objects.filter(station=station)
         context = super().get_context_data(**kwargs)
         loaned_jugs = 0
         customers = inventory.distinct('customer__name')
@@ -2488,12 +2488,12 @@ class ContainerInventoryListView(LoginRequiredMixin, ListView):
 
         searched_customer = self.request.GET.get('customer')
         if searched_customer:
-            inventory = models.ContainerInventory.objects.filter(station=station, customer__name__icontains=searched_customer).order_by('-created_date')[:10]
+            inventory = models.ContainerManagement.objects.filter(station=station, customer__name__icontains=searched_customer).order_by('-created_date')[:10]
         context = {
             'inventory': inventory,
             'station': station,
             'searched_customer': self.request.GET.get('customer', ''),
-            'customers': models.ContainerInventory.objects.filter(station=station).distinct('customer__name'),
+            'customers': models.ContainerManagement.objects.filter(station=station).distinct('customer__name'),
             'loaned_jugs': loaned_jugs,
             'initial_jug_count': station_setting.initial_jug_count or 0
         }
@@ -3094,7 +3094,7 @@ def delete_customer(request, pk):
         models.Sales.objects.filter(customer=customer).delete()
         models.Order.objects.filter(customer=customer).delete()
         models.Forecast.objects.filter(customer=customer).delete()
-        models.ContainerInventory.objects.filter(customer=customer).delete()
+        models.ContainerManagement.objects.filter(customer=customer).delete()
         models.AccountsReceivable.objects.filter(customer=customer).delete()
         models.CustomerCredit.objects.filter(customer=customer).delete()
         models.Payment.objects.filter(customer=customer).delete()

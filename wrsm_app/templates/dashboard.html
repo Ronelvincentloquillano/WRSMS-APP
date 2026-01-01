@@ -31,9 +31,9 @@
         </div>
       </div>
       
-      <!-- Container Inventory Chart -->
+      <!-- Container Management Chart -->
       <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md">
-        <h3 class="text-xl font-semibold text-center mb-4">Container Inventory</h3>
+        <h3 class="text-xl font-semibold text-center mb-4">Container Management</h3>
         <div class="relative h-64">
           <canvas id="inventoryChart"></canvas>
         </div>
@@ -128,7 +128,7 @@
       .catch(err => console.error('Error fetching forecast data:', err));
   });
 
-  // 2. Container Inventory Chart
+  // 2. Container Management Chart
   const ctxInventory = document.getElementById('inventoryChart').getContext('2d');
   new Chart(ctxInventory, {
     type: 'pie',

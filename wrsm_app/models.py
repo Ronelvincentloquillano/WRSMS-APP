@@ -375,7 +375,7 @@ class Forecast(models.Model):
         return f"{self.customer.name} - Next Order: {self.next_order_date}"
     
 
-class ContainerInventory(models.Model):
+class ContainerManagement(models.Model):
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
     created_date = models.DateTimeField(blank=True, null=True)
     customer = models.ForeignKey(to=Customer, null=True, on_delete=models.CASCADE)
@@ -384,17 +384,17 @@ class ContainerInventory(models.Model):
     returned_empty_container = models.IntegerField(default=0)
     new_balance = models.IntegerField(default=0)
     note = models.CharField(max_length=100, null=True, blank=True)
-    created_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='container_inventory_created')
+    created_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='container_management_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
-                                    blank=True, related_name='containerinventory_modified_by', 
+                                    blank=True, related_name='containermanagement_modified_by', 
                                     on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"{self.customer.name} - {self.balance_from_last_visit}"
     
     class Meta:
-        verbose_name_plural = "container inventory"
+        verbose_name_plural = "container management"
 
 
 class AccountsReceivable(models.Model):
