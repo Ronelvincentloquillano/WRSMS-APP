@@ -13,6 +13,8 @@ $(document).ready(function () {
     const urlOrdertype = $form.data("url-ordertype");
     const urlProduct = $form.data("url-product");
     
+    console.log("Add Sales Script Loaded. URLs:", {urlCustomer, urlOrdertype, urlProduct});
+
     // Customer Info UI
     const $promo_code = $("#id_promo_code");
     const $promo_description = $("#id_promo_description");
@@ -129,6 +131,9 @@ $(document).ready(function () {
               $customer_info.hide();
             }
             recalculateAllRows();
+          })
+          .fail(function(jqXHR, textStatus, errorThrown) {
+              console.error("Customer Fetch Failed:", textStatus, errorThrown);
           });
       } else {
         $customer_info.hide();
@@ -151,6 +156,9 @@ $(document).ready(function () {
             $orderTypeDisplay.text(data.order_type || '');
             
             recalculateAllRows();
+          })
+          .fail(function(jqXHR, textStatus, errorThrown) {
+              console.error("OrderType Fetch Failed:", textStatus, errorThrown);
           });
       } else {
         orderTypeData = {};
@@ -186,6 +194,9 @@ $(document).ready(function () {
               // Attach data to element for global access
               $product.data('product-info', data);
               recalculateRowPrice(i);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Product Fetch Failed:", textStatus, errorThrown);
             });
         } else {
           $product.removeData('product-info');
@@ -294,6 +305,9 @@ $(document).ready(function () {
                 if (currentOtVal) {
                     $ordertypeSelect.trigger('change');
                 }
+              })
+              .fail(function(jqXHR, textStatus, errorThrown) {
+                  console.error("Init Customer Fetch Failed:", textStatus, errorThrown, "URL:", urlCustomer);
               });
         }
     } else {
