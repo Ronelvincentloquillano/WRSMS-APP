@@ -48,11 +48,11 @@ $(document).ready(function () {
         let finalPrice = parseFloat(productData.unit_price) || 0;
 
         // Logic Scope: 20L Jug
-        const is20LRefill = (productData.jug_size_in_liters === 20.0 && productData.product_type === 'REFILL');
+        const is20LRefill = (parseFloat(productData.jug_size_in_liters) === 20.0 && productData.product_type === 'REFILL');
         
         if (is20LRefill) {
-            const orderTypeName = (orderTypeData.order_type || "").toLowerCase();
-            const hasCustomer = !!$customerSelect.val();
+            const orderTypeName = (orderTypeData.order_type || "").toLowerCase().trim();
+            const hasCustomer = !!$customerSelect.val() || !!$("#customer").length; // Check both select and fixed div
             const defaultDeliveryRate = parseFloat(orderTypeData.default_delivery_rate) || 0;
             const otUnitPrice = parseFloat(orderTypeData.ot_unit_price) || 0;
             const customerDiscount = parseFloat(customerData.discount_rate) || 0;
@@ -259,4 +259,41 @@ $(document).ready(function () {
 
       bindEventsToForm(formCount);
     });
+
+    // Initialization
+    const fixedCustomerDiv = $("#customer");
+    if (fixedCustomerDiv.length) {
+        // Add Sales From Order Mode
+        const customerId = fixedCustomerDiv.data("customer-id");
+        
+        if (customerId) {
+            $.getJSON(`/ajax/get-customer-data/?id_customer=${customerId}`)
+              .done(function (data) {
+                $orderTypeDisplay.text(data.default_ot || '');
+                customerData = data;
+
+                if (data.discount_rate != null) {
+                  $customer_info.show();
+                  $promo_code.text(data.promo_code || '');
+                  $promo_description.text(data.promo_description || '');
+                  $discount_code.text(data.discount_code || '');
+                  $discount_description.text(data.discount_description || '');
+                  $discount_rate.text(data.discount_rate || '');
+                } else {
+                  $customer_info.hide();
+                }
+                
+                // Trigger Order Type init
+                const currentOtVal = $ordertypeSelect.val();
+                if (currentOtVal) {
+                    $ordertypeSelect.trigger('change');
+                }
+              });
+        }
+    } else {
+        // Standard Add Sales Mode
+        if ($ordertypeSelect.val()) {
+            $ordertypeSelect.trigger('change');
+        }
+    }
 });
