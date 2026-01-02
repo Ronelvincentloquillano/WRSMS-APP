@@ -194,6 +194,24 @@ self.addEventListener('fetch', (event) => {
 
     // 2. Navigation Requests (HTML pages)
     if (event.request.mode === 'navigate') {
+        // Special handling for Update Container Record -> serve Add Container Record shell if offline
+        if (requestUrl.pathname.includes('/update-container-record/')) {
+             event.respondWith(
+                fetch(event.request)
+                .catch(() => {
+                    // Try to get the specific page first (if visited before)
+                    return caches.match(event.request).then((specificCache) => {
+                        if (specificCache) return specificCache;
+                        // Fallback to the generic "Add" page shell
+                        return caches.match('/add-container-record/');
+                    }).then((response) => {
+                        return response || caches.match(OFFLINE_URL);
+                    });
+                })
+             );
+             return;
+        }
+
         event.respondWith(
             fetch(event.request)
                 .then((networkResponse) => {

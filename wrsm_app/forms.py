@@ -519,14 +519,22 @@ class CreateContainerManagementForm(forms.ModelForm):
         fields = '__all__'
         exclude = ['station','created_by',]
         widgets = {
-            'created_date': forms.DateTimeInput(format='%Y-%m-%d',attrs={'type': 'datetime-local'}),
+            'created_date': forms.DateTimeInput(format='%Y-%m-%dT%H:%M',attrs={'type': 'datetime-local'}),
         }
     
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
-        self.fields['created_date'].initial = datetime.now().strftime('%Y-%m-%d %H:%M')
+        if station:
+            self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
+        # If instance exists (update), use its date, else use now
+        if not self.instance.pk and 'created_date' in self.fields:
+            self.fields['created_date'].initial = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+
+class UpdateContainerManagementForm(CreateContainerManagementForm):
+    class Meta(CreateContainerManagementForm.Meta):
+        fields = '__all__'
 
 
 class CreateShortcutForm(forms.ModelForm):

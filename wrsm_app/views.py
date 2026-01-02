@@ -1771,6 +1771,82 @@ def add_container_record(request):
 
 
 @login_required
+def update_container_record(request, pk):
+    # Authorization: Ensure user is linked to a station and is in the 'station owner/admin' group
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:container-management-list')
+
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+    
+    # Allow superusers to update any record, otherwise filter by station
+    if request.user.is_superuser:
+        container_record = get_object_or_404(models.ContainerManagement, pk=pk)
+    else:
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:container-management-list')
+        container_record = get_object_or_404(models.ContainerManagement, pk=pk, station=station)
+
+    if request.method == 'POST':
+        form = forms.UpdateContainerManagementForm(request.POST, instance=container_record, station=station)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.modified_by = request.user.profile
+            instance.save()
+            messages.success(request, 'Container record updated successfully.')
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:container-management-list'))
+    else:
+        form = forms.UpdateContainerManagementForm(instance=container_record, station=station)
+        
+    return render(request, 'wrsm/add_container_management.html', {
+        'form': form,
+        'station': station,
+        'is_update': True
+    })
+
+
+@login_required
+def delete_container_record(request, pk):
+    # Authorization: Ensure user is linked to a station and is in the 'station owner/admin' group
+    is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
+    
+    if not is_authorized:
+         messages.error(request, "Access denied. Requires 'station owner/admin' privileges.")
+         return redirect('wrsm_app:container-management-list')
+
+    station = request.user.profile.station if hasattr(request.user, 'profile') else None
+    
+    # Allow superusers to delete any record, otherwise filter by station
+    if request.user.is_superuser:
+        container_record = get_object_or_404(models.ContainerManagement, pk=pk)
+    else:
+        # Still enforce station boundary even for group members
+        if not station:
+             messages.error(request, "No station associated with your profile.")
+             return redirect('wrsm_app:container-management-list')
+        container_record = get_object_or_404(models.ContainerManagement, pk=pk, station=station)
+
+    if request.method == 'POST':
+        # Audit Logging
+        logger.info(f"User {request.user.username} (ID: {request.user.id}) initiated deletion of Container Management ID: {container_record.pk}")
+
+        try:
+            container_record.delete()
+            messages.success(request, 'Container record deleted successfully.')
+            logger.info(f"Successfully deleted Container Management ID: {pk}")
+        except Exception as e:
+            logger.error(f"Error deleting Container Management ID {pk}: {e}")
+            messages.error(request, "An error occurred while deleting the record.")
+            
+        return HttpResponseRedirect(reverse_lazy('wrsm_app:container-management-list'))
+        
+    return render(request, 'wrsm/container_management_confirm_delete.html', {'object': container_record})
+
+
+@login_required
 def get_container_balance(request):
     customer_id = request.GET.get('id_customer')
     try:

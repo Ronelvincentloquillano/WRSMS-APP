@@ -46,6 +46,7 @@ def get_offline_master_data(request):
         history_list = []
         for h in history_qs:
             history_list.append({
+                'pk': h.pk,
                 'created_date': h.created_date.strftime('%b. %d, %Y, %I:%M %p').replace('AM', 'a.m.').replace('PM', 'p.m.') if h.created_date else '',
                 'timestamp': h.created_date.isoformat() if h.created_date else '',
                 'customer': c.name,

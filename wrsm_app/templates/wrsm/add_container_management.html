@@ -3,16 +3,16 @@
 {% load crispy_forms_tags %}
 {% load widget_tweaks %}
 
-{% block title %}Add Container Management{% endblock %}
+{% block title %}{% if is_update %}Update{% else %}Add{% endif %} Container Management{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex flex-col items-center">
   <div class="bg-white text-slate-700 shadow-md rounded-lg w-96 mt-5">
     <div class="text-center border-b p-4">
-      <h2 class="text-2xl font-semibold">Add Container Management</h2>
+      <h2 class="text-2xl font-semibold">{% if is_update %}Update{% else %}Add{% endif %} Container Management</h2>
     </div>
     <div class="p-5 mb-10">
-      <form method="post" autocomplete="off" id="add_container_management_form">
+      <form method="post" autocomplete="off" id="{% if is_update %}update_container_management_form{% else %}add_container_management_form{% endif %}">
         {% csrf_token %}
 
         <div class="mt-3 flex">

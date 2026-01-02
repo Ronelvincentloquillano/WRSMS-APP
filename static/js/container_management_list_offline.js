@@ -106,6 +106,9 @@ function renderOfflineRecords(records, tableBody, getCustomerName) {
         // Row HTML
         const rowHtml = `
             <tr class="bg-orange-100 border-l-4 border-orange-500 cursor-pointer hover:bg-orange-200 transition-colors row-clickable offline-row">
+                <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">
+                    <input type="radio" disabled title="Offline record" class="w-5 h-5 text-gray-400 border-gray-300 cursor-not-allowed">
+                </td>
                 <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 font-medium">
                     ${createdDate} <span class="text-xs text-orange-700 block">(Offline)</span>
                 </td>
@@ -120,7 +123,7 @@ function renderOfflineRecords(records, tableBody, getCustomerName) {
             ${note ? `
             <tr class="bg-orange-50 offline-note-row">
                 <td class="border border-gray-300 dark:border-gray-600 px-2 py-2"></td>
-                <td colspan="5" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm text-orange-800 font-medium">
+                <td colspan="6" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm text-orange-800 font-medium">
                 Note: ${note}
                 </td>
             </tr>` : ''}
@@ -139,11 +142,13 @@ function renderOfflineRecords(records, tableBody, getCustomerName) {
             
             // Re-bind click event for modal manually for these fresh rows
             if (child.classList.contains('row-clickable')) {
-                 child.addEventListener('click', function() {
+                 child.addEventListener('click', function(e) {
+                      if (e.target.type === 'radio') return;
+
                       const cells = this.querySelectorAll('td');
                       const getText = (i) => cells[i] ? cells[i].innerText : '';
                       
-                      const dateText = getText(0).replace('(Offline)', '').trim();
+                      const dateText = getText(1).replace('(Offline)', '').trim();
                       
                       const setModalText = (id, text) => {
                           const el = document.getElementById(id);
@@ -151,13 +156,13 @@ function renderOfflineRecords(records, tableBody, getCustomerName) {
                       };
 
                       setModalText('modalCreatedDate', dateText);
-                      setModalText('modalCustomer', getText(1));
-                      setModalText('modalBFLV', getText(2));
-                      setModalText('modalDC', getText(3));
-                      setModalText('modalREC', getText(4));
-                      setModalText('modalNB', getText(5));
-                      setModalText('modalNote', getText(6));
-                      setModalText('modalCreatedBy', getText(7));
+                      setModalText('modalCustomer', getText(2));
+                      setModalText('modalBFLV', getText(3));
+                      setModalText('modalDC', getText(4));
+                      setModalText('modalREC', getText(5));
+                      setModalText('modalNB', getText(6));
+                      setModalText('modalNote', getText(7));
+                      setModalText('modalCreatedBy', getText(8));
                       
                       const modal = document.getElementById('recordModal');
                       if(modal) {

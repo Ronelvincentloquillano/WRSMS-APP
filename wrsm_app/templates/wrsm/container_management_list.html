@@ -34,11 +34,19 @@
       <!-- end of search fields -->
     </div>
   
-    <div class="flex justify-between gap-4 items-center w-96">
-      <div class="">
-        <a href="{% url 'wrsm_app:add-container-record' %}">
+    <div class="flex justify-between gap-4 items-center w-full max-w-4xl mx-auto">
+      <div class="flex gap-3">
+        <a href="{% url 'wrsm_app:add-container-record' %}" title="Add Record">
           <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
         </a>
+        
+        <button id="btnEdit" class="text-gray-400 cursor-not-allowed" disabled title="Edit Selected">
+            <ion-icon name="create-outline" class="text-3xl"></ion-icon>
+        </button>
+
+        <button id="btnDelete" class="text-gray-400 cursor-not-allowed" disabled title="Delete Selected">
+            <ion-icon name="trash-outline" class="text-3xl"></ion-icon>
+        </button>
       </div>
       <div class="text-right p-2 rounded bg-slate-100 dark:text-slate-800">
         <p class="font-medium">Total loaned jugs: <span class="text-lg">{{ loaned_jugs }}/{{ initial_jug_count }}</span></p>
@@ -52,6 +60,7 @@
     <table class="table-auto mx-auto">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
+          <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">Select</th>
           <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">Created on</th>
           <th class="border border-gray-300 dark:border-gray-600 px-2 py-2 {% if searched_customer %}hidden{% endif %}">Customer</th>
           <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">BFLV</th>
@@ -64,6 +73,9 @@
       {% if inventory %}
         {% for inv in inventory %}
         <tr class="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors row-clickable">
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">
+             <input type="radio" name="selected_record" value="{{ inv.pk }}" class="record-selector w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer">
+          </td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2">{{ inv.created_date }}</td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 {% if searched_customer %}hidden{% endif %}">{{ inv.customer }}</td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">{{ inv.balance_from_last_visit }}</td>
@@ -76,7 +88,7 @@
           {% if inv.note %}
           <tr>
             <td class="border border-gray-300 dark:border-gray-600 px-2 py-2"></td>
-            <td colspan="5" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm bg-slate-300 dark:text-slate-800 font-medium">
+            <td colspan="6" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm bg-slate-300 dark:text-slate-800 font-medium">
               Note: {{ inv.note }}
             </td>
           </tr>
@@ -159,22 +171,43 @@
 <script>
   $(document).ready(function() {
     
+    const updateUrlTemplate = "{% url 'wrsm_app:update-container-record' pk=0 %}";
+    const deleteUrlTemplate = "{% url 'wrsm_app:delete-container-record' pk=0 %}";
+
+    // Bind Radio Selection
+    $(document).on('change', '.record-selector', function() {
+        const id = $(this).val();
+        $('#btnEdit').removeClass('text-gray-400 cursor-not-allowed').addClass('text-blue-500 hover:text-blue-700').prop('disabled', false);
+        $('#btnDelete').removeClass('text-gray-400 cursor-not-allowed').addClass('text-red-500 hover:text-red-700').prop('disabled', false);
+
+        $('#btnEdit').off('click').on('click', function() {
+            window.location.href = updateUrlTemplate.replace('0', id);
+        });
+
+        $('#btnDelete').off('click').on('click', function() {
+            window.location.href = deleteUrlTemplate.replace('0', id);
+        });
+    });
+
     // Function to bind modal events to rows
     function bindModalEvents() {
         // Unbind first to avoid duplicates if called multiple times
         $('.row-clickable').off('click');
         
         // Open modal when row is clicked
-        $('.row-clickable').on('click', function() {
+        $('.row-clickable').on('click', function(e) {
+          if ($(e.target).is('input[type="radio"]')) return;
+          
           const cells = $(this).find('td');
-          $('#modalCreatedDate').text(cells.eq(0).text());
-          $('#modalCustomer').text(cells.eq(1).text());
-          $('#modalBFLV').text(cells.eq(2).text());
-          $('#modalDC').text(cells.eq(3).text());
-          $('#modalREC').text(cells.eq(4).text());
-          $('#modalNB').text(cells.eq(5).text());
-          $('#modalNote').text(cells.eq(6).text());
-          $('#modalCreatedBy').text(cells.eq(7).text());
+          // Indexes shifted by 1 because of Select column
+          $('#modalCreatedDate').text(cells.eq(1).text());
+          $('#modalCustomer').text(cells.eq(2).text());
+          $('#modalBFLV').text(cells.eq(3).text());
+          $('#modalDC').text(cells.eq(4).text());
+          $('#modalREC').text(cells.eq(5).text());
+          $('#modalNB').text(cells.eq(6).text());
+          $('#modalNote').text(cells.eq(7).text());
+          $('#modalCreatedBy').text(cells.eq(8).text());
           $('#recordModal').removeClass('hidden').addClass('flex');
         });
     }
@@ -283,15 +316,15 @@
 
       // Update Column Visibility
       const ths = $('thead tr th');
-      // Index 1 is Customer
+      // Index 2 is Customer (0 is select)
       if (searchedCustomer) {
-          $(ths[1]).addClass('hidden');
+          $(ths[2]).addClass('hidden');
       } else {
-          $(ths[1]).removeClass('hidden');
+          $(ths[2]).removeClass('hidden');
       }
 
       if (data.length === 0) {
-          tbody.html('<tr><td colspan="6" class="p-4 text-center">No offline records found for this selection.</td></tr>');
+          tbody.html('<tr><td colspan="7" class="p-4 text-center">No offline records found for this selection.</td></tr>');
           return;
       }
 
@@ -302,6 +335,9 @@
         
         const rowHtml = `
         <tr class="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors row-clickable">
+          <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">
+             <input type="radio" disabled class="w-5 h-5 text-gray-400 border-gray-300 cursor-not-allowed">
+          </td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2">${inv.created_date}</td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 ${searchedCustomer ? 'hidden' : ''}">${inv.customer}</td>
           <td class="border border-gray-300 dark:border-gray-600 px-2 py-2 text-center">${inv.balance_from_last_visit}</td>
@@ -314,7 +350,7 @@
         ${note ? `
           <tr>
             <td class="border border-gray-300 dark:border-gray-600 px-2 py-2"></td>
-            <td colspan="5" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm bg-slate-300 dark:text-slate-800 font-medium">
+            <td colspan="6" class="rounded-b-lg border border-gray-300 dark:border-gray-600 px-2 py-2 italic text-sm bg-slate-300 dark:text-slate-800 font-medium">
               Note: ${note}
             </td>
           </tr>` : ''}

@@ -71,4 +71,61 @@ $(document).ready(function () {
       $bflv.prop("readonly", false);
     }
   });
+
+  // --- Offline Update Support ---
+  if (window.location.pathname.includes('/update-container-record/')) {
+       // Extract PK
+       const parts = window.location.pathname.split('/').filter(p => p);
+       const pk = parts[parts.length - 1]; // Last non-empty segment
+       
+       // If offline (or if the page content seems empty/generic), try to populate
+       // We can check if fields are empty to decide, or just always try if offline
+       if (!navigator.onLine) {
+           populateFormOffline(pk);
+       }
+  }
+
+  async function populateFormOffline(pk) {
+      try {
+           const response = await fetch('/api/offline-master-data/');
+           if (!response.ok) return;
+           const data = await response.json();
+           
+           let record = null;
+           let customerId = null;
+           
+           // Search all customer histories
+           for (const cid in data.container_history) {
+               const history = data.container_history[cid];
+               const found = history.find(item => String(item.pk) === String(pk));
+               if (found) {
+                   record = found;
+                   customerId = cid;
+                   break;
+               }
+           }
+           
+           if (record) {
+               if (record.timestamp) {
+                   const dateObj = new Date(record.timestamp);
+                   const offsetMs = dateObj.getTimezoneOffset() * 60 * 1000;
+                   const localIso = new Date(dateObj.getTime() - offsetMs).toISOString().slice(0, 16);
+                   $('#id_created_date').val(localIso);
+               }
+               
+               $('#id_customer').val(customerId);
+               $('#id_balance_from_last_visit').val(record.balance_from_last_visit);
+               $('#id_delivered_container').val(record.delivered_container);
+               $('#id_returned_empty_container').val(record.returned_empty_container);
+               $('#id_new_balance').val(record.new_balance);
+               $('#id_note').val(record.note);
+               
+               $('h2').text('Update Container Management');
+               document.title = 'Update Container Management';
+               $('form').attr('id', 'update_container_management_form');
+           }
+      } catch (e) {
+          console.error('Error populating offline form', e);
+      }
+  }
 });
