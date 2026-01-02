@@ -95,6 +95,7 @@ urlpatterns = [
     path('ajax/get-ordertype-data/', views.get_ordertype_data, name='get_ordertype_data'),
     path('ajax/get-jugsize-data/', views.get_jugsize_data, name='get_jugsize_data'),
     path('ajax/get-finance-data/', views.get_finance_data, name='get_finance_data'),
+    path('ajax/get-expense-breakdown/', views.get_expense_breakdown_data, name='get_expense_breakdown_data'),
     path('ajax/get-forecast-data/', views.get_forecast_data, name='get_forecast_data'),
     path('documentation/', views.documentation, name='documentation'),
     path('documentation/article/<int:pk>/', views.ArticleDetailView.as_view(), name='article-detail'),

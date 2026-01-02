@@ -247,6 +247,64 @@ def dashboard(request):
     ).aggregate(total=Sum('total_amount'))
     expenses_total = expenses_agg['total'] if expenses_agg['total'] is not None else 0
 
+    # Calculate available months from data (Based on ITEMS to ensure non-empty charts)
+    sales_months = models.SalesItem.objects.filter(sales__station=station).annotate(
+        month=TruncMonth('sales__created_date')
+    ).values_list('month', flat=True).distinct()
+
+    expense_months = models.ExpenseItem.objects.filter(expense__station=station).annotate(
+        month=TruncMonth('expense__date')
+    ).values_list('month', flat=True).distinct()
+
+    # Convert to standard date objects for set operations
+    sales_dates = set()
+    for d in sales_months:
+        if d: sales_dates.add(d.date() if isinstance(d, datetime) else d)
+        
+    expense_dates = set()
+    for d in expense_months:
+        if d: expense_dates.add(d)
+    
+    current_month_start_date = current_date.replace(day=1)
+
+    # 1. Finance Chart (Sales OR Expenses)
+    finance_dates = sales_dates.union(expense_dates)
+    finance_dates.add(current_month_start_date)
+    
+    # 2. Expense Breakdown (Expenses ONLY)
+    expense_breakdown_dates = expense_dates.copy()
+    expense_breakdown_dates.add(current_month_start_date)
+
+    def serialize_dates(date_set):
+        sorted_list = sorted(list(date_set), reverse=True)
+        return [{'value': d.strftime('%Y-%m'), 'label': d.strftime('%b %Y')} for d in sorted_list]
+
+    available_months = serialize_dates(finance_dates)
+    available_months_expenses = serialize_dates(expense_breakdown_dates)
+
+    # 5. Expense Breakdown (Pie Chart) - Current Month
+    expense_breakdown = models.ExpenseItem.objects.filter(
+        expense__station=station,
+        expense__date__gte=current_month_start
+    ).values('category').annotate(total=Sum('total_amount')).order_by('-total')
+
+    expense_labels = []
+    expense_data = []
+
+    # Helper to get display name from choices
+    category_map = dict(models.ExpenseItem.CATEGORY_CHOICES)
+
+    for item in expense_breakdown:
+        cat_key = item['category']
+        # If category is None or empty, label it 'Uncategorized'
+        if not cat_key:
+            label = 'Uncategorized'
+        else:
+            label = category_map.get(cat_key, cat_key)
+            
+        expense_labels.append(label)
+        expense_data.append(float(item['total']))
+
     context = {
         'station': station,
         'last_backwash': last_backwash,
@@ -264,6 +322,10 @@ def dashboard(request):
         'product_quantities': json.dumps(product_quantities),
         'sales_total': float(sales_total),
         'expenses_total': float(expenses_total),
+        'expense_labels': json.dumps(expense_labels),
+        'expense_data': json.dumps(expense_data),
+        'available_months': json.dumps(available_months),
+        'available_months_expenses': json.dumps(available_months_expenses),
     }
     return render(request, 'dashboard.html', context)
 
@@ -1195,6 +1257,52 @@ def get_finance_data(request):
     return JsonResponse({
         'sales_total': float(sales_total),
         'expenses_total': float(expenses_total)
+    })
+
+
+@login_required
+def get_expense_breakdown_data(request):
+    month_str = request.GET.get('month')
+    station = request.user.profile.station
+    
+    if month_str:
+        try:
+            year, month = map(int, month_str.split('-'))
+            start_date = datetime(year, month, 1)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1)
+            else:
+                end_date = datetime(year, month + 1, 1)
+        except ValueError:
+             return JsonResponse({'error': 'Invalid date format'}, status=400)
+    else:
+        # Default to current month
+        today = timezone.now()
+        start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if today.month == 12:
+            end_date = datetime(today.year + 1, 1, 1)
+        else:
+            end_date = datetime(today.year, today.month + 1, 1)
+    
+    expense_breakdown = models.ExpenseItem.objects.filter(
+        expense__station=station,
+        expense__date__gte=start_date,
+        expense__date__lt=end_date
+    ).values('category').annotate(total=Sum('total_amount')).order_by('-total')
+    
+    labels = []
+    data = []
+    category_map = dict(models.ExpenseItem.CATEGORY_CHOICES)
+    
+    for item in expense_breakdown:
+        cat_key = item['category']
+        label = category_map.get(cat_key, cat_key) if cat_key else 'Uncategorized'
+        labels.append(label)
+        data.append(float(item['total']))
+        
+    return JsonResponse({
+        'labels': labels,
+        'data': data
     })
 
 

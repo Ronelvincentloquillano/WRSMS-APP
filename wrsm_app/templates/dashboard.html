@@ -59,6 +59,19 @@
           <canvas id="financeChart"></canvas>
         </div>
       </div>
+
+      <!-- Expense Breakdown Chart -->
+      <div class="bg-white dark:bg-slate-700 p-4 rounded-lg shadow-md flex flex-col">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h3 class="text-xl font-semibold">Expenses Breakdown</h3>
+            <select id="expenseMonthSelect" class="text-sm border rounded p-1 dark:bg-slate-600 dark:text-white dark:border-slate-500">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+        <div class="relative h-64 flex-grow">
+          <canvas id="expenseBreakdownChart"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="text-center mb-10">
@@ -179,17 +192,15 @@
 
   // Month Selector Logic for Finance Chart
   const monthSelect = document.getElementById('financeMonthSelect');
-  const today = new Date();
-  // Populate last 12 months
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const monthStr = d.toISOString().slice(0, 7); // YYYY-MM
-    const monthName = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+  const availableMonths = {{ available_months|safe }};
+  
+  // Populate based on actual data
+  availableMonths.forEach(m => {
     const option = document.createElement('option');
-    option.value = monthStr;
-    option.text = monthName;
+    option.value = m.value;
+    option.text = m.label;
     monthSelect.appendChild(option);
-  }
+  });
 
   monthSelect.addEventListener('change', function() {
     const selectedMonth = this.value;
@@ -204,6 +215,48 @@
         financeChart.update();
       })
       .catch(err => console.error('Error fetching finance data:', err));
+  });
+
+  // 5. Expense Breakdown Chart
+  const ctxExpenseBreakdown = document.getElementById('expenseBreakdownChart').getContext('2d');
+  let expenseBreakdownChart = new Chart(ctxExpenseBreakdown, {
+    type: 'pie',
+    data: {
+      labels: {{ expense_labels|safe }},
+      datasets: [{
+        data: {{ expense_data|safe }},
+        backgroundColor: colors,
+      }]
+    },
+    options: { maintainAspectRatio: false }
+  });
+
+  // Month Selector Logic for Expense Breakdown
+  const expenseMonthSelect = document.getElementById('expenseMonthSelect');
+  const availableMonthsExpenses = {{ available_months_expenses|safe }};
+  
+  // Populate based on available months (expenses only)
+  availableMonthsExpenses.forEach(m => {
+    const option = document.createElement('option');
+    option.value = m.value;
+    option.text = m.label;
+    expenseMonthSelect.appendChild(option);
+  });
+
+  expenseMonthSelect.addEventListener('change', function() {
+    const selectedMonth = this.value;
+    fetch(`{% url 'wrsm_app:get_expense_breakdown_data' %}?month=${selectedMonth}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        expenseBreakdownChart.data.labels = data.labels;
+        expenseBreakdownChart.data.datasets[0].data = data.data;
+        expenseBreakdownChart.update();
+      })
+      .catch(err => console.error('Error fetching expense breakdown data:', err));
   });
 </script>
 <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
