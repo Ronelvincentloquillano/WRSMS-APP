@@ -1,9 +1,12 @@
 // sales_list_offline.js
 
-document.addEventListener('DOMContentLoaded', async () => {
+const loadOfflineSales = async () => {
     // Only run if we are on the sales list page
     const container = document.getElementById('sales-list-container');
     if (!container) return;
+
+    // Remove existing offline cards to prevent duplicates on refresh
+    container.querySelectorAll('.offline-sales-card').forEach(el => el.remove());
 
     // Load Master Data (from SW Cache if offline)
     let masterData = {};
@@ -49,10 +52,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             const offlineSales = items.filter(item => item.url.includes('add-sales'));
 
             if (offlineSales.length > 0) {
+                // Sort by timestamp ascending so the newest ends up on top after prepend/insert
+                offlineSales.sort((a, b) => a.timestamp - b.timestamp);
                 renderOfflineSales(offlineSales, container, getCustomerName, getProductName);
+            } else {
+                // If no offline items left, show the "No sales records" if there are no online ones either
+                const onlineCards = container.querySelectorAll('.bg-white.text-slate-700.shadow');
+                const noRec = container.querySelector('.text-center.bg-white.shadow');
+                if (onlineCards.length === 0 && noRec) {
+                    noRec.style.display = 'block';
+                }
             }
         };
     };
+};
+
+document.addEventListener('DOMContentLoaded', loadOfflineSales);
+
+// Listen for sync completion to refresh list
+document.addEventListener('offline-sync-completed', (e) => {
+    console.log('Sync completed event received, refreshing list...', e.detail);
+    
+    // If all records synced, we might want to reload the whole page to get real data from server
+    if (e.detail.remaining === 0) {
+        // Full reload to fetch new items from server
+        window.location.reload();
+    } else {
+        // Just refresh the offline part
+        loadOfflineSales();
+    }
 });
 
 function renderOfflineSales(sales, container, getCustomerName, getProductName) {
@@ -66,7 +94,10 @@ function renderOfflineSales(sales, container, getCustomerName, getProductName) {
         // Extract basic info
         const customerId = data['customer'];
         const customerName = getCustomerName(customerId);
-        const createdDate = new Date(sale.timestamp).toLocaleString();
+        // Use user-provided date if available (e.g. retroactive sales), else submission time
+        const createdDate = data['created_date'] 
+            ? new Date(data['created_date']).toLocaleString() 
+            : new Date(sale.timestamp).toLocaleString();
         const orderType = "Offline Submission"; 
         
         // Extract Items
@@ -105,7 +136,7 @@ function renderOfflineSales(sales, container, getCustomerName, getProductName) {
         }
 
         const cardHtml = `
-      <div class="bg-orange-50 border-2 border-orange-300 text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl relative">
+      <div class="offline-sales-card bg-orange-50 border-2 border-orange-300 text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl relative">
         <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-bl-md">
             OFFLINE - PENDING SYNC
         </div>

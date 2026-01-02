@@ -1930,7 +1930,7 @@ class OrderListView(LoginRequiredMixin, ListView):
         if selected_filters:
             orders = queryset.filter(status__in=selected_filters)
         else:
-            orders = queryset.filter(status__in=['Pending','In Progress']).order_by('created_date','status')
+            orders = queryset.filter(status__in=['Pending','In Progress']).order_by('-created_date','status')
         context = {
             'orders': orders,
             'station': station,
@@ -2123,7 +2123,7 @@ class SalesListView(LoginRequiredMixin, ListView):
             else:
                 queryset = queryset.prefetch_related('sales_items', 'ar_records').all()
 
-        return queryset.order_by('-created_date__date', '-id')
+        return queryset.order_by('-created_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2484,7 +2484,7 @@ class ContainerManagementListView(LoginRequiredMixin, ListView):
             ).latest('created_date').new_balance
             loaned_jugs += latest_record if latest_record else 0
         
-        inventory = inventory.order_by('customer', '-created_date').distinct('customer')
+        inventory = inventory.order_by('-created_date')[:50]
 
         searched_customer = self.request.GET.get('customer')
         if searched_customer:

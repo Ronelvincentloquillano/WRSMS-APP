@@ -129,15 +129,22 @@ const syncOfflineRequests = async () => {
             const checkTx = db.transaction(STORE_NAME, 'readonly');
             const checkReq = checkTx.objectStore(STORE_NAME).count();
             checkReq.onsuccess = () => {
+                // Dispatch event to notify lists to refresh
+                document.dispatchEvent(new CustomEvent('offline-sync-completed', { 
+                    detail: { remaining: checkReq.result } 
+                }));
+
                 if (checkReq.result === 0) {
                     showToast('All offline records synced successfully!', 'success');
                 } else {
-                    // Show warning with a Discard button
+                    // Show warning with a Retry button instead of Discard
                     showToastWithAction(
-                        `${checkReq.result} records failed to sync.`, 
+                        `${checkReq.result} records pending sync.`, 
                         'warning',
-                        'Discard All',
-                        () => clearOfflineQueue()
+                        'Retry',
+                        () => {
+                            syncOfflineRequests();
+                        }
                     );
                 }
             };
@@ -236,10 +243,19 @@ function showToastWithAction(message, type, actionText, actionCallback) {
     
     const btn = document.createElement('button');
     btn.textContent = actionText;
-    btn.className = 'bg-black text-white px-3 py-1 rounded text-sm hover:bg-gray-800 self-end';
+    btn.className = 'bg-black text-white px-3 py-1 rounded text-sm hover:bg-gray-800 self-end transition-all';
     btn.onclick = () => {
+        if (btn.disabled) return;
+        
+        // Show loading state on the button
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Syncing...';
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+
         actionCallback();
-        toast.remove();
+        
+        // The toast will be updated/removed by the next sync results
     };
     toast.appendChild(btn);
 
@@ -358,6 +374,17 @@ async function handleOfflineSave(url, method, formData, form) {
         showToast('Offline! Record saved locally. Will sync when online.', 'warning');
         form.reset();
         
+        // Auto-update datetime inputs to 'now' after reset to prevent stale timestamps
+        // on subsequent submissions (fixing the "stuck time" issue).
+        const now = new Date();
+        // Adjust for timezone offset to match datetime-local requirement (YYYY-MM-DDTHH:MM)
+        const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+        const localIso = new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+        
+        form.querySelectorAll('input[type="datetime-local"], input[name="created_date"]').forEach(input => {
+            input.value = localIso;
+        });
+        
         // Optional: We might want to redirect the user to the list page 
         // to mimic success, or stay on page.
         // For add_sales, staying on page to add another is good.
@@ -389,6 +416,22 @@ document.addEventListener('DOMContentLoaded', () => {
         primeOfflineCache();
     }
     window.addEventListener('online', primeOfflineCache);
+
+    // FIX: Refresh 'created_date' fields on load to prevent stale server-side timestamps
+    // from cached pages (SW or Back/Forward cache).
+    // Only apply on "Add/Create" pages, avoid "Update/Edit" pages.
+    const path = window.location.pathname;
+    if (!path.includes('update') && !path.includes('edit')) {
+        const now = new Date();
+        const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+        const localIso = new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+        
+        document.querySelectorAll('input[type="datetime-local"], input[name="created_date"]').forEach(input => {
+            // Only update if it looks like a default/stale value (optional check, 
+            // but forcing 'now' on create pages is usually desired behavior).
+            input.value = localIso;
+        });
+    }
 });
 
 // Helper to fetch and cache master data

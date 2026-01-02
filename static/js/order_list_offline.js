@@ -1,9 +1,12 @@
 // order_list_offline.js
 
-document.addEventListener('DOMContentLoaded', async () => {
+const loadOfflineOrders = async () => {
     // Only run if we are on the orders list page
     const container = document.getElementById('orders-list-container');
     if (!container) return;
+
+    // Remove existing offline cards
+    container.querySelectorAll('.offline-order-card').forEach(el => el.remove());
 
     // Load Master Data (from SW Cache if offline)
     let masterData = {};
@@ -49,10 +52,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const offlineOrders = items.filter(item => item.url.includes('add-order'));
 
             if (offlineOrders.length > 0) {
+                // Sort by timestamp ascending so the newest ends up on top after prepend/insert
+                offlineOrders.sort((a, b) => a.timestamp - b.timestamp);
                 renderOfflineOrders(offlineOrders, container, getCustomerName, getOrderTypeName);
             }
         };
     };
+};
+
+document.addEventListener('DOMContentLoaded', loadOfflineOrders);
+
+// Listen for sync completion to refresh list
+document.addEventListener('offline-sync-completed', (e) => {
+    if (e.detail.remaining === 0) {
+        window.location.reload();
+    } else {
+        loadOfflineOrders();
+    }
 });
 
 function renderOfflineOrders(orders, container, getCustomerName, getOrderTypeName) {
@@ -87,7 +103,7 @@ function renderOfflineOrders(orders, container, getCustomerName, getOrderTypeNam
         }
 
         const cardHtml = `
-      <div class="bg-orange-50 border-2 border-orange-300 text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl relative">
+      <div class="offline-order-card bg-orange-50 border-2 border-orange-300 text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl relative">
         <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-bl-md">
             OFFLINE - PENDING SYNC
         </div>
