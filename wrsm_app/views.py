@@ -1636,7 +1636,7 @@ def add_order(request):
 
 
 @login_required
-def add_container_management(request):
+def add_container_record(request):
     station = request.user.profile.station
     if request.method == 'POST':
         form = forms.CreateContainerManagementForm(request.POST, station=station)
@@ -1646,7 +1646,7 @@ def add_container_management(request):
             instance.created_by = request.user.profile
             instance.modified_by = request.user.profile
             instance.save()
-            return HttpResponseRedirect(reverse_lazy('wrsm_app:container-inventory-list'))
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:container-management-list'))
     else:
         form = forms.CreateContainerManagementForm(station=station)
         

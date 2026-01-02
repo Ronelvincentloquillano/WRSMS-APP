@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v30';
+const SW_VERSION = 'wrsm-v33';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -25,10 +25,10 @@ const ASSETS_TO_CACHE = [
     '/add-sales/',
     '/add-order/',
     '/add-customer/',
-    '/add-container-inventory/',
+    '/add-container-record/',
     '/customers/',
     '/orders/',
-    '/container-inventory-list/',
+    '/container-management-list/',
     // Ionicons
     '/static/ionicons/ionicons.esm.js',
     '/static/ionicons/p-7a41fcdf.entry.js',

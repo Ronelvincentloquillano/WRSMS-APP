@@ -132,12 +132,42 @@ const syncOfflineRequests = async () => {
                 if (checkReq.result === 0) {
                     showToast('All offline records synced successfully!', 'success');
                 } else {
-                    showToast(`${checkReq.result} records failed to sync.`, 'warning');
+                    // Show warning with a Discard button
+                    showToastWithAction(
+                        `${checkReq.result} records failed to sync.`, 
+                        'warning',
+                        'Discard All',
+                        () => clearOfflineQueue()
+                    );
                 }
             };
         };
     } catch (e) {
         console.error("Error during sync process", e);
+    }
+};
+
+// Global helper to clear queue
+window.clearOfflineQueue = async () => {
+    if (!confirm("Are you sure you want to discard all unsynced offline records? This cannot be undone.")) return;
+    
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.clear();
+        
+        req.onsuccess = () => {
+            showToast('Offline queue cleared.', 'success');
+            // Remove the stuck toast if present
+            const oldToast = document.getElementById('offline-warning-toast');
+            if (oldToast) oldToast.remove();
+        };
+        req.onerror = () => {
+            showToast('Failed to clear queue.', 'error');
+        };
+    } catch (e) {
+        console.error("Error clearing queue", e);
     }
 };
 
@@ -178,6 +208,44 @@ function showToast(message, type='info') {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 500);
     }, 3000);
+}
+
+// Toast with Action Button (for stuck records)
+function showToastWithAction(message, type, actionText, actionCallback) {
+    let container = document.getElementById('offline-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'offline-toast-container';
+        container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+        document.body.appendChild(container);
+    }
+    
+    // Remove existing warning toast to prevent stacking duplicates
+    const oldToast = document.getElementById('offline-warning-toast');
+    if (oldToast) oldToast.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'offline-warning-toast';
+    toast.style.backgroundColor = '#f97316'; // Orange
+    toast.style.color = '#000000';
+    toast.className = `px-6 py-3 rounded shadow-lg font-bold flex flex-col gap-2`;
+    
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    toast.appendChild(msgSpan);
+    
+    const btn = document.createElement('button');
+    btn.textContent = actionText;
+    btn.className = 'bg-black text-white px-3 py-1 rounded text-sm hover:bg-gray-800 self-end';
+    btn.onclick = () => {
+        actionCallback();
+        toast.remove();
+    };
+    toast.appendChild(btn);
+
+    container.appendChild(toast);
+    
+    // Don't auto-hide this one so the user has time to click
 }
 
 // Interceptor Setup
