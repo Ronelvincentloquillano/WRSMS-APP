@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v29';
+const SW_VERSION = 'wrsm-v30';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;

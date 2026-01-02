@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v24';
+const SW_VERSION = 'wrsm-v30';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -9,15 +9,16 @@ const OFFLINE_DATA_URL = '/api/offline-master-data/';
 
 const ASSETS_TO_CACHE = [
     OFFLINE_URL,
-    OFFLINE_DATA_URL,
+    // OFFLINE_DATA_URL is cached dynamically by the app when online, not during install
     '/static/css/output.css',
     '/static/css/styles.css',
     '/static/js/main.js',
-    '/static/js/jquery-3.7.1.min.js',
     '/static/js/offline_forms.js',
+    '/static/js/sales_list_offline.js',
+    '/static/js/order_list_offline.js',
     '/static/img/SDR_thumbnail.png',
     '/static/img/SDR.png',
-    '/manifest.json',
+    '/static/manifest.json',
     '/', 
     '/dashboard/',
     '/sales/', 
@@ -28,6 +29,27 @@ const ASSETS_TO_CACHE = [
     '/customers/',
     '/orders/',
     '/container-inventory-list/',
+    // Ionicons
+    '/static/ionicons/ionicons.esm.js',
+    '/static/ionicons/p-7a41fcdf.entry.js',
+    '/static/ionicons/p-BKJPfAGl.js',
+    '/static/ionicons/p-DQuL1Twl.js',
+    '/static/ionicons/p-Z3yp5Yym.js',
+    '/static/ionicons/svg/link-outline.svg',
+    '/static/ionicons/svg/cart-outline.svg',
+    '/static/ionicons/svg/cash-outline.svg',
+    '/static/ionicons/svg/people-outline.svg',
+    '/static/ionicons/svg/card-outline.svg',
+    '/static/ionicons/svg/sync-outline.svg',
+    '/static/ionicons/svg/water-outline.svg',
+    '/static/ionicons/svg/settings-outline.svg',
+    '/static/ionicons/svg/home-outline.svg',
+    '/static/ionicons/svg/add-circle-outline.svg',
+    '/static/ionicons/svg/create-outline.svg',
+    '/static/ionicons/svg/chevron-down-outline.svg',
+    '/static/ionicons/svg/add-outline.svg',
+    '/static/ionicons/svg/sync-circle-outline.svg',
+    '/static/ionicons/svg/filter-circle-outline.svg',
 ];
 
 // Helper: Fetch Master Data from Cache
@@ -202,8 +224,7 @@ self.addEventListener('fetch', (event) => {
     if (
         requestUrl.pathname.startsWith('/static/') ||
         requestUrl.pathname.startsWith('/media/') ||
-        requestUrl.pathname === OFFLINE_DATA_URL ||
-        requestUrl.pathname === '/manifest.json'
+        requestUrl.pathname === OFFLINE_DATA_URL
     ) {
         event.respondWith(
             caches.open(CACHE_NAME).then((cache) => {
@@ -218,6 +239,11 @@ self.addEventListener('fetch', (event) => {
                         console.warn('[ServiceWorker] Fetch failed for asset', event.request.url);
                     });
 
+                    // For Master Data, if we have it, return it.
+                    // BUT, if it's the *first* time (installing), we might want to wait for the network?
+                    // Actually, the issue is likely that "cache.add(ASSETS_TO_CACHE)" in "install"
+                    // failed for OFFLINE_DATA_URL if the user wasn't logged in or it redirected to login HTML.
+                    
                     if (cachedResponse) {
                         return cachedResponse; 
                     }
