@@ -1660,7 +1660,9 @@ def update_expense(request, pk):
         item_formset = ExpenseItemUpdateFormSet(request.POST, instance=expense, form_kwargs={'station': expense.station})
         
         if form.is_valid() and item_formset.is_valid():
-            form.save()
+            f = form.save(commit=False)
+            f.modified_by = request.user.profile
+            f.save()
             item_formset.save()
             messages.success(request, 'Expense updated successfully.')
             return redirect('wrsm_app:expenses')
@@ -1694,6 +1696,14 @@ def delete_expense(request, pk):
 
     if request.method == 'POST':
         expense.delete()
+        models.AuditLog.objects.create(
+            station = expense.station,
+            action = 'DELETE',
+            target_model = 'Expense',
+            target_object_id = pk,
+            details = "",
+            performed_by = request.user.profile
+        )
         messages.success(request, 'Expense deleted successfully.')
         return redirect('wrsm_app:expenses')
     
@@ -1752,7 +1762,6 @@ def add_container_record(request):
             instance = form.save(commit=False)
             instance.station = station
             instance.created_by = request.user.profile
-            instance.modified_by = request.user.profile
             instance.save()
             return HttpResponseRedirect(reverse_lazy('wrsm_app:container-management-list'))
     else:
@@ -1948,6 +1957,16 @@ def add_payment_generic(request, pk, sales_id):
             instance.save()
             sales_obj.is_paid=True
             sales_obj.save()
+            
+            models.AuditLog.objects.create(
+                station = request.user.profile.station,
+                action = 'ADD',
+                target_model = 'PaymentGeneric',
+                target_object_id = instance.pk,
+                details = "",
+                performed_by = request.user.profile
+            )
+            
             messages.success(request, "Payment successfully posted!")
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
     else:
@@ -2015,6 +2034,10 @@ class StationUpdateView(LoginRequiredMixin, UpdateView):
     form_class = forms.UpdateStationForm
     template_name = 'wrsm/station_form.html'
     success_url = reverse_lazy('wrsm_app:station-list')
+    
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.profile
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
