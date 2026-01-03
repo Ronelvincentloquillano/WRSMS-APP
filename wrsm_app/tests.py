@@ -13,7 +13,7 @@ class StationSetupEnforcementTest(TestCase):
         self.profile = Profile.objects.create(user=self.user, station=self.station)
         
         # Create a valid subscription
-        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price_monthly=100.00)
         StationSubscription.objects.create(
             station=self.station,
             plan=self.plan,
@@ -77,7 +77,7 @@ class UserManagementTest(TestCase):
         self.group = Group.objects.create(name='Operator')
         
         # Create a valid subscription
-        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price_monthly=100.00)
         StationSubscription.objects.create(
             station=self.station,
             plan=self.plan,
@@ -175,7 +175,7 @@ class StationRegistrationTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='reguser', password='password')
         self.profile = Profile.objects.create(user=self.user) # No station initially
-        self.plan = SubscriptionPlan.objects.create(name='Basic', price=100)
+        self.plan = SubscriptionPlan.objects.create(name='Basic', price_monthly=100)
         self.client.login(username='reguser', password='password')
 
     def test_register_new_station(self):
@@ -213,7 +213,7 @@ class StationListTest(TestCase):
         self.profile.allowed_stations.add(self.station2)
         
         # Add subscription for template logic
-        self.plan = SubscriptionPlan.objects.create(name='Basic', price=100)
+        self.plan = SubscriptionPlan.objects.create(name='Basic', price_monthly=100)
         StationSubscription.objects.create(station=self.station1, plan=self.plan)
         StationSubscription.objects.create(station=self.station2, plan=self.plan)
         

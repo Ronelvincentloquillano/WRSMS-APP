@@ -3017,7 +3017,18 @@ def delete_sales(request, pk):
                         logger.info(f"Deleted orphaned Payment ID: {payment.pk}")
 
             # Delete the Sales record (cascades to SalesItems, AR)
+            sale_id = sale.pk
             sale.delete()
+            
+            models.AuditLog.objects.create(
+                station = sale.station,
+                action = 'DELETE',
+                target_model = 'Sales',
+                target_object_id = sale_id,
+                details = f"Deleted sale {sale_id}",
+                performed_by = request.user.profile
+            )
+
             messages.success(request, 'Sales record and related payments deleted successfully.')
             logger.info(f"Successfully deleted Sales ID: {pk}")
         except Exception as e:
@@ -3100,6 +3111,15 @@ def update_sales(request, pk):
                     total_amount=subtotal,
                     status=ar_status
                 )
+            
+            models.AuditLog.objects.create(
+                station = instance.station,
+                action = 'EDIT',
+                target_model = 'Sales',
+                target_object_id = instance.pk,
+                details = f"Updated sale {instance.pk}",
+                performed_by = request.user.profile
+            )
             
             messages.success(request, 'Sales record updated successfully.')
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))

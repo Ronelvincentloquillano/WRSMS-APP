@@ -36,7 +36,7 @@ class OfflineSyncTest(TestCase):
         )
 
         # Create Valid Subscription
-        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price_monthly=100.00)
         StationSubscription.objects.create(
             station=self.station,
             plan=self.plan,

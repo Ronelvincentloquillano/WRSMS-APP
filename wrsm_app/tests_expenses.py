@@ -14,7 +14,7 @@ class ExpenseManagementTest(TestCase):
         self.profile = Profile.objects.create(user=self.user, station=self.station)
         
         # Create valid subscription
-        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price=100.00)
+        self.plan = SubscriptionPlan.objects.create(name='Test Plan', price_monthly=100.00)
         StationSubscription.objects.create(
             station=self.station,
             plan=self.plan,
