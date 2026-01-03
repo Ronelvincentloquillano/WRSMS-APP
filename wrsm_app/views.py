@@ -3327,8 +3327,22 @@ def delete_customer(request, pk):
         models.CustomerCredit.objects.filter(customer=customer).delete()
         models.Payment.objects.filter(customer=customer).delete()
         
+        customer_name = customer.name
+        customer_pk = customer.pk
+        station = customer.station
+
         customer.delete()
-        messages.success(request, f"Customer '{customer.name}' and related data deleted.")
+
+        models.AuditLog.objects.create(
+            station=station,
+            action='DELETE',
+            target_model='Customer',
+            target_object_id=str(customer_pk),
+            details=f"Deleted customer '{customer_name}' and all related data.",
+            performed_by=request.user.profile
+        )
+
+        messages.success(request, f"Customer '{customer_name}' and related data deleted.")
         return redirect('wrsm_app:customers')
     
     return redirect('wrsm_app:customer-detail', pk=pk)
