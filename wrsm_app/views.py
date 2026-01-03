@@ -2849,6 +2849,7 @@ def monthly_financial_report(request):
     )
 
     report = {}
+    annual_report = {}
 
     def get_month_key(d):
         return d.replace(day=1)
@@ -2875,63 +2876,106 @@ def monthly_financial_report(request):
                 'total_transactions': 0
              }
 
+    def init_year(year_val):
+        if year_val not in annual_report:
+            annual_report[year_val] = {
+                'year': year_val,
+                'total_sales': 0,
+                'total_expenses': 0,
+                'total_liters': 0,
+                'total_transactions': 0,
+            }
+
     # Process Sales
     for item in daily_sales:
         if item['date']:
             d = item['date']
             m = get_month_key(d)
+            y = d.year
             init_day(m, d)
-            report[m]['total_sales'] += item['total_sales'] or 0
-            report[m]['daily_data'][d]['total_sales'] += item['total_sales'] or 0
+            init_year(y)
+            val = item['total_sales'] or 0
+            report[m]['total_sales'] += val
+            report[m]['daily_data'][d]['total_sales'] += val
+            annual_report[y]['total_sales'] += val
 
     # Process Expenses
     for item in daily_expenses:
         if item['date']:
             d = item['date']
             m = get_month_key(d)
+            y = d.year
             init_day(m, d)
-            report[m]['total_expenses'] += item['total_expenses'] or 0
-            report[m]['daily_data'][d]['total_expenses'] += item['total_expenses'] or 0
+            init_year(y)
+            val = item['total_expenses'] or 0
+            report[m]['total_expenses'] += val
+            report[m]['daily_data'][d]['total_expenses'] += val
+            annual_report[y]['total_expenses'] += val
 
     # Process Liters
     for item in daily_liters:
         if item['date']:
             d = item['date']
             m = get_month_key(d)
+            y = d.year
             init_day(m, d)
-            report[m]['total_liters'] += item['total_liters'] or 0
-            report[m]['daily_data'][d]['total_liters'] += item['total_liters'] or 0
+            init_year(y)
+            val = item['total_liters'] or 0
+            report[m]['total_liters'] += val
+            report[m]['daily_data'][d]['total_liters'] += val
+            annual_report[y]['total_liters'] += val
 
     # Process Transactions
     for item in daily_transactions:
         if item['date']:
             d = item['date']
             m = get_month_key(d)
+            y = d.year
             init_day(m, d)
-            report[m]['total_transactions'] += item['total_transactions'] or 0
-            report[m]['daily_data'][d]['total_transactions'] += item['total_transactions'] or 0
+            init_year(y)
+            val = item['total_transactions'] or 0
+            report[m]['total_transactions'] += val
+            report[m]['daily_data'][d]['total_transactions'] += val
+            annual_report[y]['total_transactions'] += val
 
-    # Sort and structure
+    # Sort and structure Monthly Report
     monthly_report = []
-    for m in sorted(report.keys()):
+    for m in sorted(report.keys(), reverse=True): # Newest month first? Or sorted keys?
+        # Original code sorted(report.keys()) -> Ascending.
+        # Usually reports are Descending (newest on top). But sticking to existing behavior if not specified.
+        # Original: for m in sorted(report.keys()):
+        # Let's keep it sorted ascending for now or match previous.
+        pass
+    
+    # Re-reading original code logic to match sort order
+    # "for m in sorted(report.keys()):" -> Ascending (Oldest first)
+    
+    for m in sorted(report.keys(), reverse=True):
         data = report[m]
         # Sort daily data
-        data['daily_data'] = sorted(data['daily_data'].values(), key=lambda x: x['date'])
+        data['daily_data'] = sorted(data['daily_data'].values(), key=lambda x: x['date'], reverse=True)
         monthly_report.append(data)
 
-    annual_sales = sum(item['total_sales'] for item in monthly_report)
-    annual_expenses = sum(item['total_expenses'] for item in monthly_report)
-    annual_liters = sum(item['total_liters'] for item in monthly_report)
-    annual_transactions = sum(item['total_transactions'] for item in monthly_report)
+    # Sort and structure Annual Summary
+    annual_summary = []
+    for y in sorted(annual_report.keys(), reverse=True):
+        annual_summary.append(annual_report[y])
+
+    # Grand Totals (All time)
+    grand_sales = sum(item['total_sales'] for item in monthly_report)
+    grand_expenses = sum(item['total_expenses'] for item in monthly_report)
+    grand_liters = sum(item['total_liters'] for item in monthly_report)
+    grand_transactions = sum(item['total_transactions'] for item in monthly_report)
 
     context = {
         'monthly_report': monthly_report,
+        'annual_summary': annual_summary,
         'station': station,
         'customers': customers,
-        'annual_sales': annual_sales,
-        'annual_expenses': annual_expenses,
-        'annual_liters': annual_liters,
-        'annual_transactions': annual_transactions,
+        'annual_sales': grand_sales, # Keeping variable name but it acts as Grand Total
+        'annual_expenses': grand_expenses,
+        'annual_liters': grand_liters,
+        'annual_transactions': grand_transactions,
     }
 
     return render(request, 'wrsm/financial_report.html', context)
@@ -3346,5 +3390,32 @@ def delete_customer(request, pk):
         return redirect('wrsm_app:customers')
     
     return redirect('wrsm_app:customer-detail', pk=pk)
+
+
+class AuditLogListView(LoginRequiredMixin, ListView):
+    template_name = 'wrsm/audit_log.html'
+    model = models.AuditLog
+    context_object_name = 'audit_logs'
+    paginate_by = 20
+
+    def get_queryset(self):
+        station = self.request.user.profile.station
+        queryset = models.AuditLog.objects.filter(station=station).order_by('-timestamp')
+        
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(action__icontains=search_query) |
+                Q(target_model__icontains=search_query) |
+                Q(target_object_id__icontains=search_query) |
+                Q(details__icontains=search_query) |
+                Q(performed_by__user__username__icontains=search_query)
+            )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        return context
 
 

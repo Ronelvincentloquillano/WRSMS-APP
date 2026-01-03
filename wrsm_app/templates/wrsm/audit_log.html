@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col space-y-4">
+  <div class="text-center mt-5">
+    <h2 class="text-4xl">Audit Logs</h2>
+  </div>
+
+  <div class="max-w-7xl mx-auto w-full px-4">
+    <!-- Search Form -->
+    <form method="get" class="mb-6">
+      <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+        <input 
+          type="text" 
+          name="search" 
+          value="{{ search_query }}" 
+          placeholder="Search by action, model, ID, details, or user..." 
+          class="w-full md:w-1/2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
+        >
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
+          Search
+        </button>
+        {% if search_query %}
+        <a href="{% url 'wrsm_app:audit-logs' %}" class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors">
+          Reset
+        </a>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-white dark:bg-slate-700 rounded-lg shadow">
+      <table class="min-w-full table-auto">
+        <thead class="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200">
+          <tr>
+            <th class="px-4 py-3 text-left">Timestamp</th>
+            <th class="px-4 py-3 text-left">Action</th>
+            <th class="px-4 py-3 text-left">Target Model</th>
+            <th class="px-4 py-3 text-left">Object ID</th>
+            <th class="px-4 py-3 text-left">Details</th>
+            <th class="px-4 py-3 text-left">Performed By</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+          {% for log in audit_logs %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-200">
+            <td class="px-4 py-3 whitespace-nowrap text-sm">{{ log.timestamp }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                {% if log.action == 'ADD' %}bg-green-100 text-green-800{% elif log.action == 'EDIT' %}bg-blue-100 text-blue-800{% elif log.action == 'DELETE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ log.get_action_display }}
+              </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm">{{ log.target_model }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm">{{ log.target_object_id }}</td>
+            <td class="px-4 py-3 text-sm min-w-[200px]">{{ log.details }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm">{{ log.performed_by.user.username }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              No audit logs found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-4 flex justify-center pb-8">
+      <nav class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-slate-700">Previous</a>
+        {% endif %}
+        
+        <span class="px-3 py-1 text-slate-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+           class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-slate-700">Next</a>
+        {% endif %}
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
