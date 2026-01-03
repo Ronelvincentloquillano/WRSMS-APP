@@ -93,7 +93,7 @@ def get_offline_master_data(request):
     jug_sizes_data = {}
     for js in jug_sizes:
         jug_sizes_data[js.id] = {
-            'js_unit_price': js.unit_price
+            # 'js_unit_price': js.unit_price 
         }
 
     response_data = {

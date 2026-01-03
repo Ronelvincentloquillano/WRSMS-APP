@@ -55,37 +55,45 @@ $(document).ready(function () {
 
         let finalPrice = parseFloat(productData.unit_price) || 0;
 
-        // Logic Scope: 20L Jug
-        const is20LRefill = (parseFloat(productData.jug_size_in_liters) === 20.0 && productData.product_type === 'REFILL');
+        // Logic Scope: Standard Refill (18-22L covers 5gal/20L variants)
+        const size = parseFloat(productData.jug_size_in_liters);
+        const pType = (productData.product_type || "").toUpperCase();
+        const is20LRefill = (pType === 'REFILL' && size >= 18.0 && size <= 22.0); 
+        
+        console.log("Debug Recalc:", {
+            product: productData.product_name,
+            type: pType,
+            size: size,
+            is20LRefill: is20LRefill,
+            orderType: orderTypeData.order_type,
+            otPrice: orderTypeData.ot_unit_price,
+            defStationPrice: orderTypeData.default_unit_price,
+            hasCustomer: !!$customerSelect.val()
+        });
+
         
         if (is20LRefill) {
             const orderTypeName = (orderTypeData.order_type || "").toLowerCase().trim();
-            const hasCustomer = !!$customerSelect.val() || !!$("#customer").length; // Check both select and fixed div
+            const hasCustomer = !!$customerSelect.val() || !!$("#customer").length; 
             const defaultDeliveryRate = parseFloat(orderTypeData.default_delivery_rate) || 0;
-            const otUnitPrice = parseFloat(orderTypeData.ot_unit_price) || 0;
             const customerDiscount = parseFloat(customerData.discount_rate) || 0;
 
-            if (orderTypeName === 'delivery') {
+            if (orderTypeName.includes('delivery')) {
                 if (hasCustomer) {
-                    // If customer selected + delivery
+                    // Customer + Delivery
                     if (customerDiscount > 0) {
                         finalPrice = customerDiscount;
                     } else {
-                        // Empty discount code -> Station Default Delivery Rate
+                        // Customer + Delivery + No Discount Code
                         finalPrice = defaultDeliveryRate;
                     }
                 } else {
-                    // No customer + delivery -> Station Default Delivery Rate
+                    // No Customer + Delivery
                     finalPrice = defaultDeliveryRate;
                 }
-            } else if (orderTypeName === 'pickup') {
-                if (!hasCustomer) {
-                    // No customer + pickup -> Station Default Pickup Rate (Assuming OT Unit Price)
-                    finalPrice = otUnitPrice;
-                }
-                // If customer selected + pickup, fallback to default product price or specific logic?
-                // Prompt didn't specify. Defaulting to product base price (initial finalPrice).
             }
+            // For Pickup or any other non-delivery type, we don't override.
+            // It will use finalPrice = productData.unit_price.
         }
 
         $unitPriceInput.val(finalPrice);

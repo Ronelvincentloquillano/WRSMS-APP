@@ -86,7 +86,6 @@ class JugSize(models.Model):
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
     size_label = models.CharField(max_length=10)
     size_in_liters = models.FloatField(null=True, blank=True)
-    unit_price = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.size_label} ({self.size_in_liters}L)"

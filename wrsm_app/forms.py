@@ -313,7 +313,7 @@ class CreatePromoForm(forms.ModelForm):
 class CreateSizeForm(forms.ModelForm):
     class Meta:
         model = models.JugSize
-        fields = ['size_label','size_in_liters','unit_price']
+        fields = ['size_label','size_in_liters']
         exclude = ['station',]
         widgets = {
             'size_label':forms.TextInput(attrs={

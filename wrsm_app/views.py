@@ -1200,6 +1200,7 @@ def get_ordertype_data(request):
             'order_type': order_type.type if order_type else None,
             'sys_default_ot': station_setting.default_order_type.type if station_setting else None,
             'default_delivery_rate': station_setting.default_delivery_rate if station_setting else None,
+            'default_unit_price': station_setting.default_unit_price if station_setting else None,
         }
         return JsonResponse(data)
     except models.OrderType.DoesNotExist:
@@ -1211,7 +1212,7 @@ def get_jugsize_data(request):
     try:
         jug_size = models.JugSize.objects.get(id=jug_size_id)
         data = {
-            'js_unit_price': jug_size.unit_price if jug_size else None,
+            # 'js_unit_price': jug_size.unit_price if jug_size else None,
         }
         return JsonResponse(data)
     except models.JugSize.DoesNotExist:
