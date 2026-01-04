@@ -214,6 +214,11 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['station', 'name'], name='unique_customer_name_per_station')
+        ]
+
 
 class Order(models.Model):
     STATUS_CHOICES = (

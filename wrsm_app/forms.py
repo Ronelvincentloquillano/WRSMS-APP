@@ -287,11 +287,17 @@ class CreateCustomerForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
-        station = kwargs.pop('station', None)
+        self.station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        self.fields['default_order_type'].queryset = models.OrderType.objects.filter(station=station)
-        self.fields['promo_code'].queryset = models.Promo.objects.filter(station=station)
-        self.fields['discount_code'].queryset = models.Discount.objects.filter(station=station)
+        self.fields['default_order_type'].queryset = models.OrderType.objects.filter(station=self.station)
+        self.fields['promo_code'].queryset = models.Promo.objects.filter(station=self.station)
+        self.fields['discount_code'].queryset = models.Discount.objects.filter(station=self.station)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if models.Customer.objects.filter(station=self.station, name__iexact=name).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(f"A customer with the name '{name}' already exists in this station.")
+        return name
 
 
 class UpdateCustomerForm(CreateCustomerForm):
