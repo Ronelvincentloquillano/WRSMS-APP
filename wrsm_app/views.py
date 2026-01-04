@@ -817,9 +817,11 @@ def add_sales_from_order(request, order_id):
                         received_by=request.user.profile,
                     )
                     order_obj.status = "Completed"
+                    order_obj.modified_by = request.user.profile
                     order_obj.save()
                 else:
                     order_obj.status = "Completed"
+                    order_obj.modified_by = request.user.profile
                     order_obj.save()
                 return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
 
@@ -941,6 +943,7 @@ def add_sales_from_order(request, order_id):
 
             # Update order status to completed
             order_obj.status = "Completed"
+            order_obj.modified_by = request.user.profile
             order_obj.save()
 
             check_transaction_limit(station, request)
@@ -1865,6 +1868,7 @@ def get_container_balance(request):
 def process_order(request, order_id):
     order_obj = models.Order.objects.get(pk=order_id) if order_id else None
     order_obj.status = "In Progress"
+    order_obj.modified_by = request.user.profile
     order_obj.save()
     return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
 
@@ -1873,6 +1877,7 @@ def process_order(request, order_id):
 def cancel_order(request, order_id):
     order_obj = models.Order.objects.get(pk=order_id) if order_id else None
     order_obj.status = "Cancelled"
+    order_obj.modified_by = request.user.profile
     order_obj.save()
     return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
 
@@ -3122,7 +3127,9 @@ def update_sales(request, pk):
         item_formset = SalesItemUpdateFormSet(request.POST, instance=sale, form_kwargs={'station': sale.station})
 
         if sales_form.is_valid() and item_formset.is_valid():
-            instance = sales_form.save()
+            instance = sales_form.save(commit=False)
+            instance.modified_by = request.user.profile
+            instance.save()
             items = item_formset.save(commit=False)
             
             # Handle deleted items
