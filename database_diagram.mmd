@@ -1,0 +1,88 @@
+erDiagram
+    User {
+        int id
+        string username
+        string email
+    }
+    Profile {
+        int id
+        int user_id
+        int station_id
+    }
+    StationSubscription {
+        int id
+        int station_id
+        int plan_id
+        date end_date
+    }
+    Station {
+        int id
+        string name
+        string contact_number
+    }
+    StationSetting {
+        int id
+        int station_id
+        float default_unit_price
+    }
+    Customer {
+        int id
+        int station_id
+        string name
+    }
+    Product {
+        int id
+        int station_id
+        string product_name
+        decimal unit_price
+    }
+    Sales {
+        int id
+        int station_id
+        int customer_id
+    }
+    SalesItem {
+        int id
+        int sales_id
+        int product_id
+        decimal total
+    }
+    Order {
+        int id
+        int station_id
+        int customer_id
+        string status
+    }
+    Payment {
+        int id
+        int customer_id
+        decimal total_paid
+    }
+    AccountsReceivable {
+        int id
+        int customer_id
+        int sales_id
+        decimal total_amount
+    }
+    ContainerManagement {
+        int id
+        int customer_id
+        int new_balance
+    }
+
+    Profile ||--|| User : "has"
+    Profile }o--|| Station : "works_at"
+    StationSubscription ||--|| Station : "covers"
+    StationSetting ||--|| Station : "configures"
+    Customer }o--|| Station : "belongs_to"
+    Product }o--|| Station : "inventory_of"
+    Sales }o--|| Station : "occurs_at"
+    Sales }o--|| Customer : "sold_to"
+    SalesItem }o--|| Sales : "includes"
+    SalesItem }o--|| Product : "item_is"
+    Order }o--|| Customer : "placed_by"
+    Order }o--|| Station : "placed_at"
+    Payment }o--|| Customer : "paid_by"
+    AccountsReceivable }o--|| Customer : "owed_by"
+    AccountsReceivable }o--|| Sales : "derived_from"
+    ContainerManagement }o--|| Customer : "tracks_containers"
