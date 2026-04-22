@@ -46,8 +46,9 @@ INSTALLED_APPS = [
     'pwa',
 ]
 
-CLOUDINARY_URL = env('CLOUDINARY_URL', default='')
-USE_CLOUDINARY = bool(CLOUDINARY_URL)
+CLOUDINARY_URL = (env('CLOUDINARY_URL', default='') or '').strip()
+# Only enable when URL looks valid (whitespace alone must not turn Cloudinary on).
+USE_CLOUDINARY = CLOUDINARY_URL.startswith('cloudinary://')
 
 if USE_CLOUDINARY:
     INSTALLED_APPS += [
@@ -217,6 +218,9 @@ GCASH_ACCOUNT_NAME = env('GCASH_ACCOUNT_NAME', default='RONEL VINCENT CASEÑAS L
 GCASH_ACCOUNT_NUMBER = env('GCASH_ACCOUNT_NUMBER', default='09669733621')
 
 
+# Render sets RENDER=true; local disk for logs can be read-only or fail on startup.
+_IS_RENDER = os.environ.get('RENDER', '').lower() in ('1', 'true', 'yes')
+
 # --- PRODUCTION SECURITY SETTINGS ---
 if not DEBUG:
     # Proxy Security (Crucial for Nginx/Gunicorn)
@@ -234,23 +238,26 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-    # Logging
+    # Logging: avoid FileHandler on Render (startup can fail if path is not writable).
+    _django_handlers = ['console'] if _IS_RENDER else ['file', 'console']
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
         'handlers': {
-            'file': {
-                'level': 'ERROR',
-                'class': 'logging.FileHandler',
-                'filename': os.path.join(BASE_DIR, 'django_error.log'),
-            },
             'console': {
                 'class': 'logging.StreamHandler',
             },
+            **({} if _IS_RENDER else {
+                'file': {
+                    'level': 'ERROR',
+                    'class': 'logging.FileHandler',
+                    'filename': os.path.join(BASE_DIR, 'django_error.log'),
+                },
+            }),
         },
         'loggers': {
             'django': {
-                'handlers': ['file', 'console'],
+                'handlers': _django_handlers,
                 'level': 'ERROR',
                 'propagate': True,
             },
