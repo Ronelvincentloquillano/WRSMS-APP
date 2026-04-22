@@ -83,3 +83,6 @@ static/icons/
 staticfiles/
 # wrsm_app/migrations/
 media/
+local_backup.sql
+local_backup_clean.sql
+local_backup.dump

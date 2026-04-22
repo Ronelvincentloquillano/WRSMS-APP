@@ -19,3 +19,5 @@ django-pwa
 Markdown
 gunicorn
 whitenoise
+cloudinary
+django-cloudinary-storage
