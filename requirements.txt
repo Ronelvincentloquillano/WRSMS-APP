@@ -18,3 +18,4 @@ crispy-tailwind
 django-pwa
 Markdown
 gunicorn
+whitenoise

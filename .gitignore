@@ -78,7 +78,6 @@ static/js/popper.min.js
 static/js/bootstrap*.*
 static/css/bootstrap*.*
 static/css/input.css
-static/css/output.css
 static/src/
 static/icons/
 staticfiles/
