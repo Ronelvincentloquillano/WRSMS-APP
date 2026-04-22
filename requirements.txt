@@ -16,3 +16,4 @@ typing_extensions
 tzdata
 crispy-tailwind
 django-pwa
+Markdown
