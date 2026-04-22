@@ -69,8 +69,6 @@ package-lock.json
 
 # project folder
 ggproject/
-*project/
-*_project/
 my_env/
 venv/
 static/admin/
