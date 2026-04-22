@@ -22,6 +22,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, CreateView, ListView, UpdateView, DetailView, DeleteView
 from django.forms import inlineformset_factory
+from django.core.exceptions import ObjectDoesNotExist
 from . import models
 from . import forms
 from account.models import StationSubscription, SubscriptionPlan
@@ -182,7 +183,11 @@ def index(request):
 @login_required
 def switch_station(request, station_id):
     user = request.user
-    profile = user.profile
+    try:
+        profile = user.profile
+    except ObjectDoesNotExist:
+        messages.error(request, "Profile not found for this account. Please contact admin.")
+        return redirect('wrsm_app:dashboard')
     try:
         new_station = models.Station.objects.get(id=station_id)
         if new_station in profile.allowed_stations.all():
@@ -200,7 +205,11 @@ def switch_station(request, station_id):
 @login_required
 def dashboard(request):
     user = request.user
-    station = getattr(user.profile, 'station', None)
+    try:
+        profile = user.profile
+    except ObjectDoesNotExist:
+        profile = None
+    station = profile.station if profile else None
     
     if not station:
          messages.warning(request, "Please select or register a station first.")

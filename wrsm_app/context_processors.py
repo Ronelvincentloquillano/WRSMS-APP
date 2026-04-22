@@ -1,6 +1,7 @@
 from .models import StationSetting
 from .utils import is_transaction_limit_reached
 from . import models
+from django.core.exceptions import ObjectDoesNotExist
 
 def global_context(request):
     has_station_settings = False
@@ -14,7 +15,10 @@ def global_context(request):
             'settings_complete': settings_complete
         }
 
-    profile = getattr(request.user, 'profile', None)
+    try:
+        profile = request.user.profile
+    except ObjectDoesNotExist:
+        profile = None
 
     if profile:
         station = profile.station
