@@ -73,7 +73,6 @@ ggproject/
 *_project/
 my_env/
 venv/
-manage.py
 static/admin/
 static/fontawesome/
 static/js/jquery-3.7.1.min.js
