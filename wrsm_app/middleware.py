@@ -8,6 +8,10 @@ class SubscriptionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # PWA install / offline shell must never hit subscription redirects
+        if request.path in ('/manifest.json', '/serviceworker.js', '/offline/'):
+            return self.get_response(request)
+
         if request.user.is_authenticated:
             # List of namespaces/view_names allowed even if expired
             ALLOWED_VIEWS = [
@@ -17,11 +21,17 @@ class SubscriptionMiddleware:
                 'wrsm_app:subscription_expired',
                 'wrsm_app:initiate_payment',
                 'wrsm_app:payment_callback',
+                'wrsm_app:submit-manual-payment',
+                'wrsm_app:subscription-payment-requests',
+                'wrsm_app:approve-subscription-payment',
+                'wrsm_app:reject-subscription-payment',
+                'wrsm_app:offline_master_data',
                 'wrsm_app:profile',
                 'wrsm_app:register-new-station',
                 'wrsm_app:station-list',
                 'wrsm_app:switch-station',
                 'wrsm_app:setup-wizard',
+                'wrsm_app:admin-settings-portal',
                 'admin:index',
                 'admin:login',
                 'account:login', # Just in case
@@ -43,12 +53,21 @@ class SubscriptionMiddleware:
             expired_url = reverse('wrsm_app:subscription_expired')
             initiate_payment_url = reverse('wrsm_app:initiate_payment')
             payment_callback_url = reverse('wrsm_app:payment_callback')
+            submit_manual_payment_url = reverse('wrsm_app:submit-manual-payment')
 
             # Allow critical subscription urls by path comparison as well
-            if request.path in [expired_url, initiate_payment_url, payment_callback_url]:
+            if request.path in [expired_url, initiate_payment_url, payment_callback_url, submit_manual_payment_url]:
                 return self.get_response(request)
 
-            if current_view_name in ['wrsm_app:subscription_expired', 'wrsm_app:initiate_payment', 'wrsm_app:payment_callback']:
+            if current_view_name in [
+                'wrsm_app:subscription_expired',
+                'wrsm_app:initiate_payment',
+                'wrsm_app:payment_callback',
+                'wrsm_app:submit-manual-payment',
+                'wrsm_app:subscription-payment-requests',
+                'wrsm_app:approve-subscription-payment',
+                'wrsm_app:reject-subscription-payment',
+            ]:
                 return self.get_response(request)
 
             # Check for static/media assets (usually handled upstream, but good practice)

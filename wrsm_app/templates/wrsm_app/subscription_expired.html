@@ -2,89 +2,137 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-md">
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto space-y-8">
         <div>
             <img class="mx-auto h-16 w-auto" src="{% static 'img/SDR.png' %}" alt="SDR Logo">
             <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
                 Subscription Expired
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
-                Your subscription has expired. Please select a plan to renew your service.
+                Your subscription has expired. Submit your GCash payment proof for admin approval.
             </p>
         </div>
-        
-        <div class="rounded-md bg-yellow-50 p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Payment Instructions (GCash)</h3>
+                <div class="space-y-2 text-sm text-gray-700">
+                    {% if gcash_account_name %}
+                    <p><span class="font-semibold">Account Name:</span> {{ gcash_account_name }}</p>
+                    {% endif %}
+                    {% if gcash_account_number %}
+                    <p><span class="font-semibold">GCash Number:</span> {{ gcash_account_number }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500">Pay the exact amount based on your selected plan and billing cycle.</p>
                 </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-yellow-800">
-                        Service Interruption
-                    </h3>
-                    <div class="mt-2 text-sm text-yellow-700">
-                        <p>
-                            Access to the dashboard is restricted until a payment method is set up.
-                        </p>
+
+                {% if gcash_qr_url %}
+                <div class="mt-4">
+                    <img src="{{ gcash_qr_url }}" alt="GCash QR Code" class="w-full max-w-xs rounded-lg border border-gray-200">
+                </div>
+                {% else %}
+                <div class="mt-4 rounded-md bg-yellow-50 p-3 text-xs text-yellow-800">
+                    GCash QR is not uploaded yet. Please ask admin to upload it in Station Settings.
+                </div>
+                {% endif %}
+
+                <div class="mt-4 text-xs text-gray-600 space-y-1">
+                    <p>1. Select your plan and cycle (monthly or annual).</p>
+                    <p>2. Send payment to the GCash account above.</p>
+                    <p>3. Upload screenshot proof and reference number.</p>
+                    <p>4. Wait for admin approval.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                {% if pending_request %}
+                <div class="rounded-md bg-blue-50 p-4">
+                    <h3 class="text-sm font-semibold text-blue-800">Pending Review</h3>
+                    <p class="text-sm text-blue-700 mt-1">
+                        You already submitted payment proof for <strong>{{ pending_request.plan.name }}</strong>
+                        ({{ pending_request.get_billing_cycle_display }}). Please wait for admin approval.
+                    </p>
+                    <p class="text-xs text-blue-700 mt-2">Reference: {{ pending_request.reference_number }}</p>
+                    <p class="text-xs text-blue-700">Submitted: {{ pending_request.created_at }}</p>
+                </div>
+                {% else %}
+                <form action="{% url 'wrsm_app:submit-manual-payment' %}" method="POST" enctype="multipart/form-data" id="manualSubscriptionForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="billing_cycle" id="billing_cycle" value="monthly">
+
+                    <div class="flex justify-center mb-4">
+                        <div class="bg-gray-100 p-1 rounded-lg flex items-center relative">
+                            <button type="button" id="btnMonthly" class="w-24 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 transition-all duration-200">Monthly</button>
+                            <button type="button" id="btnAnnual" class="w-24 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all duration-200">Annual</button>
+                        </div>
                     </div>
-                </div>
+
+                    <div class="space-y-3 mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Select a Subscription Plan:</label>
+                        {% for plan in plans %}
+                        <div class="relative flex items-center p-3 border rounded-lg hover:border-blue-500 cursor-pointer transition-colors duration-200" onclick="document.getElementById('plan_{{ plan.id }}').click()">
+                            <div class="flex items-center h-5">
+                                <input id="plan_{{ plan.id }}" name="plan_id" type="radio" value="{{ plan.id }}" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" {% if forloop.first %}checked{% endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="plan_{{ plan.id }}" class="font-medium text-gray-700 cursor-pointer">
+                                    {{ plan.name }}
+                                    <span class="block text-gray-500 text-xs mt-1">{{ plan.description }}</span>
+                                </label>
+                            </div>
+                            <div class="ml-auto font-bold text-gray-900">
+                                <span class="price-display" data-monthly="{{ plan.price_monthly }}" data-annual="{{ plan.price_annual }}">₱{{ plan.price_monthly }}</span>
+                                <span class="text-xs font-normal text-gray-500 cycle-label">/mo</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="space-y-3">
+                        <input
+                            type="text"
+                            name="payer_name"
+                            class="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
+                            placeholder="Payer name (optional)"
+                        />
+                        <input
+                            type="text"
+                            name="payer_number"
+                            class="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
+                            placeholder="Payer number (optional)"
+                        />
+                        <input
+                            type="text"
+                            name="reference_number"
+                            required
+                            class="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
+                            placeholder="Payment reference number"
+                        />
+                        <label class="block text-sm text-gray-700">
+                            Upload payment screenshot
+                            <input
+                                type="file"
+                                name="proof_image"
+                                accept="image/*"
+                                required
+                                class="mt-1 w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            />
+                        </label>
+                    </div>
+
+                    <button type="submit" class="mt-5 w-full py-3 px-4 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                        Submit Payment Proof
+                    </button>
+                </form>
+                {% endif %}
             </div>
         </div>
 
-        <div class="mt-8 space-y-6">
-            <form action="{% url 'wrsm_app:initiate_payment' %}" method="POST" id="subscriptionForm">
-                {% csrf_token %}
-                <input type="hidden" name="billing_cycle" id="billing_cycle" value="monthly">
-                
-                <!-- Billing Cycle Toggle -->
-                <div class="flex justify-center mb-6">
-                    <div class="bg-gray-100 p-1 rounded-lg flex items-center relative">
-                        <button type="button" id="btnMonthly" class="w-24 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 transition-all duration-200">Monthly</button>
-                        <button type="button" id="btnAnnual" class="w-24 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all duration-200">Annual</button>
-                    </div>
-                </div>
-
-                <div class="space-y-4 mb-6">
-                    <label class="block text-sm font-medium text-gray-700">Select a Subscription Plan:</label>
-                    {% for plan in plans %}
-                    <div class="relative flex items-center p-4 border rounded-lg hover:border-blue-500 cursor-pointer transition-colors duration-200" onclick="document.getElementById('plan_{{ plan.id }}').click()">
-                        <div class="flex items-center h-5">
-                            <input id="plan_{{ plan.id }}" name="plan_id" type="radio" value="{{ plan.id }}" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" {% if forloop.first %}checked{% endif %}>
-                        </div>
-                        <div class="ml-3 text-sm">
-                            <label for="plan_{{ plan.id }}" class="font-medium text-gray-700 cursor-pointer">
-                                {{ plan.name }}
-                                <span class="block text-gray-500 text-xs mt-1">{{ plan.description }}</span>
-                            </label>
-                        </div>
-                        <div class="ml-auto font-bold text-gray-900">
-                            <span class="price-display" data-monthly="{{ plan.price_monthly }}" data-annual="{{ plan.price_annual }}">₱{{ plan.price_monthly }}</span>
-                            <span class="text-xs font-normal text-gray-500 cycle-label">/mo</span>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="text-red-500 text-center">No subscription plans available. Please contact support.</div>
-                    {% endfor %}
-                </div>
-
-                <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                    Pay via GCash
-                </button>
-            </form>
-            
-            <div class="text-center mt-4">
-                <a href="{% url 'account:logout' %}" class="font-medium text-blue-600 hover:text-blue-500">
-                    Log out
-                </a>
-            </div>
+        <div class="text-center">
+            <a href="{% url 'account:logout' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                Log out
+            </a>
         </div>
     </div>
 </div>
@@ -97,6 +145,10 @@
         const prices = document.querySelectorAll('.price-display');
         const cycleLabels = document.querySelectorAll('.cycle-label');
 
+        if (!btnMonthly || !btnAnnual || !billingInput) {
+            return;
+        }
+
         function setCycle(cycle) {
             billingInput.value = cycle;
             if (cycle === 'monthly') {
@@ -104,7 +156,7 @@
                 btnMonthly.classList.remove('text-gray-500');
                 btnAnnual.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 btnAnnual.classList.add('text-gray-500');
-                
+
                 prices.forEach(el => el.textContent = '₱' + el.dataset.monthly);
                 cycleLabels.forEach(el => el.textContent = '/mo');
             } else {
@@ -112,7 +164,7 @@
                 btnAnnual.classList.remove('text-gray-500');
                 btnMonthly.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
                 btnMonthly.classList.add('text-gray-500');
-                
+
                 prices.forEach(el => el.textContent = '₱' + el.dataset.annual);
                 cycleLabels.forEach(el => el.textContent = '/yr');
             }

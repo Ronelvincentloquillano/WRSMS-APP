@@ -74,7 +74,7 @@ class UserManagementTest(TestCase):
         self.profile = Profile.objects.create(user=self.user, station=self.station)
         
         from django.contrib.auth.models import Group
-        self.group = Group.objects.create(name='Operator')
+        self.group, _ = Group.objects.get_or_create(name='staff')
         
         # Create a valid subscription
         self.plan = SubscriptionPlan.objects.create(name='Test Plan', price_monthly=100.00)

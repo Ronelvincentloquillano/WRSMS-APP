@@ -4,17 +4,17 @@
 {% load math_filters %}
 {% load custom_tags %}
 
-{% block title %}Monthly Financial Report{% endblock %}
+{% block title %}Monthly Financial Reports{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
-
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Monthly Financial Report</h2>
+<div class="min-h-screen max-w-7xl mx-auto px-4 py-5 flex flex-col space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-2xl sm:text-3xl font-bold">Monthly Financial Reports</h2>
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
-    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+  <section class="hidden md:block w-full max-w-full min-w-0 bg-white dark:bg-slate-700 rounded-lg shadow p-2 text-slate-800 dark:text-slate-100">
+    <div class="w-full overflow-x-auto">
+    <table class="w-full min-w-[720px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
           <th class="px-4 py-2">Month</th>
@@ -135,6 +135,80 @@
       {% endif %}
     </tbody>
   </table>
+    </div>
+</section>
+
+  <section class="md:hidden space-y-3 w-full max-w-full min-w-0">
+    {% if monthly_report %}
+      {% for report in monthly_report %}
+      <div class="ux-card p-4">
+        <div class="font-semibold text-lg">{{ report.month|date:"F Y" }}</div>
+        <div class="grid grid-cols-2 gap-2 mt-3 text-sm">
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-xs text-slate-500">Total Sales</div>
+            <div class="font-semibold">{{ report.total_sales|floatformat:2|intcomma }}</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-xs text-slate-500">Total Expenses</div>
+            <div class="font-semibold">{{ report.total_expenses|floatformat:2|intcomma }}</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-xs text-slate-500">Net Profit</div>
+            <div class="font-semibold">{{ report.total_sales|subtract:report.total_expenses|floatformat:2|intcomma }}</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-xs text-slate-500">Transactions</div>
+            <div class="font-semibold">{{ report.total_transactions|intcomma }}</div>
+          </div>
+        </div>
+        <details class="mt-3">
+          <summary class="cursor-pointer text-sm font-medium">Daily Breakdown</summary>
+          <div class="mt-2 space-y-2">
+            {% for day in report.daily_data %}
+            <div class="bg-slate-50 dark:bg-slate-800 rounded p-2 text-sm">
+              <div class="font-medium">{{ day.date|date:"M d (D)" }}</div>
+              <div>Sales: {{ day.total_sales|floatformat:2|intcomma }}</div>
+              <div>Expenses: {{ day.total_expenses|floatformat:2|intcomma }}</div>
+              <div>Net: {{ day.total_sales|subtract:day.total_expenses|floatformat:2|intcomma }}</div>
+              <div>Liters: {{ day.total_liters|intcomma }}</div>
+              <div>Txns: {{ day.total_transactions|intcomma }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      {% endfor %}
+
+      {% if annual_summary %}
+      <div class="bg-slate-200 dark:bg-slate-700 rounded-lg p-4">
+        <div class="font-bold mb-2">Annual Summaries</div>
+        <div class="space-y-2 text-sm">
+          {% for year_data in annual_summary %}
+          <div class="bg-white dark:bg-slate-800 rounded p-2">
+            <div class="font-semibold">{{ year_data.year|cut:"," }}</div>
+            <div>Sales: {{ year_data.total_sales|floatformat:2|intcomma }}</div>
+            <div>Expenses: {{ year_data.total_expenses|floatformat:2|intcomma }}</div>
+            <div>Net: {{ year_data.total_sales|subtract:year_data.total_expenses|floatformat:2|intcomma }}</div>
+            <div>Liters: {{ year_data.total_liters|intcomma }}</div>
+            <div>Txns: {{ year_data.total_transactions|intcomma }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="bg-blue-200 dark:bg-blue-900 rounded-lg p-4">
+        <div class="font-bold">Grand Total</div>
+        <div class="mt-1 text-sm">Sales: {{ annual_sales|floatformat:2|intcomma }}</div>
+        <div class="text-sm">Expenses: {{ annual_expenses|floatformat:2|intcomma }}</div>
+        <div class="text-sm">Net: {{ annual_sales|subtract:annual_expenses|floatformat:2|intcomma }}</div>
+        <div class="text-sm">Liters: {{ annual_liters|intcomma }}</div>
+        <div class="text-sm">Transactions: {{ annual_transactions|intcomma }}</div>
+      </div>
+    {% else %}
+      <div class="ux-card rounded p-4 text-center">No data available.</div>
+    {% endif %}
+  </section>
 </div>
 {% endblock %}
 

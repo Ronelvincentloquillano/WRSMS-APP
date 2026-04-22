@@ -13,7 +13,7 @@ class OfflineSyncTest(TestCase):
         self.profile = Profile.objects.create(user=self.user, station=self.station)
         
         # Setup Master Data
-        self.jug_size = JugSize.objects.create(station=self.station, size_label='20L', size_in_liters=20, unit_price=25)
+        self.jug_size = JugSize.objects.create(station=self.station, size_label='20L', size_in_liters=20)
         self.jug_type = JugType.objects.create(station=self.station, jug_type='Round')
         self.order_type = OrderType.objects.create(station=self.station, type='Walk-in', unit_price=0)
         self.payment_type = PaymentType.objects.create(station=self.station, name='Cash')

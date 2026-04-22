@@ -4,23 +4,21 @@
 {% block title %}Orders{% endblock %}
 
 {% block content %}
-<div class="min-h-screen max-w-6xl mx-auto px-4">
-  <div class="text-center mt-6 flex justify-center px-5">
-    <h2 class="text-3xl font-bold w-full">Orders</h2>
-    <div class="text-right w-auto">
-      <a href="{% url 'wrsm_app:add-order' %}">
-        <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
-      </a>
-    </div>
+<div class="min-h-screen max-w-7xl mx-auto px-4 py-5">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <h2 class="text-3xl font-bold">Orders</h2>
+    <a href="{% url 'wrsm_app:add-order' %}" class="ux-btn ux-btn-primary inline-block w-full sm:w-auto text-center">
+      + Add Order
+    </a>
   </div>
 
   <!-- search fields -->
-  <form method="get" class="mb-6 text-center mt-6 max-w-xl mx-auto">
+  <form method="get" class="mb-4 mt-4 w-full max-w-xl bg-white dark:bg-slate-700 rounded-lg shadow p-4">
     <div class="text-center flex flex-col gap-4">
-      <div class="flex mx-auto gap-4 bg-cyan-200 px-4 py-2 rounded text-slate-900">
-        <label for="filter" class="block font-medium mb-1">Filter:</label>
-        <div class="flex">
-        <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 sm:gap-4 bg-cyan-100 dark:bg-slate-600 px-4 py-3 rounded text-slate-900 dark:text-slate-100">
+        <label for="filter" class="block font-medium">Filter:</label>
+        <div class="flex items-center justify-center flex-wrap gap-x-4 gap-y-2">
+        <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox"
           value="Completed" {% if "Completed" in selected_filters %}checked{% endif %}
           onchange="this.form.submit()"
         >
@@ -32,21 +30,75 @@
         <label for="Cancelled">Cancelled</label>
       </div>
     </div>
+    </div>
   </form>
   <!-- end of search fields -->
 
   <div class="text-center mb-6">
-    <a href="{% url 'wrsm_app:delivery-map' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md">
+    <a href="{% url 'wrsm_app:delivery-map' %}" class="ux-btn ux-btn-secondary inline-block w-full sm:w-auto text-center">
       View Delivery Map
     </a>
   </div>
 
-  <div id="orders-list-container" class="flex flex-col items-center">
-   
-    {% for item in orders %}
-    <div class="bg-white text-slate-700 shadow rounded-md mt-6 w-full max-w-3xl">
+  <div id="orders-list-container">
+    <!-- Desktop table -->
+    <div class="hidden lg:block overflow-x-auto bg-white text-slate-700 shadow rounded-md">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-200">
+          <tr class="text-left">
+            <th class="px-3 py-2">Order #</th>
+            <th class="px-3 py-2">Date</th>
+            <th class="px-3 py-2">Customer</th>
+            <th class="px-3 py-2">Qty</th>
+            <th class="px-3 py-2">Order Type</th>
+            <th class="px-3 py-2">Payment</th>
+            <th class="px-3 py-2">Status</th>
+            <th class="px-3 py-2">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in orders %}
+          <tr class="border-t border-slate-200">
+            <td class="px-3 py-2 font-medium">{{ item.pk }}</td>
+            <td class="px-3 py-2">{{ item.created_date }}</td>
+            <td class="px-3 py-2">{{ item.customer.name }}</td>
+            <td class="px-3 py-2">{% if item.quantity %}{{ item.quantity }}{% else %}?{% endif %}</td>
+            <td class="px-3 py-2">{{ item.order_type }}</td>
+            <td class="px-3 py-2">
+              {% if item.is_paid == True %}
+                <span class="px-2 py-1 rounded text-white bg-green-600 text-xs">paid</span>
+              {% elif item.is_paid == False %}
+                <span class="px-2 py-1 rounded text-white bg-red-600 text-xs">unpaid</span>
+              {% else %}
+                <span class="px-2 py-1 rounded text-black bg-yellow-400 text-xs">unknown</span>
+              {% endif %}
+            </td>
+            <td class="px-3 py-2">
+              {% if item.status == 'Pending' %}
+                <span class="px-2 py-1 rounded text-white bg-red-500 text-xs">Pending</span>
+              {% elif item.status == 'In Progress' %}
+                <span class="px-2 py-1 rounded text-black bg-orange-300 text-xs">In Progress</span>
+              {% elif item.status == 'Completed' %}
+                <span class="px-2 py-1 rounded text-black bg-green-500 text-xs">Completed</span>
+              {% else %}
+                <span class="px-2 py-1 rounded text-slate-700 bg-gray-300 text-xs">{{ item.status }}</span>
+              {% endif %}
+            </td>
+            <td class="px-3 py-2">
+              <a href="{% url 'wrsm_app:update-order' pk=item.pk %}" class="text-blue-600 hover:underline">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-      <div class="flex justify-between items-center p-2 bg-gray-500 rounded-t-lg text-sm">
+    <!-- Mobile cards -->
+    <div class="grid gap-4 lg:hidden">
+      {% for item in orders %}
+      <div class="ux-card text-slate-700 mt-1 overflow-hidden">
+
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-gray-500 rounded-t-lg text-sm">
         <div class="flex flex-col text-left text-slate-100">
           <p>
             Order#: <span class="font-medium text-md">{{ item.pk }}</span>
@@ -59,7 +111,7 @@
           <p class="font-medium text-lg">{{ item.customer.name }} - {{ item.customer.brgy }}</p>
           {% endif %}
         </div>
-        <div>
+        <div class="self-start sm:self-auto">
           <!-- Dropdown -->
           <el-dropdown class="inline-block">
             <button class="inline-flex w-full justify-center 
@@ -150,7 +202,8 @@
         </table>
       </div>
     </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
 
   </div>
 </div>

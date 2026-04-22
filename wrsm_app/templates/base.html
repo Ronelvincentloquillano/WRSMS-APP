@@ -9,11 +9,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="{% static 'img/SDR_thumbnail.png' %}" sizes="any">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>SmartDynamic Refilling</title>
 
     <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json?v=2">
+    <link rel="manifest" href="{% url 'wrsm_app:pwa_manifest' %}?v=3">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -24,10 +24,195 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+        img,
+        svg,
+        video,
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        main input,
+        main select,
+        main textarea,
+        main button {
+            max-width: 100%;
+        }
+        main {
+            overflow-wrap: anywhere;
+        }
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+        .sd-sidebar-aside {
+            box-shadow: 8px 0 36px -10px rgba(0, 0, 0, 0.55);
+        }
+        .sd-sidebar-link {
+            display: block;
+            border-radius: 0.5rem;
+            padding: 0.625rem 0.75rem;
+            margin-bottom: 0.375rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            border: 1px solid rgba(51, 65, 85, 0.7);
+            background: rgba(30, 41, 59, 0.55);
+            color: rgb(226 232 240);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        }
+        .sd-sidebar-link:hover {
+            background: rgb(30 41 59);
+            border-color: rgb(100 116 139);
+            color: rgb(255 255 255);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.25);
+        }
+        .sd-sidebar-link.is-active {
+            background: linear-gradient(145deg, rgb(2 132 199) 0%, rgb(3 105 161) 100%);
+            border-color: rgba(125, 211, 252, 0.9);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 10px 24px -6px rgba(14, 165, 233, 0.45), 0 4px 8px -2px rgba(0, 0, 0, 0.35);
+        }
+        .sd-sidebar-sublink {
+            display: block;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.25rem;
+            margin-left: 0.5rem;
+            font-size: 0.8125rem;
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            background: rgba(15, 23, 42, 0.55);
+            color: rgb(203 213 225);
+            box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.25);
+            text-decoration: none;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        }
+        .sd-sidebar-sublink:hover {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgb(100 116 139);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.3);
+            color: rgb(248 250 252);
+        }
+        .sd-sidebar-sublink.is-active {
+            background: rgba(14, 165, 233, 0.22);
+            border-color: rgba(56, 189, 248, 0.6);
+            color: rgb(224 242 254);
+            font-weight: 600;
+            box-shadow: 0 4px 14px -2px rgba(14, 165, 233, 0.3);
+        }
+        .sd-sidebar-group summary {
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 0.5rem;
+            padding: 0.625rem 0.75rem;
+            margin-bottom: 0.375rem;
+            border: 1px solid rgba(51, 65, 85, 0.7);
+            background: rgba(30, 41, 59, 0.72);
+            color: rgb(226 232 240);
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.28);
+            transition: box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+        .sd-sidebar-group summary::-webkit-details-marker {
+            display: none;
+        }
+        .sd-sidebar-group summary:hover {
+            background: rgb(30 41 59);
+            border-color: rgb(100 116 139);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.38);
+        }
+        .sd-sidebar-group[open] > summary {
+            border-color: rgba(56, 189, 248, 0.45);
+            background: rgba(30, 41, 59, 0.98);
+            box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.42);
+            color: rgb(255 255 255);
+        }
+        .ux-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            border-radius: 0.5rem;
+            padding: 0.55rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            line-height: 1.25rem;
+            transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+            text-decoration: none;
+        }
+        .ux-btn:focus-visible {
+            outline: 2px solid rgba(14, 165, 233, 0.6);
+            outline-offset: 2px;
+        }
+        .ux-btn-primary {
+            background: rgb(37 99 235);
+            color: #fff;
+        }
+        .ux-btn-primary:hover {
+            background: rgb(29 78 216);
+        }
+        .ux-btn-secondary {
+            background: rgb(71 85 105);
+            color: #fff;
+        }
+        .ux-btn-secondary:hover {
+            background: rgb(51 65 85);
+        }
+        .ux-btn-muted {
+            background: rgb(148 163 184);
+            color: #fff;
+        }
+        .ux-btn:disabled,
+        .ux-btn[aria-disabled="true"] {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .ux-card {
+            background: #fff;
+            border: 1px solid rgb(226 232 240);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+        }
+        .dark .ux-card {
+            background: rgb(51 65 85);
+            border-color: rgb(71 85 105);
+        }
+        @media (max-width: 767px) {
+            main table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            main table thead,
+            main table tbody,
+            main table tr {
+                white-space: nowrap;
+            }
+            .sd-sidebar-aside {
+                width: min(86vw, 20rem);
+            }
+        }
+    </style>
+
     <script>
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/serviceworker.js")
-                .then(() => console.log("Service Worker Registered"));
+            navigator.serviceWorker
+                .register("{% url 'wrsm_app:pwa_serviceworker' %}")
+                .then(function () { console.log("Service Worker registered"); })
+                .catch(function (err) { console.warn("Service Worker registration failed", err); });
         }
     </script>
 
@@ -45,40 +230,41 @@
 </script>
 
 <body
-    class="text-base text-slate-800 bg-slate-200 dark:bg-slate-800 scheme-light flex flex-col dark:text-slate-300 dark:scheme-dark min-h-screen min-w-full">
-    <header class="sticky top-0 z-10 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 min-w-screen">
-        <section class="mx-auto flex items-center justify-between p-4">
-            <h1 class="text-3xl font-medium">
+    class="text-base text-slate-800 bg-slate-200 dark:bg-slate-800 scheme-light flex flex-col dark:text-slate-300 dark:scheme-dark min-h-screen w-full max-w-[100vw] overflow-x-hidden antialiased">
+    <!-- Logged-in: mobile-only (desktop uses sidebar). Guests: show this bar on all screen sizes so nav is never missing. -->
+    <header class="sticky top-0 z-10 w-full min-w-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 {% if request.user.is_authenticated %}md:hidden{% endif %}">
+        <section class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+            <h1 class="text-3xl font-medium shrink-0 mr-2">
                 {% if request.user.is_authenticated %}
-                <a href="{% url 'wrsm_app:dashboard' %}">
-                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
+                <a href="{% url 'wrsm_app:dashboard' %}" class="block">
+                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 sm:h-11 w-auto object-contain">
                 </a>
                 {% else %}
-                <a href="{% url 'index' %}">
-                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 w-auto object-contain">
+                <a href="{% url 'index' %}" class="block">
+                    <img src="{% static 'img/SDR.png' %}" alt="SDR logo" class="h-10 sm:h-11 w-auto object-contain">
                 </a>
                 {% endif %}
             </h1>
 
             <!-- Hamburger -->
-            <button id="hamburger-button" class="relative h-8 w-8 cursor-pointer text-3xl md:hidden"
+            <button id="hamburger-button" type="button" class="relative h-10 w-10 shrink-0 cursor-pointer md:hidden flex items-center justify-center rounded-lg hover:bg-white/30 dark:hover:bg-slate-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/50"
                 aria-label="Toggle mobile menu">
                 <div
-                    class="absolute top-4 -mt-0.5 h-1 w-8 rounded bg-white transition-all duration-500
-          before:absolute before:h-1 before:w-8 before:-translate-x-4 before:-translate-y-3 before:rounded before:bg-white before:transition-all before:duration-500 before:content-['']
-          after:absolute after:h-1 after:w-8 after:-translate-x-4 after:translate-y-3 after:rounded after:bg-white after:transition-all after:duration-500 after:content-['']">
+                    class="relative top-1/2 -translate-y-1/2 h-1 w-8 rounded bg-white transition-all duration-500
+          before:absolute before:h-1 before:w-8 before:left-0 before:-top-3 before:rounded before:bg-white before:transition-all before:duration-500 before:content-['']
+          after:absolute after:h-1 after:w-8 after:left-0 after:top-3 after:rounded after:bg-white after:transition-all after:duration-500 after:content-['']">
                 </div>
             </button>
 
             <!-- Main Nav -->
-            <nav class="hidden mx-auto md:flex items-center space-x-6 text-xl" aria-label="main">
+            <nav class="hidden md:flex flex-1 flex-wrap items-center justify-end gap-x-5 gap-y-3 lg:gap-x-7 lg:gap-y-3 text-base lg:text-lg min-w-0 leading-snug" aria-label="main">
                 {% if request.user.is_authenticated %}
 
                 {% if request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
                 {% if available_stations %}
                 <!-- Station Switcher -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1 font-bold text-blue-800 dark:text-blue-300">
+                    <button type="button" class="flex items-center gap-1.5 font-bold text-blue-800 dark:text-blue-300 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         {{ station }}
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -99,13 +285,12 @@
                 {% endif %}
 
                 {% if settings_complete %}
-                <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90">Sales</a>
-                <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90">Orders</a>
-                <a href="{% url 'wrsm_app:container-management-list' %}" class="hover:opacity-90">Container Management</a>
+                <a href="{% url 'wrsm_app:sales' %}" class="inline-flex items-center px-1.5 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90 whitespace-nowrap">Sales</a>
+                <a href="{% url 'wrsm_app:container-management-list' %}" class="inline-flex items-center px-1.5 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90 whitespace-nowrap">Container Management</a>
 
                 <!-- Finance dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1">
+                    <button type="button" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         Finance
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -119,7 +304,7 @@
                         </a>
                         <a href="{% url 'wrsm_app:monthly-financial-report' %}"
                             class="block px-4 py-2 hover:bg-blue-400">
-                            Monthly Financial Report
+                            Monthly Financial Reports
                         </a>
                         <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
                             Net Terms
@@ -129,7 +314,7 @@
 
                 <!-- More dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1">
+                    <button type="button" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         More
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -141,6 +326,7 @@
                         <a href="{% url 'wrsm_app:customer-map' %}" class="block px-4 py-2 hover:bg-blue-400">Customer
                             Map</a>
                         <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:bg-blue-400">Products</a>
+                        <a href="{% url 'wrsm_app:price-history' %}" class="block px-4 py-2 hover:bg-blue-400">Product price history</a>
                         <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:bg-blue-400">Order
                             Forecast</a>
                         <a href="{% url 'wrsm_app:expenses' %}" class="block px-4 py-2 hover:bg-blue-400">Expenses</a>
@@ -150,7 +336,7 @@
                 {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
                 <!-- Station dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1">
+                    <button type="button" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         Station
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -183,17 +369,18 @@
                 {% if request.user.is_staff or request.user.is_superuser %}
                 <!-- Settings dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1">
+                    <button type="button" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         <ion-icon name="settings-outline"></ion-icon>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
                     <div class="absolute top-full right-0 hidden group-hover:block hover:block
-                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
+                        bg-blue-300 dark:text-gray-900 py-2 w-56 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:admin-settings-portal' %}" class="block px-4 py-2 hover:bg-blue-400 font-medium">Admin settings portal</a>
                         <a href="{% url 'wrsm_app:manage-articles' %}" class="block px-4 py-2 hover:bg-blue-400">Manage
                             Articles</a>
-                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Django admin</a>
                     </div>
                 </div>
                 {% endif %}
@@ -202,15 +389,16 @@
                 {% if request.user.is_staff or request.user.is_superuser %}
                 <!-- Settings dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1">
+                    <button type="button" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30">
                         <ion-icon name="settings-outline"></ion-icon>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
                     <div class="absolute top-full right-0 hidden group-hover:block hover:block
-                        bg-blue-300 dark:text-gray-900 py-2 w-48 rounded shadow-lg z-50">
-                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                        bg-blue-300 dark:text-gray-900 py-2 w-56 rounded shadow-lg z-50">
+                        <a href="{% url 'wrsm_app:admin-settings-portal' %}" class="block px-4 py-2 hover:bg-blue-400 font-medium">Admin settings portal</a>
+                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Django admin</a>
                     </div>
                 </div>
                 {% endif %}
@@ -218,9 +406,9 @@
                 {% endif %}
 
                 <!-- Right-aligned items -->
-                <div class="relative group">
-                    <button class="flex items-center gap-1">
-                        {{ request.user.get_full_name }}
+                <div class="relative group ml-1 pl-2 border-l border-blue-400/50 dark:border-slate-600/80">
+                    <button type="button" class="flex items-center gap-1.5 max-w-[14rem] sm:max-w-[18rem] px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 text-left">
+                        <span class="truncate font-medium">{{ request.user.get_full_name }}</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -237,27 +425,35 @@
                         </form>
                     </div>
                 </div>
+                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-secondary text-xs sm:text-sm">
+                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
+                    <span>Install App</span>
+                </button>
 
                 {% else %} <!-- User is unauthenticated -->
                 <!-- Left links (flex-grow pushes login to the right) -->
-                <div class="flex flex-1 space-x-6">
-                    <a href="/pricing/" class="hover:opacity-90">Pricing</a>
-                    <a href="/documentation/" class="hover:opacity-90">Documentation</a>
-                    <a href="/contact-us/" class="hover:opacity-90">Contact Us</a>
-                    <a href="/about/" class="hover:opacity-90">About Us</a>
+                <div class="flex flex-1 flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-3 min-w-0 text-2xl lg:text-2xl">
+                    <a href="/pricing/" class="inline-flex items-center px-1.5 py-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90">Pricing</a>
+                    <a href="/documentation/" class="inline-flex items-center px-1.5 py-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90">Documentation</a>
+                    <a href="/contact-us/" class="inline-flex items-center px-1.5 py-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90">Contact Us</a>
+                    <a href="/about/" class="inline-flex items-center px-1.5 py-2 rounded-lg hover:bg-white/40 dark:hover:bg-slate-500/30 hover:opacity-90">About Us</a>
                 </div>
 
                 <!-- Login aligned right -->
-                <div>
-                    <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
+                <div class="shrink-0 pl-4 sm:pl-6 ml-auto sm:ml-0 border-l border-blue-400/50 dark:border-slate-600/80">
+                    <a href="{% url 'account:login' %}" class="inline-flex items-center px-3 py-2 rounded-lg font-semibold text-xl lg:text-2xl hover:bg-white/50 dark:hover:bg-slate-500/30 hover:opacity-90">Login</a>
                 </div>
+                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-secondary text-xs sm:text-sm">
+                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
+                    <span>Install App</span>
+                </button>
                 {% endif %}
             </nav>
         </section>
 
         <section id="mobile-menu"
-            class="top-68 justify-center absolute hidden w-full origin-top animate-open-menu flex-col text-xl">
-            <nav class="flex min-h-screen flex-col items-center py-8 bg-slate-300 dark:bg-slate-900 dark:text-slate-100"
+            class="fixed inset-x-0 top-[4.5rem] bottom-0 z-40 hidden overflow-y-auto overscroll-contain bg-slate-300 dark:bg-slate-900 dark:text-slate-100 text-lg sm:text-xl shadow-lg">
+            <nav class="flex min-h-full flex-col items-center gap-2 py-10 px-5 pb-12 text-center"
                 aria-label="mobile">
                 {% if request.user.is_authenticated %}
 
@@ -291,7 +487,6 @@
                 <a href="{% url 'wrsm_app:sales' %}" class="hover:opacity-90 mb-5"><ion-icon
                         name="cash-outline"></ion-icon>
                     Sales</a>
-                <a href="{% url 'wrsm_app:orders' %}" class="hover:opacity-90 mb-5">Orders</a>
                 <a href="{% url 'wrsm_app:container-management-list' %}" class="hover:opacity-90 mb-5">Container
                     Management</a>
                 {% endif %}
@@ -312,7 +507,7 @@
                             </a>
                             <a href="{% url 'wrsm_app:monthly-financial-report' %}"
                                 class="block px-4 py-2 hover:bg-blue-400">
-                                Monthly Financial Report
+                                Monthly Financial Reports
                             </a>
                             <a href="{% url 'wrsm_app:net-terms' %}" class="block px-4 py-2 hover:bg-blue-400">
                                 Net Terms
@@ -387,10 +582,12 @@
                         </button>
                         <div class="absolute top-full hidden group-hover:block hover:block
                       bg-blue-200 dark:text-gray-900 py-2 w-auto rounded shadow-lg z-50">
+                            <a href="{% url 'wrsm_app:admin-settings-portal' %}"
+                                class="block px-4 py-2 hover:bg-blue-400 font-medium">Admin settings portal</a>
                             <a href="{% url 'wrsm_app:manage-articles' %}"
                                 class="block px-4 py-2 hover:bg-blue-400">Manage
                                 Articles</a>
-                            <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Admin Portal</a>
+                            <a href="{% url 'admin:index' %}" class="block px-4 py-2 hover:bg-blue-400">Django admin</a>
                         </div>
                     </div>
                     {% endif %}
@@ -414,7 +611,6 @@
                         </form>
                     </div>
                 </div>
-                </div>
                 {% else %} <!-- User is unauthenticated -->
                 <a href="/pricing/" class="hover:opacity-90 mb-5">Pricing</a>
                 <a href="/documentation/" class="hover:opacity-90 mb-5">Documentation</a>
@@ -426,13 +622,166 @@
                     <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
                 </div>
                 {% endif %}
+                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-primary mt-2">
+                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
+                    <span>Install App</span>
+                </button>
             </nav>
         </section>
     </header>
 
+    <!-- Desktop layout -->
+    {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
+    <div class="hidden md:flex flex-1 min-h-screen w-full">
+        <aside class="sd-sidebar-aside lg:w-64 xl:w-72 shrink-0 flex flex-col border-r border-slate-600/70 bg-slate-900 text-slate-100 z-30" style="width: 15rem;">
+            <div class="shrink-0 border-b border-slate-700 px-3 py-4 shadow-md shadow-black/20">
+                <a href="{% url 'wrsm_app:dashboard' %}"
+                   class="block text-center no-underline transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded-sm">
+                    <span class="block text-sm font-semibold tracking-tight text-slate-100">SmartDynamic</span>
+                    <span class="mt-0.5 block text-[11px] font-medium text-slate-400">Refilling</span>
+                </a>
+            </div>
+            {% with vn=request.resolver_match.view_name %}
+            <nav class="flex-1 px-2 py-4 text-sm overflow-y-auto" aria-label="Sidebar">
+                <a href="{% url 'wrsm_app:dashboard' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:dashboard' %}is-active{% endif %}">
+                    Dashboard
+                </a>
+
+                {% if settings_complete %}
+                <a href="{% url 'wrsm_app:sales' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:sales' or vn == 'wrsm_app:sales-and-orders' or vn == 'wrsm_app:add-sales' or vn == 'wrsm_app:add-sales-retro' or vn == 'wrsm_app:add-sales-from-order' or vn == 'wrsm_app:update-sales' or vn == 'wrsm_app:delete-sales' %}is-active{% endif %}">
+                    Sales
+                </a>
+                <a href="{% url 'wrsm_app:container-management-list' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:container-management-list' or vn == 'wrsm_app:add-container-record' or vn == 'wrsm_app:update-container-record' or vn == 'wrsm_app:delete-container-record' %}is-active{% endif %}">
+                    Container Management
+                </a>
+                <a href="{% url 'wrsm_app:customers' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:customers' or vn == 'wrsm_app:customer-detail' or vn == 'wrsm_app:add-customer' or vn == 'wrsm_app:update-customer' or vn == 'wrsm_app:delete-customer' or vn == 'wrsm_app:customer-map' %}is-active{% endif %}">
+                    Customers
+                </a>
+                <a href="{% url 'wrsm_app:products' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:products' or vn == 'wrsm_app:add-product' or vn == 'wrsm_app:update-product' %}is-active{% endif %}">
+                    Products
+                </a>
+                <a href="{% url 'wrsm_app:price-history' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:price-history' or vn == 'wrsm_app:product-price-history' %}is-active{% endif %}">
+                    Price history
+                </a>
+
+                <details class="group sd-sidebar-group mt-2" {% if vn == 'wrsm_app:order-forecast' or vn == 'wrsm_app:add-forecast' or vn == 'wrsm_app:update_forecast' or vn == 'wrsm_app:forecast-customer-update' or vn == 'wrsm_app:delivery-map' or vn == 'wrsm_app:maintenance' or vn == 'wrsm_app:add-maintenance' or vn == 'wrsm_app:backwash-monitor' %}open{% endif %}>
+                    <summary>
+                        <span>Operations</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:order-forecast' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:order-forecast' or vn == 'wrsm_app:add-forecast' or vn == 'wrsm_app:update_forecast' or vn == 'wrsm_app:forecast-customer-update' %}is-active{% endif %}">Order Forecast</a>
+                        <a href="{% url 'wrsm_app:delivery-map' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:delivery-map' %}is-active{% endif %}">Delivery Map</a>
+                        <a href="{% url 'wrsm_app:maintenance' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:maintenance' or vn == 'wrsm_app:add-maintenance' %}is-active{% endif %}">Maintenance</a>
+                        <a href="{% url 'wrsm_app:backwash-monitor' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:backwash-monitor' %}is-active{% endif %}">Backwash Monitor</a>
+                    </div>
+                </details>
+
+                <details class="group sd-sidebar-group" {% if vn == 'wrsm_app:ar-list' or vn == 'wrsm_app:monthly-financial-report' or vn == 'wrsm_app:net-terms' or vn == 'wrsm_app:expenses' or vn == 'wrsm_app:add-expense' or vn == 'wrsm_app:update-expense' or vn == 'wrsm_app:delete-expense' or vn == 'wrsm_app:add-payment' or vn == 'wrsm_app:add-payment-generic' %}open{% endif %}>
+                    <summary>
+                        <span>Finance</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:ar-list' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:ar-list' or vn == 'wrsm_app:add-payment' or vn == 'wrsm_app:add-payment-generic' %}is-active{% endif %}">Accounts Receivable</a>
+                        <a href="{% url 'wrsm_app:monthly-financial-report' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:monthly-financial-report' %}is-active{% endif %}">Monthly Financial Reports</a>
+                        <a href="{% url 'wrsm_app:net-terms' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:net-terms' or vn == 'wrsm_app:add-net-terms' %}is-active{% endif %}">Net Terms</a>
+                        <a href="{% url 'wrsm_app:expenses' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:expenses' or vn == 'wrsm_app:add-expense' or vn == 'wrsm_app:update-expense' or vn == 'wrsm_app:delete-expense' %}is-active{% endif %}">Expenses</a>
+                    </div>
+                </details>
+
+                <details class="group sd-sidebar-group" {% if vn == 'wrsm_app:promos' or vn == 'wrsm_app:add-promo' or vn == 'wrsm_app:delete-promo' or vn == 'wrsm_app:discounts' or vn == 'wrsm_app:add-discount' %}open{% endif %}>
+                    <summary>
+                        <span>Marketing</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:promos' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:promos' or vn == 'wrsm_app:add-promo' or vn == 'wrsm_app:delete-promo' %}is-active{% endif %}">Promos</a>
+                        <a href="{% url 'wrsm_app:discounts' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:discounts' or vn == 'wrsm_app:add-discount' %}is-active{% endif %}">Discounts</a>
+                    </div>
+                </details>
+
+                {% if request.user|has_group:"station owner/admin" or request.user.is_superuser %}
+                <details class="group sd-sidebar-group" {% if vn == 'wrsm_app:station-list' or vn == 'wrsm_app:station-detail' or vn == 'wrsm_app:station-update' or vn == 'wrsm_app:station-setting-detail' or vn == 'wrsm_app:station-setting-update' or vn == 'wrsm_app:add-station-settings' or vn == 'wrsm_app:station-users' or vn == 'wrsm_app:shortcuts' or vn == 'wrsm_app:add-shortcut' or vn == 'wrsm_app:update-shortcut' or vn == 'wrsm_app:audit-logs' %}open{% endif %}>
+                    <summary>
+                        <span>Station</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:station-list' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:station-list' or vn == 'wrsm_app:station-detail' or vn == 'wrsm_app:station-update' %}is-active{% endif %}">My Stations</a>
+                        <a href="{% url 'wrsm_app:station-setting-detail' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:station-setting-detail' or vn == 'wrsm_app:station-setting-update' or vn == 'wrsm_app:add-station-settings' %}is-active{% endif %}">Station Settings</a>
+                        <a href="{% url 'wrsm_app:station-users' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:station-users' %}is-active{% endif %}">Station Users</a>
+                        <a href="{% url 'wrsm_app:shortcuts' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:shortcuts' or vn == 'wrsm_app:add-shortcut' or vn == 'wrsm_app:update-shortcut' or vn == 'wrsm_app:process-shortcut' %}is-active{% endif %}">Shortcuts</a>
+                        <a href="{% url 'wrsm_app:audit-logs' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:audit-logs' %}is-active{% endif %}">Audit Logs</a>
+                    </div>
+                </details>
+                {% endif %}
+
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <details class="group sd-sidebar-group" {% if vn == 'wrsm_app:admin-settings-portal' or vn == 'wrsm_app:manage-articles' or vn == 'wrsm_app:add-article' or vn == 'wrsm_app:update-article' %}open{% endif %}>
+                    <summary>
+                        <span>Admin</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:admin-settings-portal' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:admin-settings-portal' %}is-active{% endif %}">Admin settings portal</a>
+                        <a href="{% url 'wrsm_app:manage-articles' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:manage-articles' or vn == 'wrsm_app:add-article' or vn == 'wrsm_app:update-article' %}is-active{% endif %}">Manage articles</a>
+                        <a href="{% url 'admin:index' %}" class="sd-sidebar-sublink">Django admin</a>
+                        <a href="{% url 'wrsm_app:audit-logs' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:audit-logs' %}is-active{% endif %}">Audit logs</a>
+                    </div>
+                </details>
+                {% endif %}
+
+                <details class="group sd-sidebar-group" {% if vn == 'wrsm_app:documentation' or vn == 'wrsm_app:article-detail' %}open{% endif %}>
+                    <summary>
+                        <span>Support</span>
+                        <svg class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </summary>
+                    <div class="mt-1 pt-0.5 space-y-0.5">
+                        <a href="{% url 'wrsm_app:documentation' %}" class="sd-sidebar-sublink {% if vn == 'wrsm_app:documentation' or vn == 'wrsm_app:article-detail' %}is-active{% endif %}">Documentation</a>
+                    </div>
+                </details>
+
+                <form action="{% url 'account:logout' %}" method="post" class="mt-3">
+                    {% csrf_token %}
+                    <button type="submit" class="sd-sidebar-link w-full text-left">
+                        Log out
+                    </button>
+                </form>
+
+                {% endif %}
+            {% endwith %}
+            </nav>
+
+            <div class="shrink-0 px-3 py-3 border-t border-slate-700 text-xs text-slate-300 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.2)]">
+                Signed in as <span class="text-slate-100 font-medium">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </div>
+        </aside>
+
+        <div class="flex-1 min-w-0 flex flex-col">
+    {% endif %}
+
     <section>
         {% if messages %}
-        <div id="message-container" class="fixed top-16 w-full z-[9999] flex justify-center">
+        <div id="message-container" class="fixed top-16 md:top-4 w-full z-[9999] flex justify-center">
             <div class="w-full max-w-3xl px-4 space-y-2">
                 {% for message in messages %}
                 <div class="message-item text-center px-4 py-3 rounded-md shadow-lg 
@@ -461,9 +810,9 @@
         {% endif %}
     </section>
 
-    <main class="mx-auto flex-grow min-h-screen">
-        <div class="flex justify-center mt-2">
-            <h5 class="text-lg">{{ station }}</h5>
+    <main class="mx-auto flex-grow min-h-screen w-full min-w-0 max-w-full px-3 sm:px-5 lg:px-8 pb-6 box-border">
+        <div class="flex justify-center mt-2 md:hidden px-2">
+            <h5 class="text-lg text-center break-words max-w-full">{% if request.user.is_authenticated %}{{ station }}{% endif %}</h5>
         </div>
         {% block content %}
         {% endblock %}
@@ -472,14 +821,31 @@
         {% endblock %}
     </main>
 
+    <div id="ios-install-modal" class="hidden fixed inset-0 z-[9999] bg-black/50 items-center justify-center p-4">
+        <div class="max-w-sm w-full rounded-lg bg-white dark:bg-slate-700 p-4 shadow-xl">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-white">Install on iPhone/iPad</h3>
+            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                Open this app in Safari, tap Share, then choose Add to Home Screen.
+            </p>
+            <div class="mt-4 flex justify-end">
+                <button id="ios-install-close" type="button" class="ux-btn ux-btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
     <footer
-        class="bottom-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 text-sm text-center justify-center p-4 mt-4">
-        <p>&copy; 2025 SmartDynamic Refilling. All Rights Reserved.</p>
+        class="bottom-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 text-xs sm:text-sm text-center justify-center p-3 sm:p-4 mt-auto">
+        <p class="px-2">&copy; 2026 SmartDynamic Refilling. All Rights Reserved.</p>
     </footer>
+
+    {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
+        </div>
+    </div>
+    {% endif %}
 
     <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
     <script src="{% static 'js/menu.js' %}"></script>
-    <script src="{% static 'js/offline_forms.js' %}"></script>
+    <script src="{% static 'js/offline_forms.js' %}?v=2.4"></script>
     <script>
         setTimeout(function () {
             const alerts = document.querySelectorAll('.message-item');
@@ -488,6 +854,82 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 3000);
+    </script>
+    <script>
+        (function () {
+            const installButtons = Array.from(document.querySelectorAll('.pwa-install-btn'));
+            const iosModal = document.getElementById('ios-install-modal');
+            const iosClose = document.getElementById('ios-install-close');
+            if (!installButtons.length || !iosModal || !iosClose) {
+                return;
+            }
+
+            let deferredPrompt = null;
+            const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+            const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+            if (isInStandaloneMode) {
+                return;
+            }
+
+            function showInstallButtons() {
+                installButtons.forEach(function (btn) {
+                    btn.classList.remove('hidden');
+                });
+            }
+
+            function hideInstallButtons() {
+                installButtons.forEach(function (btn) {
+                    btn.classList.add('hidden');
+                });
+            }
+
+            if (isIos) {
+                showInstallButtons();
+            }
+
+            window.addEventListener('beforeinstallprompt', function (event) {
+                event.preventDefault();
+                deferredPrompt = event;
+                showInstallButtons();
+            });
+
+            installButtons.forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    if (!deferredPrompt) {
+                        if (isIos) {
+                            iosModal.classList.remove('hidden');
+                            iosModal.classList.add('flex');
+                            return;
+                        }
+                        alert('Install prompt is not ready yet. Please continue browsing and try again.');
+                        return;
+                    }
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    hideInstallButtons();
+                });
+            });
+
+            window.addEventListener('appinstalled', function () {
+                hideInstallButtons();
+                iosModal.classList.add('hidden');
+                iosModal.classList.remove('flex');
+            });
+
+            iosClose.addEventListener('click', function () {
+                iosModal.classList.add('hidden');
+                iosModal.classList.remove('flex');
+            });
+
+            iosModal.addEventListener('click', function (event) {
+                if (event.target === iosModal) {
+                    iosModal.classList.add('hidden');
+                    iosModal.classList.remove('flex');
+                }
+            });
+        })();
     </script>
 </body>
 

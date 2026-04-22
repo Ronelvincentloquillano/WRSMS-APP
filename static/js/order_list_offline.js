@@ -65,7 +65,12 @@ document.addEventListener('DOMContentLoaded', loadOfflineOrders);
 // Listen for sync completion to refresh list
 document.addEventListener('offline-sync-completed', (e) => {
     if (e.detail.remaining === 0) {
-        window.location.reload();
+        // If on Sales & Orders, reload with Sales tab so new sale is visible
+        if (window.location.pathname.indexOf('sales-and-orders') !== -1) {
+            window.location.href = window.location.pathname + '?tab=sales';
+        } else {
+            window.location.reload();
+        }
     } else {
         loadOfflineOrders();
     }

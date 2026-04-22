@@ -1,7 +1,35 @@
-from django.http import JsonResponse
+from pathlib import Path
+
+from django.conf import settings
+from django.http import FileResponse, Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import OuterRef, Subquery
+from django.shortcuts import render
 from . import models
+
+
+def offline_page(request):
+    return render(request, 'offline.html')
+
+
+def pwa_manifest(request):
+    path = Path(settings.BASE_DIR) / 'static' / 'manifest.json'
+    if not path.is_file():
+        raise Http404('manifest not found')
+    return FileResponse(path.open('rb'), content_type='application/manifest+json')
+
+
+def pwa_serviceworker(request):
+    path = Path(settings.BASE_DIR) / 'static' / 'serviceworker.js'
+    if not path.is_file():
+        raise Http404('serviceworker not found')
+    response = FileResponse(
+        path.open('rb'),
+        content_type='application/javascript; charset=utf-8',
+    )
+    response['Service-Worker-Allowed'] = '/'
+    return response
+
 
 @login_required
 def get_offline_master_data(request):
@@ -59,14 +87,14 @@ def get_offline_master_data(request):
             })
         container_history[c.id] = history_list
 
-    # 2. Station Settings
-    try:
-        station_setting = models.StationSetting.objects.get(station=station)
+    # 2. Station Settings (use newest row if duplicates exist)
+    station_setting = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+    if station_setting:
         station_data = {
             'default_order_type_pk': station_setting.default_order_type.pk if station_setting.default_order_type else None,
             'default_order_type_name': station_setting.default_order_type.type if station_setting.default_order_type else None,
         }
-    except models.StationSetting.DoesNotExist:
+    else:
         station_data = {}
 
     # 3. Order Types
@@ -83,9 +111,10 @@ def get_offline_master_data(request):
     products_data = {}
     for p in products:
         products_data[p.id] = {
+            'product_name': p.product_name or '',
             'unit_price': p.unit_price,
             'product_type': p.product_type,
-            'jug_size_in_liters': p.jug_size.size_in_liters if p.jug_size else None
+            'jug_size_in_liters': p.jug_size.size_in_liters if p.jug_size else None,
         }
 
     # 5. Jug Sizes

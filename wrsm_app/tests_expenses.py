@@ -24,7 +24,7 @@ class ExpenseManagementTest(TestCase):
         )
         
         # Add user to station owner/admin group
-        self.admin_group = Group.objects.create(name='station owner/admin')
+        self.admin_group, _ = Group.objects.get_or_create(name='station owner/admin')
         self.user.groups.add(self.admin_group)
 
         self.client.login(username='admin', password='password')

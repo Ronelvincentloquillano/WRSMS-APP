@@ -5,9 +5,12 @@
 {% block title %}Customers{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Customers <ion-icon name="people-outline"></ion-icon></h2>
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Customers <ion-icon name="people-outline"></ion-icon></h2>
+    <p class="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-200">
+      Manage customer records, contact details, and assigned promo or discount codes.
+    </p>
   </div>
   
   <div class="flex flex-col p-2 md:flex-row justify-between items-center gap-4 text-center">
@@ -41,8 +44,9 @@
 
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
-    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="hidden md:block w-full overflow-x-auto">
+    <table class="w-full min-w-[600px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100">
         <tr class="text-left">
           <th class="px-4 py-2">Name</th>
@@ -81,6 +85,42 @@
       </tfoot>
       {% endif %}
     </table>
+    </div>
+
+    <div class="md:hidden grid gap-3 p-1">
+      {% for customer in customers %}
+      <div class="ux-card p-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <a href="{% url 'wrsm_app:customer-detail' pk=customer.pk %}" class="font-semibold text-slate-800 dark:text-slate-100 hover:underline">
+              {{ customer.name }}
+            </a>
+            <div class="text-xs text-slate-500 dark:text-slate-300 mt-1">
+              {% if customer.purok %}{{ customer.purok }}, {% endif %}{{ customer.brgy }}
+            </div>
+          </div>
+          <a href="{% url 'wrsm_app:update-customer' pk=customer.pk %}" class="text-blue-600 dark:text-blue-300 p-1">
+            <ion-icon name="create-outline"></ion-icon>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-slate-500 dark:text-slate-300">Promo code</div>
+            <div class="font-medium">{{ customer.promo_code|default:"—" }}</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-slate-500 dark:text-slate-300">Discount code</div>
+            <div class="font-medium">{{ customer.discount_code|default:"—" }}</div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="text-center py-6 text-sm text-slate-500 dark:text-slate-200">No customers found.</div>
+      {% endfor %}
+      {% if customers %}
+      <div class="text-xs text-slate-600 dark:text-slate-200 px-1 pt-1">Total records: <span class="font-semibold">{{ count }}</span></div>
+      {% endif %}
+    </div>
   </section>
 </div>
 

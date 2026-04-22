@@ -23,14 +23,6 @@
 
   <section class="grid grid-cols-1 px-5 w-full sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
     <div class="shadow-lg">
-      <a href="{% url 'wrsm_app:orders' %}"
-        class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
-        <ion-icon name="cart-outline"></ion-icon>
-        Orders
-      </a>
-    </div>
-
-    <div class="shadow-lg">
       <a href="{% url 'wrsm_app:sales' %}"
         class="block bg-sky-300 text-slate-900 p-5 rounded-lg text-center">
         <ion-icon name="cash-outline"></ion-icon>
@@ -68,6 +60,22 @@
         <ion-icon name="water-outline"></ion-icon>
         Container Management
       </a>
+    </div>
+  </section>
+
+  <section class="w-full px-4 sm:px-5 mt-2">
+    <div class="w-full rounded-lg bg-slate-700 text-slate-100 shadow-lg py-8 px-6 sm:px-10 text-center">
+      <h2 class="text-4xl font-extrabold text-blue-100 mb-6">Our Location</h2>
+      <div class="mx-auto mb-5 h-20 w-20 rounded-full bg-slate-600 flex items-center justify-center">
+        <ion-icon name="location-outline" class="text-4xl text-blue-300"></ion-icon>
+      </div>
+      <p class="text-3xl sm:text-2xl font-semibold leading-relaxed">
+        Km 16, Soliman Street, Brgy. Iwahig,<br>
+        Puerto Princesa City, Palawan, 5300
+      </p>
+      <p class="mt-5 text-xl sm:text-lg text-slate-300">
+        Come visit us at our headquarters in the beautiful Palawan.
+      </p>
     </div>
   </section>
 

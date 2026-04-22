@@ -14,6 +14,12 @@ class StationRecordAdmin(admin.ModelAdmin):
 class ProductAdmin(StationRecordAdmin):
     list_display = ('product_name', 'station')
 
+
+class ProductPriceHistoryAdmin(StationRecordAdmin):
+    list_display = ('product', 'previous_price', 'new_price', 'changed_at', 'changed_by')
+    list_select_related = ('product', 'changed_by__user')
+    ordering = ('-changed_at',)
+
 class SalesAdmin(StationRecordAdmin):
     list_display = ('created_date', 'customer','station')
 
@@ -37,6 +43,7 @@ admin.site.register(models.Expense)
 admin.site.register(models.Forecast)
 admin.site.register(models.SalesItem)
 admin.site.register(models.Product, ProductAdmin)
+admin.site.register(models.ProductPriceHistory, ProductPriceHistoryAdmin)
 admin.site.register(models.Order)
 admin.site.register(models.PaymentType)
 admin.site.register(models.ContainerManagement)

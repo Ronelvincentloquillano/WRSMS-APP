@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from .forms_profile import UserProfileUpdateForm, StationProfileUpdateForm
 from account.models import StationSubscription
 from . import models
@@ -8,7 +9,16 @@ from . import models
 @login_required
 def profile_view(request):
     user = request.user
-    station = user.profile.station
+    try:
+        profile = user.profile
+    except ObjectDoesNotExist:
+        messages.warning(request, "Profile not found. Please complete registration.")
+        return redirect('wrsm_app:station-list')
+
+    station = getattr(profile, 'station', None)
+    if not station:
+        messages.warning(request, "No station assigned. Please select or register a station first.")
+        return redirect('wrsm_app:station-list')
     
     # Forms
     if request.method == 'POST':

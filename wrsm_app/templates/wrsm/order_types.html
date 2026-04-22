@@ -4,14 +4,15 @@
 {% block title %}Order Types{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
 
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Order Types</h2>
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Order Types</h2>
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-[300px]">
-    <table class="table-auto overflow-x-auto w-full">
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="w-full overflow-x-auto">
+    <table class="w-full min-w-[320px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
           <th class="px-4 py-2">Type</th>
@@ -27,8 +28,9 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </section>
-  <div class="flex justify-between">
+  <div class="flex flex-wrap justify-between gap-3">
     <a href="{% url 'wrsm_app:add-order-type' %}" 
       class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 shadow-xl">
       Add type

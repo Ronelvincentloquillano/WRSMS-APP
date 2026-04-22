@@ -4,12 +4,12 @@
 {% block title %}Audit Logs{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Audit Logs</h2>
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4">
+  <div class="text-center mt-2 sm:mt-5 px-3">
+    <h2 class="text-2xl sm:text-4xl">Audit Logs</h2>
   </div>
 
-  <div class="max-w-7xl mx-auto w-full px-4">
+  <div class="max-w-7xl mx-auto w-full min-w-0 px-3 sm:px-4">
     <!-- Search Form -->
     <form method="get" class="mb-6">
       <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
@@ -32,8 +32,8 @@
     </form>
 
     <!-- Table -->
-    <div class="overflow-x-auto bg-white dark:bg-slate-700 rounded-lg shadow">
-      <table class="min-w-full table-auto">
+    <div class="overflow-x-auto bg-white dark:bg-slate-700 rounded-lg shadow w-full max-w-full">
+      <table class="w-full min-w-[720px] table-auto text-sm">
         <thead class="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200">
           <tr>
             <th class="px-4 py-3 text-left">Timestamp</th>

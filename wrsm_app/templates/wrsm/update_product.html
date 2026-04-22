@@ -5,15 +5,47 @@
 {% block title %}Update Product{% endblock %}
 
 {% block content %}
-<div class="min-w-[400px] flex flex-col items-center mb-10">
-  <div class="bg-white text-slate-700 shadow-md rounded-lg w-full md:w-full mt-10">
+<div class="w-full max-w-3xl mx-auto min-w-0 flex flex-col items-stretch mb-10 px-3 sm:px-4">
+  <div class="bg-white text-slate-700 shadow-md rounded-lg w-full mt-6 sm:mt-10">
     <div class="text-center border-b p-4">
       <h2 class="text-2xl font-semibold">Update Product</h2>
+      <a href="{% url 'wrsm_app:product-price-history' product_pk=object.pk %}"
+        class="inline-block mt-2 text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline">
+        View price history for this product
+      </a>
     </div>
     <div class="p-5">
-      <form action="" method="post" id="productForm">
+      <form action="" method="post" id="productForm" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
+        {% if form.non_field_errors %}
+        <div class="mb-3 rounded bg-red-100 text-red-700 px-3 py-2 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-1">
+            {{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+          <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+          {% endif %}
+          {% if field.errors %}
+          <p class="text-xs text-red-600 mt-1">{{ field.errors|striptags }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <div id="product-image-preview-wrap" class="mb-3 {% if not object.image %}hidden{% endif %}">
+          <p class="text-sm font-medium mb-1">Image Preview</p>
+          <img id="product-image-preview"
+               src="{% if object.image %}{{ object.image.url }}{% endif %}"
+               alt="Product image preview"
+               class="h-28 w-28 rounded-lg border border-slate-300 object-cover bg-white p-1">
+        </div>
+
         <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl" 
           type="submit">
           Submit
@@ -23,12 +55,43 @@
           Cancel
         </a>
       </form>
-    </div>    
-  <div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="{% static 'js/add_product_script.js' %}"></script>
+<script>
+  (function () {
+    const form = document.getElementById('productForm');
+    if (!form) return;
+
+    form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach((el) => {
+      if (el.type === 'file') return;
+      el.classList.add('w-full', 'rounded-md', 'border', 'border-slate-300', 'px-3', 'py-2', 'text-sm', 'dark:bg-slate-800', 'dark:border-slate-600');
+    });
+
+    const fileInput = document.getElementById('id_image');
+    const previewWrap = document.getElementById('product-image-preview-wrap');
+    const preview = document.getElementById('product-image-preview');
+    if (!fileInput || !previewWrap || !preview) return;
+
+    fileInput.classList.add('block', 'w-full', 'text-sm', 'file:mr-3', 'file:rounded-md', 'file:border-0', 'file:bg-blue-600', 'file:px-3', 'file:py-2', 'file:text-white', 'hover:file:bg-blue-700');
+
+    fileInput.addEventListener('change', function () {
+      const file = this.files && this.files[0];
+      if (!file) {
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        previewWrap.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+  })();
+</script>
 {% endblock %}

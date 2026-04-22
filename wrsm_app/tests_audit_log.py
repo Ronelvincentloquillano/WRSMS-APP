@@ -10,7 +10,7 @@ class AuditLogSalesTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='admin', password='password')
         # Add to station owner/admin group for authorization
-        self.group = Group.objects.create(name='station owner/admin')
+        self.group, _ = Group.objects.get_or_create(name='station owner/admin')
         self.user.groups.add(self.group)
         
         self.station = Station.objects.create(name='Test Station')

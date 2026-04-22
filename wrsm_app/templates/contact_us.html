@@ -11,10 +11,12 @@
       <h2>Get in Touch</h2>
     </div>
 
-    <form action="https://formspree.io/f/xanbbldz" method="POST" class="mx-auto max-w-lg space-y-2">
+    <form method="POST" class="mx-auto max-w-lg space-y-2">
+      {% csrf_token %}
       <input
         type="text"
         name="name"
+        value="{{ contact_name|default:'' }}"
         required
         class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
         placeholder="Your Name"
@@ -23,6 +25,7 @@
       <input
         type="email"
         name="email"
+        value="{{ contact_email|default:'' }}"
         required
         class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
         placeholder="Your Email"
@@ -34,7 +37,7 @@
         required
         class="w-full dark:text-slate-900 border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
         placeholder="Your Message"
-      ></textarea>
+      >{{ contact_message|default:'' }}</textarea>
 
       <div class="text-center">
         <button

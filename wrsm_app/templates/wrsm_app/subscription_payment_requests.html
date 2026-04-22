@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Subscription Payment Requests</h1>
+
+    <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">Pending</h2>
+        <div class="space-y-4">
+            {% for req in pending_requests %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div class="flex flex-wrap justify-between gap-2 mb-2">
+                    <p class="font-semibold">{{ req.station.name }}</p>
+                    <p class="text-sm text-gray-500">{{ req.created_at }}</p>
+                </div>
+                <div class="text-sm text-gray-700 space-y-1">
+                    <p><strong>Plan:</strong> {{ req.plan.name }} ({{ req.get_billing_cycle_display }})</p>
+                    <p><strong>Amount:</strong> ₱{{ req.amount }}</p>
+                    <p><strong>Reference:</strong> {{ req.reference_number }}</p>
+                    {% if req.payer_name %}<p><strong>Payer Name:</strong> {{ req.payer_name }}</p>{% endif %}
+                    {% if req.payer_number %}<p><strong>Payer Number:</strong> {{ req.payer_number }}</p>{% endif %}
+                    {% if req.proof_image %}<p><a href="{{ req.proof_image.url }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">View Proof</a></p>{% endif %}
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <form method="post" action="{% url 'wrsm_app:approve-subscription-payment' req.pk %}" class="flex flex-wrap gap-2">
+                        {% csrf_token %}
+                        <input type="text" name="admin_note" placeholder="Optional note" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                        <button type="submit" class="px-3 py-1.5 text-sm rounded bg-green-600 text-white hover:bg-green-700">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'wrsm_app:reject-subscription-payment' req.pk %}" class="flex flex-wrap gap-2">
+                        {% csrf_token %}
+                        <input type="text" name="admin_note" placeholder="Reason for rejection" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                        <button type="submit" class="px-3 py-1.5 text-sm rounded bg-red-600 text-white hover:bg-red-700">Reject</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-500">No pending requests.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h2 class="text-xl font-semibold mb-3">Recently Reviewed</h2>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-3 py-2">Station</th>
+                        <th class="text-left px-3 py-2">Plan</th>
+                        <th class="text-left px-3 py-2">Amount</th>
+                        <th class="text-left px-3 py-2">Status</th>
+                        <th class="text-left px-3 py-2">Reviewed By</th>
+                        <th class="text-left px-3 py-2">Reviewed At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in reviewed_requests %}
+                    <tr class="border-t border-gray-100">
+                        <td class="px-3 py-2">{{ req.station.name }}</td>
+                        <td class="px-3 py-2">{{ req.plan.name }} ({{ req.get_billing_cycle_display }})</td>
+                        <td class="px-3 py-2">₱{{ req.amount }}</td>
+                        <td class="px-3 py-2">{{ req.status|title }}</td>
+                        <td class="px-3 py-2">{{ req.reviewed_by|default:'-' }}</td>
+                        <td class="px-3 py-2">{{ req.reviewed_at|default:'-' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="px-3 py-3 text-gray-500">No reviewed requests yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

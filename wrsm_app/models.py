@@ -110,6 +110,7 @@ class Product(models.Model):
     jug_type = models.ForeignKey(to=JugType, null=True, blank=True, on_delete=models.CASCADE)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     quantity = models.IntegerField(null=True, blank=True)
+    image = models.ImageField(upload_to=station_image_upload_path, null=True, blank=True)
     created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='products_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
@@ -121,6 +122,40 @@ class Product(models.Model):
             return f"{self.product_name}"
         else:
             return f"{self.product_type}"
+
+
+class ProductPriceHistory(models.Model):
+    """Append-only log when a product's unit_price changes (or is set initially)."""
+
+    product = models.ForeignKey(
+        to=Product,
+        on_delete=models.CASCADE,
+        related_name='price_history_entries',
+    )
+    station = models.ForeignKey(
+        to=Station,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='product_price_history_entries',
+    )
+    previous_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    new_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(
+        to=Profile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='product_price_changes_recorded',
+    )
+
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name_plural = 'Product price history'
+
+    def __str__(self):
+        return f"{self.product_id}: {self.previous_price} → {self.new_price} @ {self.changed_at}"
 
 
 class Promo(models.Model):
@@ -164,7 +199,9 @@ class StationSetting(models.Model):
                                     on_delete=models.SET_NULL)
 
     def __str__(self):
-        return f"{self.station.name}"
+        if self.station:
+            return f"{self.station.name}"
+        return f"Station Setting #{self.pk}"
     
     class Meta:
         verbose_name_plural = "station setting"
@@ -210,6 +247,15 @@ class Customer(models.Model):
         blank=True,
         null=True,
     )
+    is_offline = models.BooleanField(
+        default=False,
+        help_text='Indicates if this customer was created while offline',
+    )
+    synced_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text='Timestamp when offline customer was synced to server',
+    )
 
     def __str__(self):
         return self.name
@@ -230,7 +276,7 @@ class Order(models.Model):
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
     created_date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
-    order_type = models.ForeignKey(OrderType, null=True, on_delete=models.SET_NULL, default='Delivery')
+    order_type = models.ForeignKey(OrderType, null=True, blank=True, on_delete=models.SET_NULL)
     quantity = models.IntegerField(null=True, blank=True)
     note = models.CharField(max_length=100, null=True, blank=True)
     is_paid = models.BooleanField(default=False)
@@ -243,6 +289,15 @@ class Order(models.Model):
     modified_by = models.ForeignKey(to=Profile, null=True, 
                                     blank=True, related_name='order_modified_by', 
                                     on_delete=models.SET_NULL)
+    is_offline = models.BooleanField(
+        default=False,
+        help_text='Indicates if this order was created while offline',
+    )
+    synced_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text='Timestamp when offline order was synced to server',
+    )
     
 
 class Sales(models.Model):
@@ -252,6 +307,8 @@ class Sales(models.Model):
     note = models.CharField(max_length=100, null=True, blank=True)
     customer = models.ForeignKey(Customer, blank=True, null=True, on_delete=models.SET_NULL)
     is_paid = models.BooleanField(null=True, default=False)
+    payment_type = models.ForeignKey(to=PaymentType, null=True, blank=True, on_delete=models.SET_NULL, related_name='sales_payments')
+    amount_given = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text='Amount tendered (for Cash); used for change calculation')
     created_by = models.ForeignKey(to=Profile, null=True, on_delete=models.SET_NULL, related_name='sales_created')
     modified_date = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(to=Profile, null=True, 
@@ -365,12 +422,24 @@ class ExpenseItem(models.Model):
 class Forecast(models.Model):
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
-    days_frequency = models.PositiveIntegerField(null=True, blank=True,help_text="Number of days between orders")
-    last_order_date = models.DateField(null=True, blank=True)
-    next_order_date = models.DateField(blank=True, null=True)
+    days_frequency = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Mean calendar days between consecutive Sales (see update_forecast); used with last_order_date to set next_order_date.",
+    )
+    last_order_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date of the latest Sale for this customer (from Sales.created_date).",
+    )
+    next_order_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text="last_order_date + days_frequency when both are set.",
+    )
 
     def save(self, *args, **kwargs):
-        # Automatically calculate next_order_date if not set
+        # next_order_date: simple calendar projection from last sale + average gap (no seasonality).
         if self.last_order_date and self.days_frequency:
             self.next_order_date = self.last_order_date + timedelta(days=self.days_frequency)
         super().save(*args, **kwargs)
@@ -503,6 +572,7 @@ class ShortCut(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     prompt_quantity = models.BooleanField(default=False)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    image = models.ImageField(upload_to=station_image_upload_path, null=True, blank=True)
     is_visible = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(to=Profile, on_delete=models.SET_NULL, null=True, related_name='shortcuts_created')

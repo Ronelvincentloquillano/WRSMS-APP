@@ -5,14 +5,18 @@
 {% block title %}Maintenance{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
 
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Maintenance</h2>
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Maintenance</h2>
+    <p class="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-200">
+      Track cleaning, filter changes, and other service tasks to keep your station running smoothly.
+    </p>
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 min-w-screen">
-    <table class="table-auto overflow-x-auto w-full">
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="w-full overflow-x-auto">
+    <table class="w-full min-w-[480px] text-sm">
       <thead>
         <tr>
           <th colspan="10" class="text-left py-5">
@@ -39,6 +43,7 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
+    </div>
+  </section>
 </div>
 {% endblock %}

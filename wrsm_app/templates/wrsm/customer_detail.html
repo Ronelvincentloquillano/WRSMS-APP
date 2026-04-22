@@ -7,14 +7,14 @@
 {% block title %}Customer detail{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col mt-5">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col mt-3 sm:mt-5 px-3 sm:px-4">
   <div>
-    <section class="text-center mb-5">
-      <h2 class="text-4xl mb-5"><span class="font-medium">{{ customer.name }}</span> Details</h2>
+    <section class="text-center mb-4 sm:mb-5">
+      <h2 class="text-xl sm:text-4xl mb-3 sm:mb-5 break-words px-1"><span class="font-medium">{{ customer.name }}</span> Details</h2>
     </section>
     
-    <section class="lg:min-w-[1080px] md:min-w-[740px]">
-      <div class="flex justify-between ml-5 mr-5">
+    <section class="w-full max-w-full min-w-0">
+      <div class="flex flex-wrap items-center justify-between gap-3 ml-0 sm:ml-5 mr-0 sm:mr-5">
         <a href="{% url 'wrsm_app:customers' %}" 
           class="bg-cyan-400 px-4 py-2 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl">
           <ion-icon name="people-outline"></ion-icon>
@@ -45,7 +45,7 @@
             
             <!-- Delete Confirmation Modal -->
             <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-700">
+                <div class="relative top-20 mx-4 sm:mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-slate-700">
                     <div class="mt-3 text-center">
                         <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                             <ion-icon name="warning-outline" class="text-red-600 text-2xl"></ion-icon>
@@ -105,24 +105,24 @@
               <img src="{{ customer.image.url }}" alt="{{ customer.name }}" class="w-[200px] object-cover">
               {% endif %}
               {% if customer.location_image %}
-              <img src="{{ customer.location_image.url }}" alt="{{ customer.name }}" class="w-96 object-cover">
+              <img src="{{ customer.location_image.url }}" alt="{{ customer.name }}" class="max-w-full w-full sm:w-96 object-cover">
               {% endif %}
             </div>
           </div>
         </div>
         
 
-        <div class="bg-slate-100 text-slate-800 min-w-full">
+        <div class="bg-slate-100 text-slate-800 w-full min-w-0 max-w-full">
           <div class="bg-slate-500 text-slate-100 p-2 mb-5">
             <h3 class="text-2xl font-semibold text-center">
               Order and Payment History
             </h3>
           </div>
-          <form method="get" action="{% url 'wrsm_app:add-payment' customer_id=customer.pk %}" class="px-5">
-            <div class="flex justify-between mb-5">
+          <form method="get" action="{% url 'wrsm_app:add-payment' customer_id=customer.pk %}" class="px-2 sm:px-5">
+            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-5">
               <button type="submit" id="add_credit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-xl">add credit</button>
               <button type="submit" id="add_payment" class="bg-cyan-400 text-slate-700 px-4 py-2 rounded-md hover:bg-cyan-500 hover:text-slate-100 shadow-xl" hidden>add payment (P<span id="totalSelectedAmount"></span>)</button>
-              <p class="px-5 py-2 border border-1 border-slate-300 rounded">
+              <p class="px-3 sm:px-5 py-2 border border-1 border-slate-300 rounded text-sm sm:text-base">
                 <strong>Credit Balance:</strong>
                   {% if credit %}
                     {{ credit.amount|intcomma }}
@@ -131,7 +131,8 @@
                   {% endif %}
               </p>
             </div>
-            <table class="table-fixed min-w-full">
+            <div class="w-full overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+            <table class="table-fixed w-full min-w-[720px] text-sm">
               <thead class="mb-5 dark:bg-slate-700 bg-slate-300 dark:text-slate-100 min-w-auto">
                 <tr>
                   <th class="w-auto">Select</th>
@@ -190,7 +191,7 @@
                     <td colspan="6">
                       <div class="overflow-hidden transition-all duration-300 ease-in-out h-0 flex justify-end" id="collapsePayments{{ar.id}}">
                         <div class="p-4 bg-gray-100 mt-2">
-                          <table class="table-fixed font-light text-sm min-w-screen">
+                          <table class="table-fixed w-full max-w-full min-w-0 font-light text-sm">
                             <thead class="mb-5 dark:bg-slate-500 bg-slate-300/50 dark:text-slate-100 min-w-auto">
                               <tr class="text-xs font-light">
                                 <th class="w-auto">Date</th>
@@ -217,6 +218,7 @@
                 {% endfor %}
               </tbody>
             </table>
+            </div>
           </form>
         </div>
       </div>

@@ -3,7 +3,7 @@
 {% block title %}Station Users{% endblock %}
 
 {% block content %}
-<div class="min-h-screen max-w-6xl mx-auto px-4">
+<div class="min-h-screen w-full max-w-6xl mx-auto min-w-0 px-3 sm:px-4">
   <div class="text-center mt-6">
     <h2 class="text-3xl font-bold">Station Users</h2>
     <h6 class="text-gray-600 dark:text-gray-400">Manage users for {{ station.name }}</h6>
@@ -60,8 +60,8 @@
   </div>
 
   <!-- Desktop View (Table) -->
-  <div class="hidden md:block mt-6 overflow-x-auto bg-white shadow rounded-md">
-    <table class="min-w-full text-sm text-left">
+  <div class="hidden md:block mt-6 w-full overflow-x-auto bg-white shadow rounded-md">
+    <table class="w-full min-w-[720px] text-sm text-left">
       <thead class="bg-gray-100 uppercase text-gray-700">
         <tr>
           <th class="px-6 py-3">Username</th>

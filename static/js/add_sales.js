@@ -101,6 +101,7 @@ $(document).ready(function () {
         // Recalc total
         let qty = parseFloat($qtyInput.val()) || 0;
         $totalInput.val((qty * finalPrice).toFixed(2));
+        if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
     }
 
     function recalculateAllRows() {
@@ -108,6 +109,7 @@ $(document).ready(function () {
         for (let i = 0; i < totalForms; i++) {
             recalculateRowPrice(i);
         }
+        if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
     }
 
     // Customer Change Handler
@@ -187,6 +189,7 @@ $(document).ready(function () {
         var qty = parseFloat($qty.val()) || 0;
         var unit_price = parseFloat($unit_price.val()) || 0;
         $total.val((qty * unit_price).toFixed(2));
+        if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
       }
 
       $qty.on('input', calculateTotal);
@@ -240,6 +243,7 @@ $(document).ready(function () {
                $deleteInput.prop('checked', true);
            }
            $row.hide();
+           if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
       });
     }
 
@@ -283,6 +287,7 @@ $(document).ready(function () {
       totalFormsInput.val(formCount + 1);
 
       bindEventsToForm(formCount);
+      if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
     });
 
     // Initialization
@@ -324,4 +329,188 @@ $(document).ready(function () {
             $ordertypeSelect.trigger('change');
         }
     }
+
+    // --- Payment: Cash / GCash (QR shows only after exact amount match) ---
+    let gcashQrLastRenderedAmount = null;
+    let gcashQrGenToken = 0;
+
+    function clearGcashQrCanvas() {
+        const canvas = document.getElementById('gcash-qr-canvas');
+        if (canvas && canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width || 180;
+            const h = canvas.height || 180;
+            ctx.clearRect(0, 0, w, h);
+        }
+    }
+
+    function getPaymentTypeText() {
+        const $radio = $('input[name="payment_type"]:checked');
+        if ($radio.length) return $radio.closest('label').text().trim();
+        const $sel = $('select[name="payment_type"]');
+        if ($sel.length) return $sel.find('option:selected').text();
+        return '';
+    }
+
+    function paymentLabelIsGcash(label) {
+        const compact = (label || '').toLowerCase().replace(/[\s_-]+/g, '');
+        return compact.includes('gcash');
+    }
+
+    function gcashConfirmMatchesSale(grandTotal) {
+        const raw = $('#gcash-confirm-amount').val();
+        if (raw === '' || raw === null || grandTotal <= 0) return false;
+        const v = parseFloat(String(raw).replace(/,/g, ''));
+        if (!Number.isFinite(v)) return false;
+        return Math.round(v * 100) === Math.round(grandTotal * 100);
+    }
+
+    function getGrandTotal() {
+        let total = 0;
+        const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
+        for (let i = 0; i < totalForms; i++) {
+            const $row = $(`#id_sales_items-${i}-total`).closest('.form-row');
+            if ($row.length && $row.is(':visible')) {
+                const val = parseFloat($(`#id_sales_items-${i}-total`).val()) || 0;
+                total += val;
+            }
+        }
+        return total;
+    }
+
+    function togglePaymentSections(selectedText) {
+        const t = (selectedText || '').toLowerCase().trim();
+        const $cash = $('#payment-cash-section');
+        const $gcash = $('#payment-gcash-section');
+        $cash.addClass('hidden');
+        $gcash.addClass('hidden');
+        if (paymentLabelIsGcash(selectedText)) {
+            $gcash.removeClass('hidden');
+        } else if (t.includes('cash')) {
+            $cash.removeClass('hidden');
+        }
+    }
+
+    function syncGcashQr(grandTotal, selectedText) {
+        const isGcash = paymentLabelIsGcash(selectedText);
+        const $reveal = $('#gcash-qr-reveal');
+        const $wrapper = $('#gcash-qr-wrapper');
+        const $stationImg = $('#gcash-station-qr-img');
+        const $fallback = $('#gcash-qr-fallback');
+        const canvas = document.getElementById('gcash-qr-canvas');
+        const hasStationImg = $stationImg.length > 0;
+
+        function hideQr() {
+            gcashQrLastRenderedAmount = null;
+            if ($reveal.length) $reveal.addClass('hidden');
+            if ($wrapper.length) $wrapper.addClass('hidden');
+            clearGcashQrCanvas();
+        }
+
+        if (!isGcash || !gcashConfirmMatchesSale(grandTotal)) {
+            hideQr();
+            return;
+        }
+
+        if ($reveal.length) $reveal.removeClass('hidden');
+
+        if (hasStationImg) {
+            if ($wrapper.length) $wrapper.addClass('hidden');
+            return;
+        }
+
+        if (!$wrapper.length || !canvas) return;
+        if (typeof QRCode === 'undefined') {
+            console.warn('GCash QR: QRCode library not loaded.');
+            return;
+        }
+
+        if ($fallback.length) $fallback.removeClass('hidden');
+
+        const amountKey = Math.round(grandTotal * 100) / 100;
+        if (gcashQrLastRenderedAmount !== null && Math.abs(gcashQrLastRenderedAmount - amountKey) < 0.0001 && !$wrapper.hasClass('hidden')) {
+            $wrapper.removeClass('hidden');
+            return;
+        }
+
+        const myToken = ++gcashQrGenToken;
+        const payload = 'GCASH|Amount: PHP ' + amountKey.toFixed(2) + '|Scan to pay';
+        QRCode.toCanvas(canvas, payload, { width: 180, margin: 1 }, function (err) {
+            if (myToken !== gcashQrGenToken) return;
+            if (err) {
+                console.warn('QR generate error', err);
+                return;
+            }
+            gcashQrLastRenderedAmount = amountKey;
+            $wrapper.removeClass('hidden');
+        });
+    }
+
+    function updateAmountGivenRequired() {
+        const paid = $('#is_paid').is(':checked');
+        const selectedText = getPaymentTypeText();
+        const t = selectedText.toLowerCase();
+        const cashOnly = t.includes('cash') && !paymentLabelIsGcash(selectedText);
+        $('#id_amount_given').prop('required', !!(paid && cashOnly));
+    }
+
+    function syncPaidPanelVisibility() {
+        const $wrap = $('#payment_details_wrap');
+        const $isPaid = $('#is_paid');
+        if (!$wrap.length || !$isPaid.length) return;
+        if ($isPaid.is(':checked')) $wrap.removeClass('hidden');
+        else $wrap.addClass('hidden');
+        updateAmountGivenRequired();
+    }
+
+    function updatePaymentDisplay() {
+        const grandTotal = getGrandTotal();
+        const selectedText = getPaymentTypeText();
+        const t = (selectedText || '').toLowerCase().trim();
+
+        $('#display-grand-total').text(grandTotal.toFixed(2));
+        $('#display-gcash-amount').text(grandTotal.toFixed(2));
+
+        if (t.includes('cash') && !paymentLabelIsGcash(selectedText)) {
+            const amountGiven = parseFloat($('#id_amount_given').val()) || 0;
+            const change = amountGiven - grandTotal;
+            const $changeWrap = $('#display-change-wrap');
+            const $changeVal = $('#display-change');
+            if (amountGiven > 0) {
+                $changeVal.text(change.toFixed(2));
+                $changeWrap.removeClass('hidden');
+                if (change < 0) $changeVal.removeClass('text-green-700').addClass('text-red-600');
+                else $changeVal.removeClass('text-red-600').addClass('text-green-700');
+            } else {
+                $changeWrap.addClass('hidden');
+            }
+        } else {
+            $('#display-change-wrap').addClass('hidden');
+        }
+
+        syncGcashQr(grandTotal, selectedText);
+    }
+
+    $(document).on('change', 'input[name="payment_type"], select[name="payment_type"]', function () {
+        gcashQrLastRenderedAmount = null;
+        if (!paymentLabelIsGcash(getPaymentTypeText())) $('#gcash-confirm-amount').val('');
+        togglePaymentSections(getPaymentTypeText());
+        updateAmountGivenRequired();
+        updatePaymentDisplay();
+    });
+
+    $(document).on('input', '#id_amount_given', updatePaymentDisplay);
+    $(document).on('input change', '#gcash-confirm-amount', function () {
+        gcashQrLastRenderedAmount = null;
+        updatePaymentDisplay();
+    });
+    $('#is_paid').on('change', function () {
+        syncPaidPanelVisibility();
+        togglePaymentSections(getPaymentTypeText());
+        updatePaymentDisplay();
+    });
+
+    syncPaidPanelVisibility();
+    togglePaymentSections(getPaymentTypeText());
+    updatePaymentDisplay();
 });

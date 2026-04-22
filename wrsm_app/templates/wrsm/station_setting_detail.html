@@ -4,10 +4,10 @@
 {% block title %}Station Setting detail{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col px-3 sm:px-4 py-4">
 
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Station Settings</h2>
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Station Settings</h2>
     {% if not settings_complete %}
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4 mx-auto max-w-lg" role="alert">
       <strong class="font-bold">Incomplete Settings!</strong>
@@ -16,8 +16,10 @@
     {% endif %}
   </div>
 
-  <section class="w-full bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 mt-5">
-    <table class="table-auto">
+  {% if station_settings %}
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100 mt-4 sm:mt-5">
+    <div class="w-full overflow-x-auto">
+    <table class="table-auto w-full min-w-[320px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50 text-left">
         <tr>
           <th class="px-4 py-2">Default setting</th>
@@ -101,14 +103,18 @@
         </tr>
       </tbody>
     </table>
+    </div>
     <div class="p-5 my-2 mx-auto">
       <a href="{% url 'wrsm_app:station-setting-update' %}" 
       class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 shadow-xl">edit</a>
     </div>
   </section>
+  {% else %}
+  <p class="text-center mt-6 text-slate-600 dark:text-slate-400">No station settings found. Use setup or contact support.</p>
+  {% endif %}
 
   <!-- Links -->
-  <div class="grid grid-cols-2 gap-5 mx-5 mt-5 text-center mb-5">
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 mx-0 sm:mx-5 mt-5 text-center mb-5 max-w-3xl w-full self-center">
     <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:sizes' %}">Sizes</a>
     <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:jug-types' %}">Jug Types</a>
     <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:order-types' %}">Order Types</a>

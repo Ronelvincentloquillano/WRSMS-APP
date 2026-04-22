@@ -6,9 +6,9 @@
 {% block title %}Backwash Monitor{% endblock %}
 
 {% block content %}
-<div class="min-h-screen min-w-96 flex flex-col items-center">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col items-stretch px-3 sm:px-4">
 
-  <div class="bg-white mt-5 dark:bg-gray-800 text-slate-700 dark:text-slate-100 shadow-md rounded-lg min-w-96">
+  <div class="bg-white mt-5 dark:bg-gray-800 text-slate-700 dark:text-slate-100 shadow-md rounded-lg w-full max-w-2xl mx-auto min-w-0">
     <div class="text-center p-5 mb-2">
       <h2 class="text-2xl font-semibold">Backwash Monitor</h2>
     </div>
@@ -19,9 +19,9 @@
       </p>
       <p class="font-medium"><strong>Last backwash date:</strong> {{ last_backwash_date }}</p>
     </div>
-    <div class="flex p-5 my-5 mx-auto border">
-      <form method="get" class="flex gap-6">
-        <div class="flex-1">
+    <div class="flex p-3 sm:p-5 my-5 mx-auto border w-full max-w-full min-w-0 overflow-x-auto">
+      <form method="get" class="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6 w-full min-w-0 items-stretch sm:items-end">
+        <div class="flex-1 min-w-[140px]">
           <label class="block font-medium mb-1" for="start_date">
             Start Date: 
           </label>
@@ -29,7 +29,7 @@
             type="date" name="start_date" value="{{ start_date }}"
           >
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-[140px]">
           <label class="block font-medium mb-1" for="end_date">
             End Date: 
           </label>
@@ -37,7 +37,7 @@
             type="date" name="end_date" value="{{ end_date }}"
           >
         </div>
-        <div class="flex mx-auto my-auto items-center">
+        <div class="flex sm:mx-auto sm:my-auto items-center justify-center sm:justify-start">
           <button type="submit" 
             class="bg-cyan-400 px-2 py-1 rounded-md dark:text-slate-700 hover:bg-cyan-500 shadow-xl"
           >

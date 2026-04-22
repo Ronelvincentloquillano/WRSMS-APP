@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Price history{% endblock %}
+
+{% block content %}
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
+
+  <div class="flex flex-col items-center gap-3">
+    <div class="text-center">
+      <h1 class="text-2xl sm:text-3xl font-semibold text-slate-800 dark:text-slate-100">
+        {% if filtered_product %}
+        Price history: {{ filtered_product.product_name|default:filtered_product.product_type }}
+        {% else %}
+        Product price history
+        {% endif %}
+      </h1>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 text-center mx-auto">
+        Each row records a change to unit price (or the price when the product was first saved with a price).
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 justify-center">
+      {% if filtered_product %}
+      <a href="{% url 'wrsm_app:price-history' %}"
+        class="inline-flex items-center justify-center rounded-lg border border-slate-400 dark:border-slate-500 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600">
+        All products
+      </a>
+      <a href="{% url 'wrsm_app:update-product' pk=filtered_product.pk %}"
+        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        Edit product
+      </a>
+      {% else %}
+      <a href="{% url 'wrsm_app:products' %}"
+        class="inline-flex items-center justify-center rounded-lg border border-slate-400 dark:border-slate-500 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600">
+        Back to products
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="w-full overflow-x-auto">
+      <table class="w-full min-w-[720px] text-sm">
+        <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
+          <tr class="text-left">
+            <th class="px-3 py-2">When</th>
+            {% if not filtered_product %}
+            <th class="px-3 py-2">Product</th>
+            {% endif %}
+            <th class="px-3 py-2">Previous</th>
+            <th class="px-3 py-2">New</th>
+            <th class="px-3 py-2">By</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in entries %}
+          <tr class="border-t border-slate-200 dark:border-slate-600">
+            <td class="px-3 py-2 whitespace-nowrap">{{ row.changed_at|date:"Y-m-d H:i" }}</td>
+            {% if not filtered_product %}
+            <td class="px-3 py-2">
+              <a href="{% url 'wrsm_app:product-price-history' product_pk=row.product_id %}"
+                class="font-medium text-sky-600 dark:text-sky-400 hover:underline">
+                {{ row.product.product_name|default:row.product.product_type }}
+              </a>
+            </td>
+            {% endif %}
+            <td class="px-3 py-2">{% if row.previous_price is not None %}{{ row.previous_price|intcomma }}{% else %}—{% endif %}</td>
+            <td class="px-3 py-2 font-medium">{% if row.new_price is not None %}{{ row.new_price|intcomma }}{% else %}—{% endif %}</td>
+            <td class="px-3 py-2">
+              {% if row.changed_by and row.changed_by.user %}
+                {{ row.changed_by.user.get_full_name|default:row.changed_by.user.username }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{% if filtered_product %}4{% else %}5{% endif %}" class="px-3 py-8 text-center text-slate-600 dark:text-slate-300">
+              No price changes recorded yet. Updates to product unit prices will appear here.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if is_paginated %}
+  <nav class="flex flex-wrap justify-center gap-2 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600">Previous</a>
+    {% endif %}
+    <span class="px-3 py-1 text-slate-600 dark:text-slate-300">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600">Next</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

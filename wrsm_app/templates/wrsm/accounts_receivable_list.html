@@ -5,24 +5,24 @@
 {% block title %}Account Receivable{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
 
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Accounts Receivable</h2>
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Accounts Receivable</h2>
   </div>
 
   <div class="mb-6 mt-6 max-w-xl mx-auto flex justify-between md:flex-row gap-4">
-    <form method="get" class="bg-cyan-200 px-2 py-1 text-slate-700 dark:text-slate-100/50 rounded-md flex flex-col md:flex-row lg:flex-row gap-2 items-center">
+    <form method="get" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow rounded-md px-3 py-3 text-slate-800 dark:text-slate-100 flex flex-col md:flex-row lg:flex-row gap-2 items-center">
       <div class="flex-1">
         <input 
           type="text" 
           name="customer"
           value="{{ request.GET.customer }}" 
-          class="w-full border rounded-md px-3 py-2 text-slate-700"
+          class="w-full border border-slate-300 dark:border-slate-500 rounded-md px-3 py-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
           placeholder="customer name">
       </div>
       <div class="flex rounded px-5 py-2 space-x-2 items-center">
-        <label for="filter" class="font-medium mb-1">Filter by status:</label>
+        <label for="filter" class="font-medium mb-1 text-slate-700 dark:text-slate-200">Filter by status:</label>
         <div class="flex items-center">
           <input name="filter" class="mr-1 checked:bg-blue-500 p-2 size-5" type="checkbox" 
             value="Partially Paid" {% if "Partially Paid" in selected_filters %}checked{% endif %}
@@ -39,8 +39,9 @@
     </form>
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
-    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="hidden md:block w-full overflow-x-auto">
+    <table class="w-full min-w-[640px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
           <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Sales ID</th>
@@ -76,6 +77,45 @@
       </tfoot>
       {% endif %}
     </table>
+    </div>
+
+    <div class="md:hidden grid gap-3 p-1">
+      {% for ar_item in ar_items %}
+      <div class="ux-card p-3">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="font-semibold text-slate-800 dark:text-slate-100">
+              <a href="{% url 'wrsm_app:customer-detail' pk=ar_item.customer.pk %}" class="text-blue-700 dark:text-blue-300 hover:underline">
+                {{ ar_item.customer|default:'' }}
+              </a>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-300 mt-1">{{ ar_item.sales.created_date.date }}</div>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-600">{{ ar_item.status }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-slate-500 dark:text-slate-300">Sales ID</div>
+            <div class="font-medium">{{ ar_item.sales.id|cut:',' }}</div>
+          </div>
+          <div class="bg-slate-100 dark:bg-slate-600 rounded p-2">
+            <div class="text-slate-500 dark:text-slate-300">Total Amount</div>
+            <div class="font-medium">{{ ar_item.total_amount }}</div>
+          </div>
+        </div>
+        {% if ar_item.sales.note %}
+        <div class="mt-2 text-xs text-slate-600 dark:text-slate-300">Note: {{ ar_item.sales.note }}</div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="text-center py-6 text-sm text-slate-500 dark:text-slate-200">No accounts receivable found.</div>
+      {% endfor %}
+      {% if ar_items %}
+      <div class="bg-slate-200 dark:bg-slate-600 rounded p-3 text-sm">
+        <span class="font-medium">Grand total:</span> {{ grand_total }}
+      </div>
+      {% endif %}
+    </div>
   </section>
 
 </div>

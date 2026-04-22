@@ -75,7 +75,6 @@ document.addEventListener('offline-sync-completed', (e) => {
     
     // If all records synced, we might want to reload the whole page to get real data from server
     if (e.detail.remaining === 0) {
-        // Full reload to fetch new items from server
         window.location.reload();
     } else {
         // Just refresh the offline part

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionPlan, StationSubscription, PendingRegistration
+from .models import SubscriptionPlan, StationSubscription, PendingRegistration, SubscriptionPaymentRequest
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
@@ -21,3 +21,10 @@ class StationSubscriptionAdmin(admin.ModelAdmin):
 class PendingRegistrationAdmin(admin.ModelAdmin):
     list_display = ('email', 'station_name', 'plan_name', 'created_at')
     search_fields = ('email', 'station_name')
+
+
+@admin.register(SubscriptionPaymentRequest)
+class SubscriptionPaymentRequestAdmin(admin.ModelAdmin):
+    list_display = ('station', 'plan', 'billing_cycle', 'amount', 'reference_number', 'status', 'created_at')
+    list_filter = ('status', 'billing_cycle', 'plan')
+    search_fields = ('station__name', 'reference_number', 'payer_name', 'payer_number')

@@ -5,26 +5,58 @@
 {% block title %}Order Forecast{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
 
-  <div class="flex text-center items-center mt-5 mx-auto gap-4 text-4xl">
+  <div class="flex flex-wrap justify-center text-center items-center mt-2 sm:mt-5 mx-auto gap-3 sm:gap-4 text-2xl sm:text-4xl">
     <h2>Order Forecast</h2>
     <form action="{% url 'wrsm_app:update_forecast' %}" method="post">
       {% csrf_token %}
-      <button type="submit" class="flex">
+      <button type="submit" class="flex" title="Recalculate from sales history">
         <ion-icon name="sync-circle-outline" title="update"></ion-icon>
       </button>
     </form>
   </div>
 
-  <section class="bg-slate-100 rounded p-2 text-slate-800 dark:bg-slate-500 dark:text-slate-100 lg:min-w-[1080px] md:min-w-[740px]">
-    <table class="table-auto overflow-x-auto w-full lg:min-w-[1080px] md:min-w-[740px]">
+  <details class="w-full max-w-3xl mx-auto rounded-lg border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-700/50 px-4 py-3 text-left text-sm text-slate-700 dark:text-slate-200">
+    <summary class="cursor-pointer font-semibold text-slate-900 dark:text-slate-100 select-none">What is the forecast based on?</summary>
+    <div class="mt-3 space-y-2 border-t border-slate-200 dark:border-slate-600 pt-3">
+      <p><strong>Data source:</strong> Completed <strong>sales</strong> for each customer only (<code class="text-xs bg-slate-200 dark:bg-slate-600 px-1 rounded">Sales</code> records and their <code class="text-xs bg-slate-200 dark:bg-slate-600 px-1 rounded">created_date</code>). Pending or open <strong>orders</strong> are not used in this calculation.</p>
+      <p><strong>Days frequency:</strong> For each customer, all sale dates are sorted from oldest to newest. The system takes the number of <strong>whole calendar days</strong> between each pair of consecutive sales, then uses the <strong>average</strong> of those gaps (rounded). If there are fewer than two sales, there is no gap to average—frequency stays empty or zero.</p>
+      <p><strong>Last ordered date:</strong> The calendar date of the <strong>most recent</strong> sale for that customer.</p>
+      <p><strong>Next order date:</strong> <em>Last ordered date</em> plus <em>days frequency</em> (simple forward projection). This is a planning hint, not a guarantee—it does not model holidays, seasonality, or delivery schedules.</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Use the sync button above to recompute from the latest sales history.</p>
+    </div>
+  </details>
+
+  <section class="w-full max-w-3xl mx-auto rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+    <h4 class="font-semibold text-slate-900 dark:text-slate-100 mb-2">Legend</h4>
+    <div class="space-y-2 text-sm">
+      <p>
+        <span class="inline-flex items-center rounded px-2 py-0.5 bg-green-300 text-slate-900 text-xs font-semibold mr-2">Green row</span>
+        Customer is forecasted to reorder <strong>today</strong> (<code class="text-xs bg-slate-200 dark:bg-slate-600 px-1 rounded">next_order_date = current date</code>).
+      </p>
+      <p>
+        <span class="inline-flex items-center rounded px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 text-xs font-semibold mr-2">Days freq.</span>
+        Average number of days between consecutive sales of that customer.
+      </p>
+      <p>
+        <span class="inline-flex items-center rounded px-2 py-0.5 bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200 text-xs font-semibold mr-2">Forecast basis</span>
+        <code class="text-xs bg-slate-200 dark:bg-slate-600 px-1 rounded">last_order_date + days_frequency</code>.
+      </p>
+      <p class="text-xs text-slate-500 dark:text-slate-300">Forecast is a guide from sales history and is not a guaranteed order.</p>
+    </div>
+  </section>
+
+  <section class="w-full max-w-full min-w-0 bg-slate-100 dark:bg-slate-500 rounded-lg p-2 text-slate-800 dark:text-slate-100">
+    <div class="w-full overflow-x-auto">
+    <table class="w-full min-w-[560px] text-sm">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
           <th class="px-4 py-2">Customer</th>
           <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Days freq.</th>
           <th class="px-4 py-2 hidden md:table-cell lg:table-cell">Last ordered date</th>
           <th class="px-4 py-2">Next order date</th>
+          <th class="px-4 py-2 hidden lg:table-cell">Forecast basis</th>
         </tr>
       </thead>
       <tbody>
@@ -35,19 +67,36 @@
             <td class="border px-4 py-2">{{ item.customer.name }}</td>
             <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.days_frequency }}</td>
             <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.last_order_date }}</td>
-            <td class="border px-4 py-2">{{ item.next_order_date|remove_none }}</td>
+            <td class="border px-4 py-2">
+              {{ item.next_order_date|remove_none }}
+              <div class="mt-1 text-[11px] text-slate-600 lg:hidden">
+                Basis: {{ item.last_order_date|remove_none }} + {{ item.days_frequency|default:0 }} day(s)
+              </div>
+            </td>
+            <td class="border px-4 py-2 hidden lg:table-cell text-xs text-slate-600">
+              {{ item.last_order_date|remove_none }} + {{ item.days_frequency|default:0 }} day(s)
+            </td>
           </tr>
           {% else %}
           <tr>
             <td class="border px-4 py-2">{{ item.customer.name }}</td>
             <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.days_frequency }}</td>
             <td class="border px-4 py-2 hidden md:table-cell lg:table-cell">{{ item.last_order_date }}</td>
-            <td class="border px-4 py-2">{{ item.next_order_date|remove_none }}</td>
+            <td class="border px-4 py-2">
+              {{ item.next_order_date|remove_none }}
+              <div class="mt-1 text-[11px] text-slate-600 lg:hidden">
+                Basis: {{ item.last_order_date|remove_none }} + {{ item.days_frequency|default:0 }} day(s)
+              </div>
+            </td>
+            <td class="border px-4 py-2 hidden lg:table-cell text-xs text-slate-600">
+              {{ item.last_order_date|remove_none }} + {{ item.days_frequency|default:0 }} day(s)
+            </td>
           </tr>
           {% endif %}
         {% endfor %}
       </tbody>
     </table>
-  </div>
+    </div>
+  </section>
 </div>
 {% endblock %}

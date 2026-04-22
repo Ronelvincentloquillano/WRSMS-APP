@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
+from django.conf import settings
+from django.core.mail import send_mail
 from django.urls import reverse_lazy, reverse
 from django.db.models import Sum, Max, F, ExpressionWrapper, DecimalField, Count, Q
 from collections import defaultdict
@@ -29,6 +31,52 @@ from .utils import check_transaction_limit, is_transaction_limit_reached
 today = timezone.now()
 local_date = today.astimezone(timezone.get_current_timezone()).date()
 current_date = today.date()
+
+
+def _deduct_refill_consumables(station, qty):
+    """Per refill container sold: deduct consumables (transparent/umbrella/faucet seals)."""
+    if not station or not qty:
+        return
+    transparent_items = models.Product.objects.filter(
+        station=station,
+    ).filter(
+        Q(product_name__icontains='transparent plastic')
+        | Q(product_name__icontains='transparent seal')
+        | Q(product_name__icontains='umbrella seal')
+        | Q(product_name__icontains='faucet seal')
+    )
+    for item in transparent_items:
+        current_qty = item.quantity or 0
+        item.quantity = current_qty - qty
+        item.save(update_fields=['quantity'])
+
+
+def _ensure_station_settings(station):
+    """Return existing StationSetting; create one with safe defaults if missing."""
+    if not station:
+        return None
+    settings_obj = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+    if settings_obj:
+        return settings_obj
+
+    default_jug_size = models.JugSize.objects.filter(station=station).order_by('pk').first()
+    default_order_type = models.OrderType.objects.filter(station=station).order_by('pk').first()
+    default_payment_type = models.PaymentType.objects.filter(station=station).order_by('sort_number', 'pk').first()
+
+    # If setup wizard is incomplete, keep previous behavior and require setup first.
+    if not (default_jug_size and default_order_type and default_payment_type):
+        return None
+
+    return models.StationSetting.objects.create(
+        station=station,
+        default_delivery_rate=0,
+        default_jug_size=default_jug_size,
+        default_unit_price=0,
+        default_minimum_delivery_qty=1,
+        default_order_type=default_order_type,
+        default_payment_type=default_payment_type,
+        initial_jug_count=0,
+    )
 
 class StationSetupRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -158,9 +206,8 @@ def dashboard(request):
          messages.warning(request, "Please select or register a station first.")
          return redirect('wrsm_app:station-list')
 
-    try:
-        station_settings = models.StationSetting.objects.get(station=station)
-    except models.StationSetting.DoesNotExist:
+    station_settings = _ensure_station_settings(station)
+    if not station_settings:
         messages.warning(request, "Station settings not found. Please complete the setup.")
         return redirect('wrsm_app:setup-wizard')
 
@@ -231,6 +278,12 @@ def dashboard(request):
 
     product_names = [(p.product_name if p.product_name else p.product_type) for p in valid_products]
     product_quantities = [p.quantity or 0 for p in valid_products]
+
+    dashboard_shortcuts = (
+        models.ShortCut.objects.filter(station=station, is_visible=True)
+        .select_related('product')
+        .order_by('name')
+    )
 
     # 4. Sales vs Expenses (Monthly)
     current_month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -326,6 +379,7 @@ def dashboard(request):
         'expense_data': json.dumps(expense_data),
         'available_months': json.dumps(available_months),
         'available_months_expenses': json.dumps(available_months_expenses),
+        'dashboard_shortcuts': dashboard_shortcuts,
     }
     return render(request, 'dashboard.html', context)
 
@@ -346,7 +400,8 @@ def home(request):
 
 
 def pricing(request):
-    return render(request, 'pricing.html')
+    subscription_plans = SubscriptionPlan.objects.all().order_by('id')
+    return render(request, 'pricing.html', {'subscription_plans': subscription_plans})
 
 
 def about(request):
@@ -354,6 +409,59 @@ def about(request):
 
 
 def contact_us(request):
+    if request.method == 'POST':
+        name = (request.POST.get('name') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        message = (request.POST.get('message') or '').strip()
+
+        if not (name and email and message):
+            messages.error(request, "Please complete all contact form fields.")
+            return render(request, 'contact_us.html', {
+                'contact_name': name,
+                'contact_email': email,
+                'contact_message': message,
+            })
+
+        recipient = (
+            getattr(settings, 'CONTACT_US_RECIPIENT_EMAIL', '') or
+            getattr(settings, 'EMAIL_HOST_USER', '')
+        ).strip()
+        if not recipient:
+            messages.error(request, "Contact form is not configured yet. Please try again later.")
+            return render(request, 'contact_us.html', {
+                'contact_name': name,
+                'contact_email': email,
+                'contact_message': message,
+            })
+
+        subject = f"New Contact Us message from {name}"
+        body = (
+            "New contact inquiry received.\n\n"
+            f"Name: {name}\n"
+            f"Email: {email}\n\n"
+            "Message:\n"
+            f"{message}\n"
+        )
+
+        try:
+            send_mail(
+                subject=subject,
+                message=body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                recipient_list=[recipient],
+                fail_silently=False,
+            )
+            messages.success(request, "Thanks for reaching out. We received your message.")
+            return redirect('contact-us')
+        except Exception:
+            logger.exception("Contact Us email send failed")
+            messages.error(request, "We could not send your message right now. Please try again shortly.")
+            return render(request, 'contact_us.html', {
+                'contact_name': name,
+                'contact_email': email,
+                'contact_message': message,
+            })
+
     return render(request, 'contact_us.html')
 
 
@@ -365,7 +473,6 @@ def custom_logout_view(request):
 @login_required
 def add_sales(request):
     station = request.user.profile.station
-    station_settings = models.StationSetting.objects.get(station=station)
     user = models.Profile.objects.get(user=request.user)
     
 
@@ -406,6 +513,7 @@ def add_sales(request):
                         for seal in round_seal_product:
                             seal.quantity -= item.quantity
                             seal.save()
+                    _deduct_refill_consumables(station, item.quantity)
                 subtotal += item.total
                 item.save()
             sales_obj = models.Sales.objects.get(pk=instance.pk)
@@ -427,7 +535,7 @@ def add_sales(request):
                 payment_obj = models.Payment.objects.create(
                     customer = sales_obj.customer,
                     total_paid = subtotal,
-                    payment_type = None,
+                    payment_type = instance.payment_type,
                     received_by = request.user.profile,
                 )
                 models.PaymentItem.objects.create(
@@ -532,22 +640,30 @@ def add_sales(request):
             check_transaction_limit(station, request)
 
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
-            
+
+        limit_reached = is_transaction_limit_reached(station)
     else:
         limit_reached = is_transaction_limit_reached(station)
         sales_form = forms.CreateSalesForm(station=station, is_disabled=limit_reached)
         item_formset = forms.SalesItemFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
-        
-    return render(request,'wrsm/add_sales.html',{
-        'form':sales_form,
+
+    st_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+    gcash_qr_url = ''
+    if st_settings and st_settings.gcash_qr_image:
+        gcash_qr_url = st_settings.gcash_qr_image.url
+    return render(request, 'wrsm/add_sales.html', {
+        'form': sales_form,
         'item_formset': item_formset,
+        'station': station,
+        'limit_reached': limit_reached,
+        'gcash_qr_url': gcash_qr_url,
+        'gcash_account': (st_settings.gcash_account or '') if st_settings else '',
     })
 
 
 @login_required
 def add_sales_retro(request):
     station = request.user.profile.station
-    station_settings = models.StationSetting.objects.get(station=station)
     user = models.Profile.objects.get(user=request.user)
     
 
@@ -595,6 +711,7 @@ def add_sales_retro(request):
                         for seal in round_seal_product:
                             seal.quantity -= item.quantity
                             seal.save()
+                    _deduct_refill_consumables(station, item.quantity)
                 subtotal += item.total
                 item.save()
             sales_obj = models.Sales.objects.get(pk=instance.pk)
@@ -616,22 +733,22 @@ def add_sales_retro(request):
 
             if ar_status == "Paid":
                 payment_obj = models.Payment.objects.create(
-                    customer = sales_obj.customer,
-                    total_paid = subtotal,
-                    payment_type = None,
-                    received_by = request.user.profile,
+                    customer=sales_obj.customer,
+                    total_paid=subtotal,
+                    payment_type=instance.payment_type,
+                    received_by=request.user.profile,
                 )
                 models.Payment.objects.filter(pk=payment_obj.pk).update(payment_date=retro_date)
 
                 models.PaymentItem.objects.create(
-                    payment = payment_obj,
-                    accounts_receivable = ar_obj,
-                    amount_applied = subtotal
+                    payment=payment_obj,
+                    accounts_receivable=ar_obj,
+                    amount_applied=subtotal
                 )
 
             try:
                 customer_credit = models.CustomerCredit.objects.filter(
-                    customer = sales_obj.customer
+                    customer=sales_obj.customer
                 ).latest('created_date')
 
                 if not customer_credit:
@@ -735,22 +852,31 @@ def add_sales_retro(request):
             check_transaction_limit(station, request)
 
             return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
-            
+
+        limit_reached = is_transaction_limit_reached(station)
     else:
         limit_reached = is_transaction_limit_reached(station)
         sales_form = forms.CreateSalesRetroForm(station=station, is_disabled=limit_reached)
         item_formset = forms.SalesItemFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
-        
-    return render(request,'wrsm/add_sales_retro.html',{
-        'form':sales_form,
+
+    st_retro = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+    gcash_qr_retro = ''
+    if st_retro and st_retro.gcash_qr_image:
+        gcash_qr_retro = st_retro.gcash_qr_image.url
+    return render(request, 'wrsm/add_sales_retro.html', {
+        'form': sales_form,
         'item_formset': item_formset,
+        'station': station,
+        'limit_reached': limit_reached,
+        'gcash_qr_url': gcash_qr_retro,
+        'gcash_account': (st_retro.gcash_account or '') if st_retro else '',
     })
 
 
 @login_required
 def add_sales_from_order(request, order_id):
     station = request.user.profile.station
-    station_settings = models.StationSetting.objects.get(station=station)
+    station_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
     user = models.Profile.objects.get(user=request.user)
     order_obj = models.Order.objects.get(pk=order_id) if order_id else None
     customer = models.Customer.objects.get(id=order_obj.customer.id) if order_obj.customer else None
@@ -768,7 +894,6 @@ def add_sales_from_order(request, order_id):
             instance.station = station
             instance.customer = customer
             instance.created_by = user
-            instance.is_paid = order_obj.is_paid
             instance.order = order_obj
             instance.save()
             items = item_formset.save(commit=False)
@@ -795,6 +920,7 @@ def add_sales_from_order(request, order_id):
                         for seal in round_seal_product:
                             seal.quantity -= item.quantity
                             seal.save()
+                    _deduct_refill_consumables(station, item.quantity)
                 item.save()
 
             sales_obj = models.Sales.objects.get(pk=instance.pk)
@@ -811,8 +937,8 @@ def add_sales_from_order(request, order_id):
                         note = f"Order#: {order_obj.id} - {order_obj.note}"
                     models.PaymentGeneric.objects.create(
                         sales_id=sales_obj.pk,
-                        total_paid=order_obj.paid_amount,
-                        payment_type=order_obj.payment_type,
+                        total_paid=subtotal,
+                        payment_type=sales_obj.payment_type,
                         note=note,
                         received_by=request.user.profile,
                     )
@@ -823,7 +949,7 @@ def add_sales_from_order(request, order_id):
                     order_obj.status = "Completed"
                     order_obj.modified_by = request.user.profile
                     order_obj.save()
-                return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
+                return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
 
             ar_obj = models.AccountsReceivable.objects.create(
                 station=instance.station,
@@ -852,7 +978,8 @@ def add_sales_from_order(request, order_id):
                     payment = customer_credit.amount
                     if is_paid:
                         payment = customer_credit.amount + subtotal
-                    if payment > 0 and payment > subtotal:
+                    # Auto-apply credit only when Paid is checked (respects form intent).
+                    if is_paid and payment > 0 and payment > subtotal:
                         cc_balance = payment - subtotal
                         sales_obj.is_paid = True
                         sales_obj.save()
@@ -877,7 +1004,7 @@ def add_sales_from_order(request, order_id):
                             created_by=request.user.profile
                         )
                         messages.success(request, "Payment successfully posted using customer credit!")
-                    elif payment > 0 and payment < subtotal:
+                    elif is_paid and payment > 0 and payment < subtotal:
                         cc_balance = 0
                         sales_amount_balance = subtotal - payment
                         ar_obj.status = "Partially Paid"
@@ -903,7 +1030,7 @@ def add_sales_from_order(request, order_id):
                             created_by=request.user.profile
                         )
                         messages.info(request, F"Payment posted using customer credit balance. Remaining sales amount: {sales_amount_balance}")
-                    elif payment > 0 and payment == subtotal:
+                    elif is_paid and payment > 0 and payment == subtotal:
                         ar_obj.status = "Paid"
                         ar_obj.save()
                         sales_obj.is_paid = True
@@ -928,11 +1055,12 @@ def add_sales_from_order(request, order_id):
                 sales_obj.save()
                 ar_obj.status = "Paid"
                 ar_obj.save()
+                payment_note = sales_obj.note or order_obj.payment_note or ""
                 payment_obj = models.Payment.objects.create(
                     customer=order_obj.customer,
                     total_paid=subtotal,
-                    payment_type=order_obj.payment_type,
-                    note=order_obj.payment_note,
+                    payment_type=sales_obj.payment_type,
+                    note=payment_note,
                     received_by=request.user.profile,
                 )
                 models.PaymentItem.objects.create(
@@ -949,8 +1077,9 @@ def add_sales_from_order(request, order_id):
             check_transaction_limit(station, request)
 
             messages.success(request, "Order successfully completed and added to sales list.")
-            return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
 
+        limit_reached = is_transaction_limit_reached(station)
     else:
         if order_obj.note and order_obj.payment_note and order_obj.customer == None:
             note = f"Order#: {order_obj.id} {order_obj.note} - ({order_obj.payment_type}) {order_obj.payment_note}"
@@ -960,27 +1089,41 @@ def add_sales_from_order(request, order_id):
             else:
                 note = ""
         limit_reached = is_transaction_limit_reached(station)
-        sales_form = forms.CreateSalesFromOrderForm(station=station, is_disabled=limit_reached, initial={
+        initial_from_order = {
             'order_type': order_obj.order_type,
             'note': note,
             'is_paid': order_obj.is_paid,
-        })
+        }
+        if order_obj.payment_type_id:
+            initial_from_order['payment_type'] = order_obj.payment_type_id
+        sales_form = forms.CreateSalesFromOrderForm(
+            station=station,
+            is_disabled=limit_reached,
+            initial=initial_from_order,
+        )
         item_formset = forms.SalesItemFromOrderFormSet(form_kwargs={'station': station, 'is_disabled': limit_reached})
 
-    return render(request,'wrsm/add_sales_from_order.html',{
-        'form':sales_form,
+    gcash_qr_url = ''
+    if station_settings and station_settings.gcash_qr_image:
+        gcash_qr_url = station_settings.gcash_qr_image.url
+    return render(request, 'wrsm/add_sales_from_order.html', {
+        'form': sales_form,
         'item_formset': item_formset,
-        'station':station,
+        'station': station,
         'customer': customer,
-        'station_settings':station_settings
-        })
+        'order_obj': order_obj,
+        'station_settings': station_settings,
+        'limit_reached': limit_reached,
+        'gcash_qr_url': gcash_qr_url,
+        'gcash_account': (station_settings.gcash_account or '') if station_settings else '',
+    })
 
 
 @login_required
 def add_shortcut(request):
     station = request.user.profile.station
     if request.method == 'POST':
-        form = forms.CreateShortcutForm(request.POST, station=station)
+        form = forms.CreateShortcutForm(request.POST, request.FILES, station=station)
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
@@ -999,7 +1142,8 @@ def add_shortcut(request):
 def process_shortcut(request, pk):
     station = request.user.profile.station
     shortcut = models.ShortCut.objects.get(id=pk, station=station)
-    if shortcut.prompt_note or shortcut.prompt_quantity:
+    force_prompt_qty = request.GET.get('prompt_qty') == '1'
+    if shortcut.prompt_note or shortcut.prompt_quantity or force_prompt_qty:
         if request.method == 'POST':
             if is_transaction_limit_reached(station):
                 check_transaction_limit(station, request)
@@ -1042,6 +1186,7 @@ def process_shortcut(request, pk):
                         for seal in round_seal_product:
                             seal.quantity -= quantity
                             seal.save()
+                    _deduct_refill_consumables(station, quantity)
 
                 check_transaction_limit(station, request)
                 messages.success(request, 'Added successfully!')
@@ -1088,6 +1233,7 @@ def process_shortcut(request, pk):
                 for seal in round_seal_product:
                     seal.quantity -= shortcut.quantity
                     seal.save()
+            _deduct_refill_consumables(station, shortcut.quantity)
 
         check_transaction_limit(station, request)
         messages.success(request, 'Added successfully!')
@@ -1114,7 +1260,7 @@ def add_promo(request):
 def add_product(request):
     station = request.user.profile.station
     if request.method == 'POST':
-        form = forms.CreateProductForm(request.POST, station=station)
+        form = forms.CreateProductForm(request.POST, request.FILES, station=station)
         if form.is_valid():
             instance = form.save(commit=False)
             instance.station = station
@@ -1164,20 +1310,25 @@ def get_customer_data(request):
 
     try:
         customer = models.Customer.objects.get(id=customer_id)
-        station_setting = models.StationSetting.objects.get(station=customer.station)
-        data = {
-            'promo_code': customer.promo_code.promo_code if customer.promo_code else None,
-            'promo_description': customer.promo_code.promo_description if customer.promo_code else None,
-            'discount_code': customer.discount_code.discount_code if customer.discount_code else None,
-            'discount_description': customer.discount_code.discount_description if customer.discount_code else None,
-            'discount_rate': customer.discount_code.discount_rate if customer.discount_code else None,
-            'default_order_type': customer.default_order_type.pk if customer.default_order_type else None,
-            'default_ot': customer.default_order_type.type if customer.default_order_type else None,
-            'station_default_order_type': station_setting.default_order_type.pk if station_setting.default_order_type else None,
-        }
-        return JsonResponse(data)
-    except models.Customer.DoesNotExist or models.StationSetting.DoesNotExist:
+    except models.Customer.DoesNotExist:
         return JsonResponse({'error': 'Customer or StationSetting not found'}, status=404)
+
+    station_setting = models.StationSetting.objects.filter(station=customer.station).order_by('-pk').first()
+    data = {
+        'promo_code': customer.promo_code.promo_code if customer.promo_code else None,
+        'promo_description': customer.promo_code.promo_description if customer.promo_code else None,
+        'discount_code': customer.discount_code.discount_code if customer.discount_code else None,
+        'discount_description': customer.discount_code.discount_description if customer.discount_code else None,
+        'discount_rate': customer.discount_code.discount_rate if customer.discount_code else None,
+        'default_order_type': customer.default_order_type.pk if customer.default_order_type else None,
+        'default_ot': customer.default_order_type.type if customer.default_order_type else None,
+        'station_default_order_type': (
+            station_setting.default_order_type.pk
+            if station_setting and station_setting.default_order_type
+            else None
+        ),
+    }
+    return JsonResponse(data)
 
 
 def get_payment_item_data(request):
@@ -1197,17 +1348,22 @@ def get_ordertype_data(request):
     id_order_type = request.GET.get('id_order_type')
     try:
         order_type = models.OrderType.objects.get(id=id_order_type)
-        station_setting = models.StationSetting.objects.get(station=order_type.station)
-        data = {
-            'ot_unit_price': order_type.unit_price if order_type else None,
-            'order_type': order_type.type if order_type else None,
-            'sys_default_ot': station_setting.default_order_type.type if station_setting else None,
-            'default_delivery_rate': station_setting.default_delivery_rate if station_setting else None,
-            'default_unit_price': station_setting.default_unit_price if station_setting else None,
-        }
-        return JsonResponse(data)
     except models.OrderType.DoesNotExist:
         return JsonResponse({'error': 'Ordertype not found'}, status=404)
+
+    station_setting = models.StationSetting.objects.filter(station=order_type.station).order_by('-pk').first()
+    data = {
+        'ot_unit_price': order_type.unit_price if order_type else None,
+        'order_type': order_type.type if order_type else None,
+        'sys_default_ot': (
+            station_setting.default_order_type.type
+            if station_setting and station_setting.default_order_type
+            else None
+        ),
+        'default_delivery_rate': station_setting.default_delivery_rate if station_setting else None,
+        'default_unit_price': station_setting.default_unit_price if station_setting else None,
+    }
+    return JsonResponse(data)
 
 
 def get_jugsize_data(request):
@@ -1734,8 +1890,22 @@ def add_forecast(request, pk):
 def add_order(request):
     station = request.user.profile.station
     customers = models.Customer.objects.filter(station=station).order_by('name')
-    station_setting = models.StationSetting.objects.get(station=station)
+    station_setting = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+    has_active_orders = models.Order.objects.filter(station=station, status__in=['Pending', 'In Progress']).exists()
+    if has_active_orders and request.method != 'POST':
+        messages.info(request, "May active order ka pa. I-complete o i-cancel muna bago mag-add ng bagong order.")
+        return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
+    if station_setting is None:
+        messages.warning(
+            request,
+            'Station settings are missing. Complete station settings before adding orders.',
+        )
+        return HttpResponseRedirect(reverse_lazy('wrsm_app:station-setting-update'))
     if request.method == 'POST':
+        # Re-check to prevent double orders (race condition / double-click)
+        if models.Order.objects.filter(station=station, status__in=['Pending', 'In Progress']).exists():
+            messages.info(request, "May active order ka pa. I-complete o i-cancel muna bago mag-add ng bagong order.")
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
         form = forms.CreateOrderForm(request.POST, station=station)
         if form.is_valid():
             instance = form.save(commit=False)
@@ -1743,7 +1913,7 @@ def add_order(request):
             instance.created_by = request.user.profile
             instance.save()
             messages.success(request, 'Order successfully submitted')
-            return HttpResponseRedirect(reverse_lazy('wrsm_app:orders'))
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
         else:
             messages.error(request, 'An error occurred.')
 
@@ -2138,17 +2308,28 @@ class OrderListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         station = self.request.user.profile.station
+        has_active_orders = models.Order.objects.filter(station=station, status__in=['Pending', 'In Progress']).exists()
         selected_filters = self.request.GET.getlist('filter')
         queryset = models.Order.objects.filter(station=station)
         if selected_filters:
-            orders = queryset.filter(status__in=selected_filters)
+            orders = queryset.filter(status__in=selected_filters).order_by('-created_date', 'status')
         else:
-            orders = queryset.filter(status__in=['Pending','In Progress']).order_by('-created_date','status')
+            orders = queryset.filter(status__in=['Pending', 'In Progress']).order_by('-created_date', 'status')
+        order_ids_with_sales = set()
+        try:
+            if hasattr(models.Sales, 'order'):
+                order_ids_with_sales = set(
+                    models.Sales.objects.filter(station=station).exclude(order__isnull=True).values_list('order_id', flat=True)
+                )
+        except Exception:
+            pass
         context = {
             'orders': orders,
             'station': station,
+            'has_active_orders': has_active_orders,
             'filter_options': models.Order.STATUS_CHOICES,
-            'selected_filters': self.request.GET.getlist('filter'),
+            'selected_filters': selected_filters,
+            'order_ids_with_sales': order_ids_with_sales,
         }
         return context
 
@@ -2192,20 +2373,18 @@ class JugTypeListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
-        try:
-            station_settings = models.StationSetting.objects.get(station=station)
-            # Check for completeness
+        station_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+        if station_settings:
             required_fields = [
                 station_settings.default_delivery_rate,
                 station_settings.default_jug_size,
                 station_settings.default_unit_price,
                 station_settings.default_minimum_delivery_qty,
                 station_settings.default_order_type,
-                station_settings.default_payment_type
+                station_settings.default_payment_type,
             ]
             settings_complete = all(field is not None for field in required_fields)
-        except models.StationSetting.DoesNotExist:
-            station_settings = None
+        else:
             settings_complete = False
         jug_types = models.JugType.objects.filter(station=station)
         context = super().get_context_data(**kwargs)
@@ -2274,6 +2453,41 @@ class ProductUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         return context
 
 
+class ProductPriceHistoryListView(LoginRequiredMixin, ListView):
+    """Chronological unit price changes for the current station (optionally one product)."""
+
+    template_name = 'wrsm/product_price_history.html'
+    context_object_name = 'entries'
+    paginate_by = 40
+
+    def get_queryset(self):
+        station = self.request.user.profile.station
+        qs = (
+            models.ProductPriceHistory.objects.filter(station=station)
+            .select_related('product', 'changed_by__user')
+            .order_by('-changed_at')
+        )
+        product_pk = self.kwargs.get('product_pk')
+        if product_pk is not None:
+            if not models.Product.objects.filter(pk=product_pk, station=station).exists():
+                return models.ProductPriceHistory.objects.none()
+            qs = qs.filter(product_id=product_pk)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        station = self.request.user.profile.station
+        product_pk = self.kwargs.get('product_pk')
+        filtered_product = None
+        if product_pk is not None:
+            filtered_product = models.Product.objects.filter(pk=product_pk, station=station).first()
+        context.update({
+            'station': station,
+            'filtered_product': filtered_product,
+        })
+        return context
+
+
 class ForecastCustomerUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = forms.UpdateForecastForm
     success_message = 'successfully updated!'
@@ -2302,20 +2516,49 @@ class SalesListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         station = self.request.user.profile.station
-        station_settings = models.StationSetting.objects.get(station=station)
-        num_of_days_to_filter = station_settings.days_to_filter_saleslist or 0
+        station_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+        num_of_days_to_filter = (
+            (station_settings.days_to_filter_saleslist or 0) if station_settings else 0
+        )
         queryset = super().get_queryset().filter(station=station)
 
+        period = self.request.GET.get('period', '').lower() or 'daily'
         selected_date = self.request.GET.get('date')
+        selected_month = self.request.GET.get('month')
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
         selected_customer = self.request.GET.get('customer')
         keyword = self.request.GET.get('keyword')
 
-        if selected_date:
+        if period == 'monthly':
+            if selected_month:
+                try:
+                    month_obj = datetime.strptime(selected_month, '%Y-%m')
+                    queryset = queryset.filter(
+                        created_date__year=month_obj.year,
+                        created_date__month=month_obj.month
+                    )
+                except ValueError:
+                    pass
+        elif period == 'range':
             try:
-                date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_date__date=date_obj)
+                start_obj = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+                end_obj = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+                if start_obj and end_obj:
+                    queryset = queryset.filter(created_date__date__range=(start_obj, end_obj))
+                elif start_obj:
+                    queryset = queryset.filter(created_date__date__gte=start_obj)
+                elif end_obj:
+                    queryset = queryset.filter(created_date__date__lte=end_obj)
             except ValueError:
                 pass
+        else:
+            # Daily default
+            try:
+                date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else current_date
+                queryset = queryset.filter(created_date__date=date_obj)
+            except ValueError:
+                queryset = queryset.filter(created_date__date=current_date)
 
         if selected_customer:
             queryset = queryset.filter(customer__name__icontains=selected_customer)
@@ -2327,7 +2570,7 @@ class SalesListView(LoginRequiredMixin, ListView):
                 queryset = queryset.filter(
                     customer__name__icontains=keyword)
 
-        if not selected_date and not selected_customer and not keyword:
+        if not selected_date and not selected_month and not start_date and not end_date and not selected_customer and not keyword and period not in ['daily', 'monthly', 'range']:
             if num_of_days_to_filter == 1:
                 queryset = queryset.prefetch_related('sales_items', 'ar_records').filter(created_date__date__range=(current_date, current_date))
             elif num_of_days_to_filter > 1:
@@ -2342,35 +2585,88 @@ class SalesListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         station = self.request.user.profile.station
         products = models.Product.objects.filter(station=station) or None
+        customers = None
         try:
             customers = models.Customer.objects.filter(station=station) or None
         except ValueError:
             pass
-        totals = self.get_queryset().aggregate(
-                grand_total=Sum(ExpressionWrapper(F('sales_items__quantity') * F('sales_items__unit_price'), output_field=DecimalField())),
-                grand_total_qty=Sum('sales_items__quantity')
-            )
-
-        context['grand_total'] = totals['grand_total'] or 0
-        context['grand_total_qty'] = totals['grand_total_qty'] or 0
+        sales_qs = context['sales_list']
         context['station'] = station
+        context['limit_reached'] = is_transaction_limit_reached(station)
         if customers != None:
             context['customers'] = customers.order_by('name')
 
-        # Calculate totals per sales_id
-        product_expr = ExpressionWrapper(F('quantity') * F('unit_price'), output_field=DecimalField())
-        product_totals = models.SalesItem.objects.filter(sales__station=station).values('sales_id') \
-            .annotate(total=Sum(product_expr), total_qty=Sum('quantity')).order_by('sales_id')
+        sales_ids = list(sales_qs.values_list('id', flat=True))
+        line_amount_expr = ExpressionWrapper(
+            F('quantity') * F('unit_price'),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+        if sales_ids:
+            ga = models.SalesItem.objects.filter(sales_id__in=sales_ids).aggregate(
+                grand_line_count=Count('id'),
+                grand_subtotal=Sum(line_amount_expr),
+                grand_total=Sum('total'),
+                grand_total_qty=Sum('quantity'),
+            )
+            context['grand_line_count'] = ga['grand_line_count'] or 0
+            context['grand_subtotal'] = ga['grand_subtotal'] or 0
+            context['grand_total'] = ga['grand_total'] or 0
+            context['grand_total_qty'] = ga['grand_total_qty'] or 0
 
-        # Convert to dictionary { sales_id: total_amount }
+            product_totals = (
+                models.SalesItem.objects.filter(sales_id__in=sales_ids)
+                .values('sales_id')
+                .annotate(
+                    line_count=Count('id'),
+                    subtotal=Sum(line_amount_expr),
+                    total=Sum('total'),
+                    total_qty=Sum('quantity'),
+                )
+                .order_by('sales_id')
+            )
+
+            item_groups = defaultdict(list)
+            for row in (
+                models.SalesItem.objects.filter(sales_id__in=sales_ids)
+                .select_related('product')
+                .order_by('sales_id', 'pk')
+            ):
+                label = row.product.product_name if row.product else 'Item'
+                item_groups[row.sales_id].append(f'{label} ×{row.quantity}')
+            context['item_summaries_by_sale'] = {
+                sid: ', '.join(parts) for sid, parts in item_groups.items()
+            }
+        else:
+            context['grand_line_count'] = 0
+            context['grand_subtotal'] = 0
+            context['grand_total'] = 0
+            context['grand_total_qty'] = 0
+            product_totals = []
+            context['item_summaries_by_sale'] = {}
+
+        context['subtotals_by_sale'] = {item['sales_id']: item['subtotal'] for item in product_totals}
         context['totals_by_product'] = {item['sales_id']: item['total'] for item in product_totals}
         context['quantities_by_product'] = {item['sales_id']: item['total_qty'] for item in product_totals}
+        context['line_counts_by_sale'] = {item['sales_id']: item['line_count'] for item in product_totals}
+        shortcuts = models.ShortCut.objects.filter(station=station)
+        context['shortcuts_count'] = shortcuts.count()
+        context['shortcuts'] = shortcuts
         context['selected_date'] = self.request.GET.get('date', '')
+        context['selected_month'] = self.request.GET.get('month', '')
+        context['start_date'] = self.request.GET.get('start_date', '')
+        context['end_date'] = self.request.GET.get('end_date', '')
+        context['selected_period'] = self.request.GET.get('period', 'daily')
         context['entered_customer'] = self.request.GET.get('customer', '')
         context['products'] = products.count() if products else 0
 
         return context
-    
+
+
+class SalesAndOrdersView(SalesListView):
+    """Same sales list as /sales/ (Daily / Monthly / Date Range, table + cards)."""
+
+    pass
+
 
 class CustomersListView(LoginRequiredMixin, ListView):
     template_name = 'wrsm/customers.html'
@@ -2541,20 +2837,18 @@ class StationSettingDetail(StationSetupRequiredMixin,TemplateView):
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
-        try:
-            station_settings = models.StationSetting.objects.get(station=station)
-            # Check for completeness
+        station_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+        if station_settings:
             required_fields = [
                 station_settings.default_delivery_rate,
                 station_settings.default_jug_size,
                 station_settings.default_unit_price,
                 station_settings.default_minimum_delivery_qty,
                 station_settings.default_order_type,
-                station_settings.default_payment_type
+                station_settings.default_payment_type,
             ]
             settings_complete = all(field is not None for field in required_fields)
-        except models.StationSetting.DoesNotExist:
-            station_settings = None
+        else:
             settings_complete = False
 
         context = super().get_context_data(**kwargs)
@@ -2636,14 +2930,15 @@ class StationSettingUpdateView(StationSetupRequiredMixin, SuccessMessageMixin, U
         return reverse_lazy('wrsm_app:station-setting-detail')
     
     def get_object(self, queryset=None):
-        obj, created = models.StationSetting.objects.get_or_create(
-            station=self.request.user.profile.station,
-            defaults={
-                'default_delivery_rate': 0,
-                'default_unit_price': 0,
-                'default_minimum_delivery_qty': 0
-            }
-        )
+        station = self.request.user.profile.station
+        obj = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+        if obj is None:
+            obj = models.StationSetting.objects.create(
+                station=station,
+                default_delivery_rate=0,
+                default_unit_price=0,
+                default_minimum_delivery_qty=0,
+            )
         return obj
     
     def get_context_data(self, **kwargs):
@@ -2686,7 +2981,7 @@ class ContainerManagementListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
-        station_setting = models.StationSetting.objects.get(station=station)
+        station_setting = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
         inventory = models.ContainerManagement.objects.filter(station=station)
         context = super().get_context_data(**kwargs)
         loaned_jugs = 0
@@ -2708,7 +3003,7 @@ class ContainerManagementListView(LoginRequiredMixin, ListView):
             'searched_customer': self.request.GET.get('customer', ''),
             'customers': models.ContainerManagement.objects.filter(station=station).distinct('customer__name'),
             'loaned_jugs': loaned_jugs,
-            'initial_jug_count': station_setting.initial_jug_count or 0
+            'initial_jug_count': (station_setting.initial_jug_count or 0) if station_setting else 0,
         }
         return context
 
@@ -2775,13 +3070,25 @@ class ShortcutUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
 
 @login_required
 def update_forecast(request):
+    """
+    Recalculate forecast rows from **historical Sales** only (not Orders).
+
+    Basis:
+    - **Last order date** = latest `Sales.created_date` for that customer (date component used for schedule).
+    - **Days frequency** = rounded **mean** of calendar days between consecutive sale timestamps
+      (all `Sales` for the customer, oldest → newest). With 0–1 sales, frequency is 0.
+    - **Next order date** = last order **date** + days frequency (see `Forecast.save()`).
+    """
     station = request.user.profile.station
     customers = models.Forecast.objects.filter(station=station)
     for customer in customers:
         last_order_date = models.Sales.objects.filter(customer=customer.customer).aggregate(
             latest=Max('created_date')
         )['latest']
-        customer.last_order_date = last_order_date
+        if last_order_date is not None and hasattr(last_order_date, 'date'):
+            customer.last_order_date = last_order_date.date()
+        else:
+            customer.last_order_date = last_order_date
         customer.save()
     
     customer_forecast_list = models.Forecast.objects.filter(station=station)
@@ -3002,6 +3309,13 @@ class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_superuser or self.request.user.is_staff
 
+
+class AdminSettingsPortalView(LoginRequiredMixin, AdminRequiredMixin, TemplateView):
+    """Hub for staff: Django admin, documentation CMS, audit tools."""
+
+    template_name = 'wrsm/admin_settings_portal.html'
+
+
 class ManageArticlesView(AdminRequiredMixin, ListView):
     model = models.Article
     template_name = 'wrsm_app/manage_articles.html'
@@ -3110,7 +3424,7 @@ def update_sales(request, pk):
              return redirect('wrsm_app:sales')
         sale = get_object_or_404(models.Sales, pk=pk, station=station)
     
-    station_settings = models.StationSetting.objects.get(station=sale.station)
+    station_settings = models.StationSetting.objects.filter(station=sale.station).order_by('-pk').first()
 
     # Use extra=0 for updates to prevent empty forms from appearing/validating
     SalesItemUpdateFormSet = inlineformset_factory(
@@ -3179,12 +3493,18 @@ def update_sales(request, pk):
         sales_form = forms.CreateSalesForm(instance=sale, station=sale.station)
         item_formset = SalesItemUpdateFormSet(instance=sale, form_kwargs={'station': sale.station})
         
+    gcash_qr_url = ''
+    if station_settings and station_settings.gcash_qr_image:
+        gcash_qr_url = station_settings.gcash_qr_image.url
     return render(request, 'wrsm/add_sales.html', {
         'form': sales_form,
         'item_formset': item_formset,
         'station': sale.station,
         'station_settings': station_settings,
-        'is_update': True
+        'gcash_qr_url': gcash_qr_url,
+        'gcash_account': (station_settings.gcash_account or '') if station_settings else '',
+        'is_update': True,
+        'limit_reached': False,
     })
 
 

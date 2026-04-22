@@ -5,13 +5,13 @@
 {% block title %}Container Management List{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col space-y-4">
-  <div class="text-center mt-5">
-    <h2 class="text-4xl">Container Management</h2>
+<div class="min-h-screen w-full max-w-full min-w-0 flex flex-col space-y-4 px-3 sm:px-4 py-4">
+  <div class="text-center mt-2 sm:mt-5">
+    <h2 class="text-2xl sm:text-4xl">Container Management</h2>
   </div>
 
-  <div class="flex flex-col gap-5 px-4 mx-auto">
-    <div class="mx-auto">
+  <div class="flex flex-col gap-5 w-full max-w-4xl mx-auto">
+    <div class="w-full sm:w-auto mx-auto">
       <!-- search fields -->
       <form method="get">
         <div class="flex-1">
@@ -34,7 +34,7 @@
       <!-- end of search fields -->
     </div>
   
-    <div class="flex justify-between gap-4 items-center w-full max-w-4xl mx-auto">
+    <div class="flex flex-wrap justify-between gap-4 items-center w-full">
       <div class="flex gap-3">
         <a href="{% url 'wrsm_app:add-container-record' %}" title="Add Record">
           <ion-icon name="add-circle-outline" class="text-4xl"></ion-icon>
@@ -54,10 +54,10 @@
     </div>
   </div>
   
-  <section class="w-full justify-center p-1 text-slate-800 dark:bg-slate-500 dark:text-slate-100">
-    <section class="w-full justify-center p-1 text-slate-800 dark:bg-slate-500 dark:text-slate-100">
-    <h6 class="mb-2 text-center mx-auto bg-yellow-200 dark:text-slate-800 p-2 text-lg font-bold {% if searched_customer == '' %}hidden{% endif %}">{{searched_customer}} Record</h6>
-    <table class="table-auto mx-auto">
+  <section class="w-full max-w-full min-w-0 justify-center p-1 text-slate-800 dark:text-slate-100">
+    <h6 class="mb-2 text-center mx-auto bg-yellow-200 dark:text-slate-800 p-2 text-base sm:text-lg font-bold {% if searched_customer == '' %}hidden{% endif %}">{{searched_customer}} Record</h6>
+    <div class="w-full overflow-x-auto">
+    <table class="table-auto w-full min-w-[640px] text-sm mx-auto">
       <thead class="dark:bg-slate-700 bg-slate-300 dark:text-slate-100/50">
         <tr class="text-left">
           <th class="border border-gray-300 dark:border-gray-600 px-2 py-2">Select</th>
@@ -97,6 +97,7 @@
       {% endif %}
       </tbody>
     </table>
+    </div>
   </section>
 
   <!-- Modal -->
@@ -146,15 +147,15 @@
     </div>
   </div>
 
-  <section class="flex flex-col mx-auto border border-gray-50 p-5 text-xs shadow-inner">
+  <section class="flex flex-col mx-auto border border-gray-50 p-4 sm:p-5 text-xs shadow-inner w-full max-w-3xl">
     <div class="mx-auto mb-2 font-bold">
       <h5>LEGEND</h5>
     </div>
-    <div class="flex gap-10">
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-10">
       <p><strong>BFLV</strong> = balance from last visit</p>
       <p><strong>REC</strong> = returned empty containers</p>
     </div>
-    <div class="flex gap-10 text-left">
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-10 text-left">
       <p><strong>DC</strong> = delivered container</p>
       <p><strong>NB</strong> = new balance</p>
     </div>

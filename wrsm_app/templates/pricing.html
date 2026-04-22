@@ -4,92 +4,134 @@
 {% block title %}Pricing{% endblock %}
 
 {% block content %}
-<div class="mt-32">
-  <div class="flex flex-col items-center">
+<div class="mt-24 sm:mt-28 mb-16 px-4">
+  <div class="mx-auto max-w-6xl flex flex-col items-center">
 
-    <h1 class="text-center text-4xl font-extrabold mt-4">Pricing Plans</h1>
-    <p class="text-center text-lg text-gray-600 dark:text-slate-200 mb-8">
-      Choose a plan that suits your needs
+    <h1 class="text-center text-3xl sm:text-4xl font-extrabold">Pricing Plans</h1>
+    <p class="text-center text-base sm:text-lg text-gray-600 dark:text-slate-200 mt-3 mb-10 max-w-2xl text-balance">
+      Each plan includes a defined set of system modules. Monthly price reflects both <strong>features</strong> and your
+      <strong>transaction volume tier</strong> (one sale/order record = one transaction).
     </p>
 
-    <!-- Pricing Cards Container -->
-    <div class="flex flex-col sm:flex-row justify-center gap-6">
+    {% if subscription_plans %}
+    <div class="mb-8 w-full max-w-4xl rounded-xl bg-white/80 dark:bg-slate-700/70 shadow-md p-4 sm:p-5">
+      <h3 class="text-base sm:text-lg font-semibold text-center mb-3">Plan Transaction Limits</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        {% for plan in subscription_plans %}
+        <div class="rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/70 p-3">
+          <div class="font-semibold">{{ plan.name }}</div>
+          <div class="mt-1 text-slate-600 dark:text-slate-300">
+            Maximum transactions:
+            {% if plan.transaction_limit %}
+              <span class="font-medium">{{ plan.transaction_limit }} / month</span>
+            {% else %}
+              <span class="font-medium">Unlimited</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
-      <!-- Card 1 -->
-      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
-        <h4 class="text-xl font-semibold capitalize">sediment</h4>
-        <h1 class="text-4xl font-bold">
-          ₱300
-          <small class="text-base font-normal">/per month</small>
-        </h1>
-        <p class="dark:text-slate-200 mt-3">
-          Designed for small entity with limited number of transaction per month
-        </p>
+    <div class="grid w-full grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
 
-        <p class="mt-5">
-          <strong>Transaction per month:</strong> up to 300
-        </p>
+      <!-- Sediment -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl p-6 flex flex-col border border-transparent hover:border-blue-400/40 transition-colors">
+        <h2 class="text-xl font-semibold capitalize tracking-tight">Sediment</h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-200">Starter station — essentials only</p>
+        <div class="mt-4">
+          <span class="text-4xl font-bold tabular-nums">₱149</span>
+          <span class="text-base font-normal text-gray-600 dark:text-slate-300">/month</span>
+        </div>
 
-        <div class="text-center mt-6">
-          <a href="{% url 'account:signup' %}?plan=Sediment" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
-            Sign-up
+        <div class="mt-5 rounded-lg bg-white/50 dark:bg-slate-600/50 px-3 py-2 text-sm">
+          <strong class="text-gray-800 dark:text-slate-100">Transaction volume (per month)</strong>
+          <p class="mt-1 tabular-nums"><span class="font-semibold">1 – 300</span> transactions</p>
+        </div>
+
+        <p class="mt-4 text-sm font-semibold text-gray-800 dark:text-slate-100">Included features</p>
+        <ul class="mt-2 space-y-2 text-sm text-gray-700 dark:text-slate-100 list-disc list-inside">
+          <li>Sales &amp; orders (walk-in / delivery)</li>
+          <li>Customers &amp; container records</li>
+          <li>Products &amp; price history</li>
+          <li>Dashboard &amp; line-of-business basics</li>
+        </ul>
+
+        <div class="mt-auto pt-8 text-center">
+          <a href="{% url 'account:signup' %}?plan=Sediment" class="inline-block bg-blue-600 text-white py-2.5 px-8 rounded-full text-base font-semibold hover:bg-blue-700 transition shadow-sm">
+            Sign up
           </a>
-          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-200">30-day free trial</p>
         </div>
       </div>
 
-      <!-- Card 2 -->
-      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
-        <h4 class="text-xl font-semibold capitalize">carbon</h4>
-        <h1 class="text-4xl font-bold">
-          ₱400
-          <small class="text-base font-normal">/per month</small>
-        </h1>
-        <p class="dark:text-slate-200 mt-3">
-          Designed for medium entity with limited number of transaction per month
-        </p>
+      <!-- Carbon -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl p-6 flex flex-col border-2 border-blue-500/60 relative">
+        <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Popular</span>
+        <h2 class="text-xl font-semibold capitalize tracking-tight">Carbon</h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-200">Growing business — finance &amp; marketing</p>
+        <div class="mt-4">
+          <span class="text-4xl font-bold tabular-nums">₱199</span>
+          <span class="text-base font-normal text-gray-600 dark:text-slate-300">/month</span>
+        </div>
 
-        <p class="mt-5">
-          <strong>Transaction per month:</strong> up to 500
-        </p>
+        <div class="mt-5 rounded-lg bg-white/50 dark:bg-slate-600/50 px-3 py-2 text-sm">
+          <strong class="text-gray-800 dark:text-slate-100">Transaction volume (per month)</strong>
+          <p class="mt-1 tabular-nums"><span class="font-semibold">301 – 500</span> transactions</p>
+        </div>
 
-        <div class="text-center mt-6">
-          <a href="{% url 'account:signup' %}?plan=Carbon" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
-            Sign-up
+        <p class="mt-4 text-sm font-semibold text-gray-800 dark:text-slate-100">Everything in Sediment, plus</p>
+        <ul class="mt-2 space-y-2 text-sm text-gray-700 dark:text-slate-100 list-disc list-inside">
+          <li>Accounts receivable &amp; net terms</li>
+          <li>Expenses &amp; financial reports</li>
+          <li>Order forecast &amp; delivery map</li>
+          <li>Promos &amp; discounts</li>
+        </ul>
+
+        <div class="mt-auto pt-8 text-center">
+          <a href="{% url 'account:signup' %}?plan=Carbon" class="inline-block bg-blue-600 text-white py-2.5 px-8 rounded-full text-base font-semibold hover:bg-blue-700 transition shadow-sm">
+            Sign up
           </a>
-          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-200">30-day free trial</p>
         </div>
       </div>
 
-      <!-- Card 3 -->
-      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl w-72 p-5">
-        <h4 class="text-xl font-semibold capitalize">RO</h4>
-        <h1 class="text-4xl font-bold">
-          ₱500
-          <small class="text-base font-normal">/per month</small>
-        </h1>
-        <p class="dark:text-slate-200 mt-3">
-          Designed for large entity with unlimited number of transaction per month
-        </p>
+      <!-- RO -->
+      <div class="bg-gray-100 dark:bg-slate-500 dark:text-slate-100 shadow-md rounded-xl p-6 flex flex-col border border-transparent hover:border-blue-400/40 transition-colors">
+        <h2 class="text-xl font-semibold tracking-tight">RO</h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-200">High volume — full platform</p>
+        <div class="mt-4">
+          <span class="text-4xl font-bold tabular-nums">₱249</span>
+          <span class="text-base font-normal text-gray-600 dark:text-slate-300">/month</span>
+        </div>
 
-        <p class="mt-5">
-          <strong>Transaction per month:</strong> unlimited
-        </p>
+        <div class="mt-5 rounded-lg bg-white/50 dark:bg-slate-600/50 px-3 py-2 text-sm">
+          <strong class="text-gray-800 dark:text-slate-100">Transaction volume (per month)</strong>
+          <p class="mt-1"><span class="font-semibold">Unlimited</span> <span class="text-gray-600 dark:text-slate-300">(no cap)</span></p>
+        </div>
 
-        <div class="text-center mt-6">
-          <a href="{% url 'account:signup' %}?plan=RO" class="bg-blue-600 text-white py-2 px-6 rounded-full text-lg hover:bg-blue-700 transition">
-            Sign-up
+        <p class="mt-4 text-sm font-semibold text-gray-800 dark:text-slate-100">Everything in Carbon, plus</p>
+        <ul class="mt-2 space-y-2 text-sm text-gray-700 dark:text-slate-100 list-disc list-inside">
+          <li>Audit logs &amp; compliance trail</li>
+          <li>Shortcuts &amp; maintenance workflows</li>
+          <li>Backwash monitor &amp; station tooling</li>
+          <li>Priority fit for multi-shift / high-throughput sites</li>
+        </ul>
+
+        <div class="mt-auto pt-8 text-center">
+          <a href="{% url 'account:signup' %}?plan=RO" class="inline-block bg-blue-600 text-white py-2.5 px-8 rounded-full text-base font-semibold hover:bg-blue-700 transition shadow-sm">
+            Sign up
           </a>
-          <p class="text-sm mt-2 text-gray-600 dark:text-slate-100">with free 30-day trial</p>
+          <p class="text-sm mt-2 text-gray-600 dark:text-slate-200">30-day free trial</p>
         </div>
       </div>
 
     </div>
 
-    <!-- Trial Notice -->
-    <div class="bg-gray-100 dark:bg-yellow-300 shadow-md rounded-xl w-72 max-w-5xl text-center p-4 mt-6">
-      <p class="text-gray-700 text-balance">
-        Free 30-day trial comes with full feature and unlimited number of transaction.
+    <div class="mt-10 max-w-3xl rounded-xl bg-gray-100 dark:bg-yellow-300/90 dark:text-gray-900 shadow-md p-4 sm:p-5 text-center text-sm sm:text-base text-gray-700">
+      <p class="text-balance">
+        <strong>Free 30-day trial:</strong> full feature access so you can evaluate the system. Transaction limits for paid tiers apply after you subscribe and choose Sediment, Carbon, or RO.
       </p>
     </div>
 

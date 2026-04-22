@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v35';
+const SW_VERSION = 'wrsm-v37';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -194,6 +194,21 @@ self.addEventListener('fetch', (event) => {
 
     // 2. Navigation Requests (HTML pages)
     if (event.request.mode === 'navigate') {
+        if (requestUrl.pathname.includes('/update-container-record/')) {
+            event.respondWith(
+                fetch(event.request)
+                    .catch(() => {
+                        return caches.match(event.request).then((specificCache) => {
+                            if (specificCache) return specificCache;
+                            return caches.match('/add-container-record/');
+                        }).then((response) => {
+                            return response || caches.match(OFFLINE_URL);
+                        });
+                    })
+            );
+            return;
+        }
+
         event.respondWith(
             fetch(event.request)
                 .then((networkResponse) => {
@@ -255,10 +270,18 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 4. Default
+    // 4. Default (form POST, JSON API, etc.) — must always resolve to a Response
     event.respondWith(
         fetch(event.request).catch(() => {
-            // Optional
+            console.warn('[ServiceWorker] Network failed for', event.request.method, event.request.url);
+            return new Response(
+                'Network unavailable. Check your connection and try again.',
+                {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
+                }
+            );
         })
     );
 });

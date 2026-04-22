@@ -1,11 +1,58 @@
 from django import forms
+from django.db.models import Q
 from django.forms import inlineformset_factory
 from django.forms import formset_factory
 from datetime import datetime, timedelta
 # from django.utils import timezone
 from . import models
 from django.contrib.auth.models import User, Group
-from account.models import SubscriptionPlan
+from account.models import SubscriptionPlan, StationSubscription
+
+ROLE_GROUP_NAMES = (
+    'station owner/admin',
+    'staff',
+    'driver',
+)
+
+PLAN_ROLE_LIMITS = {
+    'Sediment': {'driver': 2, 'staff': 2},
+    'Carbon': {'driver': 3, 'staff': 3},
+    # RO and other plans: unlimited by default
+}
+
+
+def _ensure_core_order_types(station):
+    """Ensure standard sales flow options exist per station."""
+    if not station:
+        return
+
+    station_order_types = models.OrderType.objects.filter(station=station)
+    has_pickup = (
+        station_order_types.filter(type__icontains='pick').exists()
+        or station_order_types.filter(type__icontains='pickup').exists()
+    )
+    has_delivery = station_order_types.filter(type__icontains='delivery').exists()
+
+    if not has_pickup:
+        models.OrderType.objects.get_or_create(station=station, type='Pick up')
+    if not has_delivery:
+        models.OrderType.objects.get_or_create(station=station, type='Delivery')
+
+
+def _get_station_plan_and_role_usage(station, exclude_user=None):
+    if not station:
+        return None, None, None, None
+    subscription = StationSubscription.objects.filter(station=station).select_related('plan').first()
+    plan_name = subscription.plan.name if subscription and subscription.plan else None
+    plan_limits = PLAN_ROLE_LIMITS.get(plan_name)
+
+    qs = models.Profile.objects.filter(station=station)
+    if exclude_user is not None:
+        qs = qs.exclude(user=exclude_user)
+
+    staff_count = qs.filter(user__groups__name='staff').count()
+    driver_count = qs.filter(user__groups__name='driver').count()
+    return plan_name, plan_limits, staff_count, driver_count
 
 
 class NewStationRegistrationForm(forms.ModelForm):
@@ -48,12 +95,35 @@ class SalesUpdateForm(forms.Form):
 class CreateSalesForm(forms.ModelForm):
     class Meta:
         model = models.Sales
-        fields = ['customer','order_type','note','is_paid',]
-        exclude = ['created_date','station','total_liters']
-        widgets = {
-            'is_paid' : forms.CheckboxInput(attrs={'type':'checkbox'}),
+        fields = ['customer', 'order_type', 'note', 'is_paid', 'payment_type', 'amount_given']
+        exclude = ['created_date', 'station', 'total_liters']
+        labels = {
+            'order_type': 'Sales type',
+            'customer': 'Customer',
+            'note': 'Note',
+            'is_paid': 'Paid',
+            'payment_type': 'Payment method',
+            'amount_given': 'Cash received',
         }
-    
+        help_texts = {
+            'order_type': 'Pickup, delivery, or how this sale is fulfilled — one smooth sales flow (no separate order step).',
+        }
+        widgets = {
+            'is_paid': forms.CheckboxInput(attrs={'type': 'checkbox', 'id': 'is_paid'}),
+            'payment_type': forms.RadioSelect(
+                attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0'}
+            ),
+            'amount_given': forms.NumberInput(
+                attrs={
+                    'class': 'w-full max-w-xs p-2 border rounded border-slate-400 dark:bg-slate-800 dark:border-slate-600',
+                    'step': '0.01',
+                    'min': '0',
+                    'placeholder': '0.00',
+                    'id': 'id_amount_given',
+                }
+            ),
+        }
+
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         is_disabled = kwargs.pop('is_disabled', False)
@@ -64,13 +134,16 @@ class CreateSalesForm(forms.ModelForm):
                 field.disabled = True
 
         if station:
-            try:
-                settings = models.StationSetting.objects.get(station=station)
-                self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station).order_by('-type')
-                self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
+            _ensure_core_order_types(station)
+            settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+            self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station).order_by('-type')
+            self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
+            self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
+            self.fields['payment_type'].empty_label = 'Select payment (Cash, GCash, etc.)'
+            if settings:
                 self.fields['order_type'].initial = settings.default_order_type
-            except models.StationSetting.DoesNotExist:
-                pass
+                if settings.default_payment_type:
+                    self.fields['payment_type'].initial = settings.default_payment_type
 
 
 class CreateSalesRetroForm(CreateSalesForm):
@@ -106,8 +179,14 @@ class SalesItemForm(forms.ModelForm):
         if is_disabled:
             for field in self.fields.values():
                 field.disabled = True
-        self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
-            'product_type','-jug_size__size_in_liters')
+        self.fields['product'].queryset = (
+            models.Product.objects.filter(station=station)
+            .filter(
+                ~Q(product_type='SEAL')
+                | Q(product_name__icontains='transparent')
+            )
+            .order_by('product_type', '-jug_size__size_in_liters')
+        )
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
 
@@ -140,9 +219,34 @@ SalesItemFormSet = inlineformset_factory(
 class CreateSalesFromOrderForm(forms.ModelForm):
     class Meta:
         model = models.Sales
-        fields = ['order_type','note','is_paid',]
-        exclude = ['created_date','station','total_liters']
-    
+        fields = ['order_type', 'note', 'is_paid', 'payment_type', 'amount_given']
+        exclude = ['created_date', 'station', 'total_liters']
+        labels = {
+            'order_type': 'Sales type',
+            'note': 'Note',
+            'is_paid': 'Paid',
+            'payment_type': 'Payment method',
+            'amount_given': 'Cash received',
+        }
+        help_texts = {
+            'order_type': 'Pickup, delivery, or how this sale is fulfilled — same flow as new sales.',
+        }
+        widgets = {
+            'is_paid': forms.CheckboxInput(attrs={'type': 'checkbox', 'id': 'is_paid'}),
+            'payment_type': forms.RadioSelect(
+                attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0'}
+            ),
+            'amount_given': forms.NumberInput(
+                attrs={
+                    'class': 'w-full max-w-xs p-2 border rounded border-slate-400 dark:bg-slate-800 dark:border-slate-600',
+                    'step': '0.01',
+                    'min': '0',
+                    'placeholder': '0.00',
+                    'id': 'id_amount_given',
+                }
+            ),
+        }
+
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         is_disabled = kwargs.pop('is_disabled', False)
@@ -153,13 +257,15 @@ class CreateSalesFromOrderForm(forms.ModelForm):
                 field.disabled = True
 
         if station:
-            try:
-                settings = models.StationSetting.objects.get(station=station)
-                order_types = models.OrderType.objects.filter(station=station)
-                self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station.pk).order_by('-type')
+            _ensure_core_order_types(station)
+            settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+            self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station.pk).order_by('-type')
+            self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
+            self.fields['payment_type'].empty_label = 'Select payment (Cash, GCash, etc.)'
+            if settings:
                 self.fields['order_type'].initial = settings.default_order_type
-            except models.StationSetting.DoesNotExist:
-                pass
+                if settings.default_payment_type:
+                    self.fields['payment_type'].initial = settings.default_payment_type
 
 
 class SalesItemFromOrderForm(forms.ModelForm):
@@ -174,8 +280,14 @@ class SalesItemFromOrderForm(forms.ModelForm):
         if is_disabled:
             for field in self.fields.values():
                 field.disabled = True
-        self.fields['product'].queryset = models.Product.objects.filter(station=station).exclude(product_type='SEAL').order_by(
-            'product_type','-jug_size__size_in_liters')
+        self.fields['product'].queryset = (
+            models.Product.objects.filter(station=station)
+            .filter(
+                ~Q(product_type='SEAL')
+                | Q(product_name__icontains='transparent')
+            )
+            .order_by('product_type', '-jug_size__size_in_liters')
+        )
         self.fields['product'].empty_label = "SELECT PRODUCT"
 
 
@@ -234,7 +346,7 @@ class CreateJugTypeForm(forms.ModelForm):
 class CreateProductForm(forms.ModelForm):
     class Meta:
         model = models.Product
-        fields = ['product_type','jug_size','jug_type','product_name','unit_price','quantity']
+        fields = ['product_type','jug_size','jug_type','product_name','unit_price','quantity','image']
         exclude = ['station','created_by','modified_by','modified_date',]
     
     def __init__(self, *args, **kwargs):
@@ -314,6 +426,15 @@ class CreatePromoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
+        self.fields['promo_code'].widget.attrs.update({
+            'placeholder': 'Example: SUMMER10'
+        })
+        self.fields['promo_description'].widget.attrs.update({
+            'placeholder': 'Example: 10% off on selected refills'
+        })
+        self.fields['end_date'].widget.attrs.update({
+            'placeholder': 'Example: 2026-12-31'
+        })
 
 
 class CreateSizeForm(forms.ModelForm):
@@ -384,6 +505,15 @@ class CreateDiscountForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
+        self.fields['discount_code'].widget.attrs.update({
+            'placeholder': 'Example: SENIOR5'
+        })
+        self.fields['discount_rate'].widget.attrs.update({
+            'placeholder': 'Example: 5'
+        })
+        self.fields['discount_description'].widget.attrs.update({
+            'placeholder': 'Example: 5% discount for senior citizens'
+        })
 
 
 class CreateNetTermsForm(forms.ModelForm):
@@ -395,7 +525,15 @@ class CreateNetTermsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        self.fields['terms_label'].widget.attrs.update({'placeholder': 'example: Net 0, Net 15, or Net 30'})
+        self.fields['terms_label'].widget.attrs.update({
+            'placeholder': 'Example: Net 15'
+        })
+        self.fields['terms_in_days'].widget.attrs.update({
+            'placeholder': 'Example: 15'
+        })
+        self.fields['terms_description'].widget.attrs.update({
+            'placeholder': 'Example: Payment due within 15 days from invoice date'
+        })
 
 
 class CreateStationSettingsForm(forms.ModelForm):
@@ -471,12 +609,18 @@ class CreateOrderForm(forms.ModelForm):
 
         self.fields['created_date'].required = True
 
-        settings = models.StationSetting.objects.get(station=station)
+        self.fields['customer'].required = True
+        self.fields['customer'].empty_label = 'Select a customer'
         self.fields['customer'].queryset = models.Customer.objects.filter(station=station.pk).order_by('name')
         self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station.pk).order_by('type')
+        self.fields['order_type'].empty_label = 'Select order type (e.g. Pickup / Delivery)'
         self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
-        self.fields['order_type'].initial = 'Delivery'
-        self.fields['payment_type'].initial = settings.default_payment_type
+        # Use .first() so duplicate StationSetting rows (bad data) do not crash with MultipleObjectsReturned.
+        settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
+        if settings:
+            if not self.is_bound and not self.initial.get('order_type') and settings.default_order_type_id:
+                self.initial['order_type'] = settings.default_order_type_id
+            self.fields['payment_type'].initial = settings.default_payment_type
 
 
 class UpdateOrderForm(CreateOrderForm):
@@ -496,9 +640,10 @@ class CreatePaymentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        settings = models.StationSetting.objects.get(station=station)
+        settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
         self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station)
-        self.fields['payment_type'].initial = settings.default_payment_type
+        if settings and settings.default_payment_type:
+            self.fields['payment_type'].initial = settings.default_payment_type
 
 
 class CreatePaymentGenericForm(forms.ModelForm):
@@ -514,9 +659,10 @@ class CreatePaymentGenericForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         station = kwargs.pop('station', None)
         super().__init__(*args, **kwargs)
-        settings = models.StationSetting.objects.get(station=station)
-        self.fields['payment_type'].initial = settings.default_payment_type.pk
+        settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
         self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station)
+        if settings and settings.default_payment_type_id:
+            self.fields['payment_type'].initial = settings.default_payment_type.pk
 
 
 class CreateContainerManagementForm(forms.ModelForm):
@@ -578,7 +724,7 @@ class StationUserCreationForm(forms.ModelForm):
     last_name = forms.CharField(max_length=30, required=True)
     email = forms.EmailField(required=True)
     password = forms.CharField(widget=forms.PasswordInput)
-    role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+    role = forms.ModelChoiceField(queryset=Group.objects.none(), required=True)
     allowed_stations = forms.ModelMultipleChoiceField(
         queryset=models.Station.objects.none(), 
         required=False, 
@@ -593,6 +739,19 @@ class StationUserCreationForm(forms.ModelForm):
         station = kwargs.pop('station', None)
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.station = station
+        self.fields['role'].queryset = Group.objects.filter(name__in=ROLE_GROUP_NAMES).order_by('name')
+        plan_name, plan_limits, staff_count, driver_count = _get_station_plan_and_role_usage(self.station)
+        if plan_limits:
+            self.fields['role'].help_text = (
+                f"Current plan: {plan_name} | "
+                f"Staff: {staff_count}/{plan_limits['staff']} | "
+                f"Driver: {driver_count}/{plan_limits['driver']}"
+            )
+        elif plan_name:
+            self.fields['role'].help_text = (
+                f"Current plan: {plan_name} | Staff: {staff_count} | Driver: {driver_count} (unlimited)"
+            )
         
         if user and hasattr(user, 'profile'):
              self.fields['allowed_stations'].queryset = user.profile.allowed_stations.all()
@@ -604,6 +763,32 @@ class StationUserCreationForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("A user with this email address already exists.")
         return email
+
+    def clean_role(self):
+        role = self.cleaned_data.get('role')
+        if not role or not self.station:
+            return role
+
+        role_name = role.name.lower()
+        if role_name not in ('driver', 'staff'):
+            return role
+
+        subscription = StationSubscription.objects.filter(station=self.station).select_related('plan').first()
+        plan_name = subscription.plan.name if subscription and subscription.plan else None
+        role_limits = PLAN_ROLE_LIMITS.get(plan_name, {})
+        role_limit = role_limits.get(role_name)
+        if role_limit is None:
+            return role  # Unlimited / no configured limit
+
+        current_count = models.Profile.objects.filter(
+            station=self.station,
+            user__groups=role,
+        ).count()
+        if current_count >= role_limit:
+            raise forms.ValidationError(
+                f"{plan_name} plan allows up to {role_limit} {role_name}(s) only."
+            )
+        return role
         
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -619,7 +804,7 @@ class StationUserUpdateForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
     email = forms.EmailField(required=True)
-    role = forms.ModelChoiceField(queryset=Group.objects.all(), required=True)
+    role = forms.ModelChoiceField(queryset=Group.objects.none(), required=True)
     allowed_stations = forms.ModelMultipleChoiceField(
         queryset=models.Station.objects.none(), 
         required=False, 
@@ -634,6 +819,21 @@ class StationUserUpdateForm(forms.ModelForm):
         station = kwargs.pop('station', None)
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.station = station
+        self.fields['role'].queryset = Group.objects.filter(name__in=ROLE_GROUP_NAMES).order_by('name')
+        plan_name, plan_limits, staff_count, driver_count = _get_station_plan_and_role_usage(
+            self.station, exclude_user=self.instance if self.instance and self.instance.pk else None
+        )
+        if plan_limits:
+            self.fields['role'].help_text = (
+                f"Current plan: {plan_name} | "
+                f"Staff: {staff_count}/{plan_limits['staff']} | "
+                f"Driver: {driver_count}/{plan_limits['driver']}"
+            )
+        elif plan_name:
+            self.fields['role'].help_text = (
+                f"Current plan: {plan_name} | Staff: {staff_count} | Driver: {driver_count} (unlimited)"
+            )
         
         if self.instance.pk:
             current_groups = self.instance.groups.all()
@@ -650,6 +850,32 @@ class StationUserUpdateForm(forms.ModelForm):
         if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
              raise forms.ValidationError("A user with this email address already exists.")
         return email
+
+    def clean_role(self):
+        role = self.cleaned_data.get('role')
+        if not role or not self.station:
+            return role
+
+        role_name = role.name.lower()
+        if role_name not in ('driver', 'staff'):
+            return role
+
+        subscription = StationSubscription.objects.filter(station=self.station).select_related('plan').first()
+        plan_name = subscription.plan.name if subscription and subscription.plan else None
+        role_limits = PLAN_ROLE_LIMITS.get(plan_name, {})
+        role_limit = role_limits.get(role_name)
+        if role_limit is None:
+            return role  # Unlimited / no configured limit
+
+        current_count = models.Profile.objects.filter(
+            station=self.station,
+            user__groups=role,
+        ).exclude(user=self.instance).count()
+        if current_count >= role_limit:
+            raise forms.ValidationError(
+                f"{plan_name} plan allows up to {role_limit} {role_name}(s) only."
+            )
+        return role
 
     def save(self, commit=True):
         user = super().save(commit=False)

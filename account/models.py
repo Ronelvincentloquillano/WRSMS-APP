@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 from wrsm_app.models import Station
 
 class SubscriptionPlan(models.Model):
@@ -44,3 +45,36 @@ class PendingRegistration(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class SubscriptionPaymentRequest(models.Model):
+    BILLING_CYCLE_CHOICES = (
+        ('monthly', 'Monthly'),
+        ('annual', 'Annual'),
+    )
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='subscription_payment_requests')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name='subscription_payment_requests')
+    billing_cycle = models.CharField(max_length=10, choices=BILLING_CYCLE_CHOICES, default='monthly')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reference_number = models.CharField(max_length=100)
+    payer_name = models.CharField(max_length=100, blank=True)
+    payer_number = models.CharField(max_length=20, blank=True)
+    proof_image = models.ImageField(upload_to='subscription_proofs/')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    admin_note = models.CharField(max_length=200, blank=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_subscription_payment_requests')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_subscription_payment_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.station} - {self.plan} - {self.status}"

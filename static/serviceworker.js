@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v35';
+const SW_VERSION = 'wrsm-v40';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -11,9 +11,11 @@ const ASSETS_TO_CACHE = [
     OFFLINE_URL,
     // OFFLINE_DATA_URL is cached dynamically by the app when online, not during install
     '/static/css/output.css',
-    '/static/css/styles.css',
-    '/static/js/main.js',
+    '/static/js/jquery-3.7.1.min.js',
+    '/static/js/menu.js',
+    '/static/js/add_sales.js',
     '/static/js/offline_forms.js',
+    '/static/js/offline_forms.js?v=2.4',
     '/static/js/sales_list_offline.js',
     '/static/js/order_list_offline.js',
     '/static/js/container_management_list_offline.js',
@@ -273,10 +275,18 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 4. Default
+    // 4. Default (form POST, JSON API, etc.) — must always resolve to a Response
     event.respondWith(
         fetch(event.request).catch(() => {
-            // Optional
+            console.warn('[ServiceWorker] Network failed for', event.request.method, event.request.url);
+            return new Response(
+                'Network unavailable. Check your connection and try again.',
+                {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
+                }
+            );
         })
     );
 });
