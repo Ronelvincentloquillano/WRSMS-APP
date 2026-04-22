@@ -2271,11 +2271,22 @@ class StationListView(LoginRequiredMixin, ListView):
     context_object_name = 'stations'
 
     def get_queryset(self):
-        return self.request.user.profile.allowed_stations.all()
+        try:
+            profile = self.request.user.profile
+        except ObjectDoesNotExist:
+            return models.Station.objects.none()
+        return profile.allowed_stations.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['station'] = self.request.user.profile.station
+        try:
+            profile = self.request.user.profile
+            context['station'] = profile.station
+            context['missing_profile'] = False
+        except ObjectDoesNotExist:
+            context['station'] = None
+            context['missing_profile'] = True
+            messages.warning(self.request, "Your account profile is incomplete. Please register a station.")
         return context
 
 
@@ -2286,7 +2297,10 @@ class StationDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['station'] = self.request.user.profile.station
+        try:
+            context['station'] = self.request.user.profile.station
+        except ObjectDoesNotExist:
+            context['station'] = None
         return context
 
 
@@ -2297,12 +2311,18 @@ class StationUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('wrsm_app:station-list')
     
     def form_valid(self, form):
-        form.instance.modified_by = self.request.user.profile
+        try:
+            form.instance.modified_by = self.request.user.profile
+        except ObjectDoesNotExist:
+            form.instance.modified_by = None
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['station'] = self.request.user.profile.station
+        try:
+            context['station'] = self.request.user.profile.station
+        except ObjectDoesNotExist:
+            context['station'] = None
         return context
 
 
