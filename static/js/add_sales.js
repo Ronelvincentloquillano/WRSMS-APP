@@ -595,6 +595,15 @@ $(document).ready(function () {
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
     $(document).on('input change', '#gcash-confirm-amount', function () {
         gcashQrLastRenderedAmount = null;
+        const entered = parseMoney($('#gcash-confirm-amount').val());
+        const totalNow = getGrandTotal();
+        if (entered !== null && entered > 0 && totalNow > 0) {
+            const reveal = document.getElementById('gcash-qr-reveal');
+            if (reveal) {
+                reveal.classList.remove('hidden');
+                reveal.style.display = 'block';
+            }
+        }
         updatePaymentDisplay();
     });
     $('#is_paid').on('change', function () {
