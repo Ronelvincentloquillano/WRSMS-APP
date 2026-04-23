@@ -492,11 +492,8 @@ $(document).ready(function () {
     }
 
     function syncGcashQr(grandTotal, selectedText) {
-        const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
         const selection = getPaymentTypeSelection();
         const isPaid = $('#is_paid').is(':checked');
-        const hasItems = hasItemTypeSelected();
-        const exactMatch = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -512,31 +509,18 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Strict gate requested by user:
-        // paid + gcash selected + with item type + exact amount match to sale total.
-        const shouldShowQr =
-            isPaid &&
-            selection.isGcash &&
-            hasItems &&
-            enteredAmount !== null &&
-            enteredAmount > 0 &&
-            grandTotal > 0 &&
-            exactMatch;
+        // Requested flow:
+        // show QR as soon as staff selects GCash and confirms customer is paid.
+        const shouldShowQr = isPaid && selection.isGcash;
 
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
-                let hintText = 'QR appears only when this exactly matches the sale total.';
+                let hintText = 'Select GCash and mark customer as paid to show QR.';
                 if (!isPaid) {
-                    hintText = 'Mark "Customer paid now" first to enable GCash QR checking.';
+                    hintText = 'Mark "Customer paid now" first to enable GCash QR.';
                 } else if (!selection.isGcash) {
                     hintText = 'Select GCash as payment method to show QR.';
-                } else if (!hasItems || grandTotal <= 0) {
-                    hintText = 'Add at least one item with total greater than 0.';
-                } else if (enteredAmount === null || enteredAmount <= 0) {
-                    hintText = 'Enter the exact GCash amount to reveal the QR.';
-                } else if (!exactMatch) {
-                    hintText = 'Amount must exactly match the sale total before QR appears.';
                 }
                 $hint
                     .removeClass('text-emerald-600')
@@ -551,7 +535,7 @@ $(document).ready(function () {
             $hint
                 .removeClass('text-slate-500')
                 .addClass('text-emerald-600')
-                .text('Exact match confirmed. QR ready to scan.');
+                .text('GCash selected. QR ready to scan.');
         }
 
         if (hasStationImg) {
@@ -567,7 +551,7 @@ $(document).ready(function () {
 
         if ($fallback.length) $fallback.removeClass('hidden');
 
-        const amountBase = enteredAmount === null ? grandTotal : enteredAmount;
+        const amountBase = grandTotal > 0 ? grandTotal : 0;
         const amountKey = Math.round(amountBase * 100) / 100;
         if (gcashQrLastRenderedAmount !== null && Math.abs(gcashQrLastRenderedAmount - amountKey) < 0.0001 && !$wrapper.hasClass('hidden')) {
             $wrapper.removeClass('hidden');
@@ -606,7 +590,6 @@ $(document).ready(function () {
         $('input[name="payment_type"], select[name="payment_type"], #id_amount_given').prop('disabled', false);
         if (!isPaid) {
             $('#payment-cash-section, #payment-gcash-section, #gcash-qr-reveal, #gcash-qr-wrapper').addClass('hidden');
-            $('#gcash-confirm-amount').val('');
         }
         updateAmountGivenRequired();
     }
@@ -642,17 +625,12 @@ $(document).ready(function () {
 
     $(document).on('input change click', 'input[name="payment_type"], select[name="payment_type"]', function () {
         gcashQrLastRenderedAmount = null;
-        if (!getPaymentTypeSelection().isGcash) $('#gcash-confirm-amount').val('');
         togglePaymentSections(getPaymentTypeText());
         updateAmountGivenRequired();
         updatePaymentDisplay();
     });
 
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
-    $(document).on('input change', '#gcash-confirm-amount', function () {
-        gcashQrLastRenderedAmount = null;
-        updatePaymentDisplay();
-    });
     $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
