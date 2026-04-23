@@ -1,15 +1,33 @@
 from django import template
+from django.conf import settings
 
 register = template.Library()
 
+
+@register.filter
+def hosted_media_url(fieldfile):
+    """
+    Return image URL only if it will load on the current deployment.
+
+    After DB import, ImageField paths often point to /media/... files that do not
+    exist on Render. In production (DEBUG=False), only absolute http(s) URLs
+    (e.g. Cloudinary) are returned so templates can fall back to placeholders.
+    """
+    if not fieldfile:
+        return ''
+    try:
+        url = fieldfile.url
+    except ValueError:
+        return ''
+    if url.startswith('https://') or url.startswith('http://'):
+        return url
+    if getattr(settings, 'DEBUG', False):
+        return url
+    return ''
+
 @register.filter
 def get_item(dictionary, key):
-    if dictionary is None:
-        return None
-    try:
-        return dictionary.get(key)
-    except (TypeError, AttributeError):
-        return None
+    return dictionary.get(key)
 
 @register.filter
 def remove_none(value):
