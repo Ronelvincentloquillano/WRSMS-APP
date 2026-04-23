@@ -493,7 +493,6 @@ $(document).ready(function () {
 
     function syncGcashQr(grandTotal, selectedText) {
         const selection = getPaymentTypeSelection();
-        const isPaid = $('#is_paid').is(':checked');
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -510,16 +509,14 @@ $(document).ready(function () {
         }
 
         // Requested flow:
-        // show QR as soon as staff selects GCash and confirms customer is paid.
-        const shouldShowQr = isPaid && selection.isGcash;
+        // show QR as soon as staff selects GCash.
+        const shouldShowQr = selection.isGcash;
 
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
-                let hintText = 'Select GCash and mark customer as paid to show QR.';
-                if (!isPaid) {
-                    hintText = 'Mark "Customer paid now" first to enable GCash QR.';
-                } else if (!selection.isGcash) {
+                let hintText = 'Select GCash to show QR.';
+                if (!selection.isGcash) {
                     hintText = 'Select GCash as payment method to show QR.';
                 }
                 $hint
