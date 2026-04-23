@@ -346,10 +346,31 @@ $(document).ready(function () {
 
     function getPaymentTypeText() {
         const $radio = $('input[name="payment_type"]:checked');
-        if ($radio.length) return $radio.closest('label').text().trim();
+        if ($radio.length) {
+            const fromSibling = $radio.siblings('span').first().text().trim();
+            if (fromSibling) return fromSibling;
+            return $radio.closest('label').text().trim();
+        }
         const $sel = $('select[name="payment_type"]');
         if ($sel.length) return $sel.find('option:selected').text();
         return '';
+    }
+
+    function isPaidChecked() {
+        const $paidById = $('#is_paid');
+        if ($paidById.length) return $paidById.is(':checked');
+        const $paidByName = $('input[name="is_paid"]');
+        if ($paidByName.length) return $paidByName.is(':checked');
+        return false;
+    }
+
+    function isGcashSelected(selectedText) {
+        const $radio = $('input[name="payment_type"]:checked');
+        if ($radio.length) {
+            const radioLabel = ($radio.siblings('span').first().text() || $radio.closest('label').text() || '').trim();
+            return paymentLabelIsGcash(radioLabel);
+        }
+        return paymentLabelIsGcash(selectedText);
     }
 
     function paymentLabelIsGcash(label) {
@@ -389,13 +410,10 @@ $(document).ready(function () {
         const t = (selectedText || '').toLowerCase().trim();
         const $cash = $('#payment-cash-section');
         const $gcash = $('#payment-gcash-section');
-        const isPaid = $('#is_paid').is(':checked');
+        const gcashSelected = isGcashSelected(selectedText);
         $cash.addClass('hidden');
         $gcash.addClass('hidden');
-        if (!isPaid) {
-            return;
-        }
-        if (paymentLabelIsGcash(selectedText)) {
+        if (gcashSelected) {
             $gcash.removeClass('hidden');
         } else if (t.includes('cash')) {
             $cash.removeClass('hidden');
@@ -403,7 +421,7 @@ $(document).ready(function () {
     }
 
     function syncGcashQr(grandTotal, selectedText) {
-        const isGcash = paymentLabelIsGcash(selectedText);
+        const isGcash = isGcashSelected(selectedText);
         const matches = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
@@ -421,7 +439,7 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        const isPaid = $('#is_paid').is(':checked');
+        const isPaid = isPaidChecked();
         if ($debug.length) {
             if (!isGcash) {
                 $debug.addClass('hidden').text('');
@@ -473,7 +491,7 @@ $(document).ready(function () {
     }
 
     function updateAmountGivenRequired() {
-        const paid = $('#is_paid').is(':checked');
+        const paid = isPaidChecked();
         const selectedText = getPaymentTypeText();
         const t = selectedText.toLowerCase();
         const cashOnly = t.includes('cash') && !paymentLabelIsGcash(selectedText);
@@ -487,7 +505,7 @@ $(document).ready(function () {
         // Some sales pages still render this panel with `hidden` by default.
         // Ensure it's always visible, then control interactivity via disabled styles.
         $wrap.removeClass('hidden');
-        const isPaid = $isPaid.is(':checked');
+        const isPaid = isPaidChecked();
         // Keep payment options visible so cashier can immediately choose Cash/GCash.
         $wrap.toggleClass('opacity-60', !isPaid);
         $wrap.toggleClass('bg-slate-50', !isPaid);
@@ -542,6 +560,11 @@ $(document).ready(function () {
         updatePaymentDisplay();
     });
     $('#is_paid').on('change', function () {
+        syncPaidPanelVisibility();
+        togglePaymentSections(getPaymentTypeText());
+        updatePaymentDisplay();
+    });
+    $('input[name="is_paid"]').on('change', function () {
         syncPaidPanelVisibility();
         togglePaymentSections(getPaymentTypeText());
         updatePaymentDisplay();
