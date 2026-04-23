@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_tags %}
 {% static 'img/SDR_thumbnail.png' as qr_fallback %}
 
 {% block title %}Station Setting detail{% endblock %}
@@ -73,13 +74,15 @@
         <tr>
           <td class="border px-4 py-2 font-medium bg-gray-200 dark:bg-gray-500">GCash QR Code</td>
           <td class="border px-4 py-2 text-lg">
-            {% if station_settings.gcash_qr_image %}
-              <img src="{{ station_settings.gcash_qr_image.url }}" alt="GCash QR Code"
+            {% with qr_url=station_settings.gcash_qr_image|hosted_media_url %}
+            {% if qr_url %}
+              <img src="{{ qr_url }}" alt="GCash QR Code"
                    class="w-10 h-10 object-contain border rounded p-1 bg-white"
                    onerror="this.onerror=null;this.src='{{ qr_fallback }}';this.alt='GCash QR placeholder';">
             {% else %}
               <span class="text-gray-400 text-sm italic">Not uploaded</span>
             {% endif %}
+            {% endwith %}
           </td>
         </tr>
         <tr>
