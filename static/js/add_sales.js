@@ -424,10 +424,13 @@ $(document).ready(function () {
         let total = 0;
         const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
         for (let i = 0; i < totalForms; i++) {
-            const $row = $(`#id_sales_items-${i}-total`).closest('.form-row');
-            if ($row.length && $row.is(':visible')) {
-                const val = parseMoney($(`#id_sales_items-${i}-total`).val());
-                total += (val === null ? 0 : val);
+            const val = parseMoney($(`#id_sales_items-${i}-total`).val());
+            total += (val === null ? 0 : val);
+        }
+        if (total <= 0) {
+            const displayTotal = parseMoney($('#display-grand-total').text());
+            if (displayTotal !== null) {
+                total = displayTotal;
             }
         }
         return total;
@@ -449,7 +452,8 @@ $(document).ready(function () {
     }
 
     function syncGcashQr(grandTotal, selectedText) {
-        const hasGcashAmountInput = parseMoney($('#gcash-confirm-amount').val()) !== null;
+        const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
+        const hasGcashAmountInput = enteredAmount !== null;
         const entryState = getGcashEntryState(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
@@ -466,8 +470,9 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Primary gate: show QR only after item total and entered amount are both present.
-        if (!hasGcashAmountInput || !entryState.ready) {
+        // Deterministic gate: show only when both amount and total are positive.
+        const shouldShowQr = hasGcashAmountInput && enteredAmount > 0 && grandTotal > 0;
+        if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
                 $hint
@@ -506,7 +511,7 @@ $(document).ready(function () {
 
         if ($fallback.length) $fallback.removeClass('hidden');
 
-        const amountBase = entryState.entered === null ? grandTotal : entryState.entered;
+        const amountBase = enteredAmount === null ? grandTotal : enteredAmount;
         const amountKey = Math.round(amountBase * 100) / 100;
         if (gcashQrLastRenderedAmount !== null && Math.abs(gcashQrLastRenderedAmount - amountKey) < 0.0001 && !$wrapper.hasClass('hidden')) {
             $wrapper.removeClass('hidden');
