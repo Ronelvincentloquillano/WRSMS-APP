@@ -81,7 +81,17 @@ def _ensure_station_settings(station):
 
 class StationSetupRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        station = request.user.profile.station
+        try:
+            profile = request.user.profile
+        except ObjectDoesNotExist:
+            messages.warning(request, "Your account profile is incomplete. Please register or select a station.")
+            return redirect('wrsm_app:station-list')
+
+        station = profile.station
+        if not station:
+            messages.warning(request, "Please select or register a station first.")
+            return redirect('wrsm_app:station-list')
+
         if not (
             models.JugSize.objects.filter(station=station).exists() and
             models.JugType.objects.filter(station=station).exists() and
