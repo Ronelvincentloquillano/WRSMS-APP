@@ -1,11 +1,21 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v52';
+const SW_VERSION = 'wrsm-v53';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
 const OFFLINE_URL = '/offline/';
 const DATA_CACHE_NAME = 'wrsm-data-v1';
 const OFFLINE_DATA_URL = '/api/offline-master-data/';
+const SENSITIVE_PATH_PREFIXES = [
+    '/add-sales',
+    '/add-order',
+    '/add-customer',
+    '/add-container-record',
+    '/update-sales',
+    '/add-payment',
+    '/account/',
+    '/admin/',
+];
 
 const ASSETS_TO_CACHE = [
     OFFLINE_URL,
@@ -22,16 +32,6 @@ const ASSETS_TO_CACHE = [
     '/static/img/SDR_thumbnail.png',
     '/static/img/SDR.png',
     '/static/manifest.json',
-    '/', 
-    '/dashboard/',
-    '/sales/', 
-    '/add-sales/',
-    '/add-order/',
-    '/add-customer/',
-    '/add-container-record/',
-    '/customers/',
-    '/orders/',
-    '/container-management-list/',
     // Ionicons
     '/static/ionicons/ionicons.esm.js',
     '/static/ionicons/p-7a41fcdf.entry.js',
@@ -196,6 +196,16 @@ self.addEventListener('fetch', (event) => {
 
     // 2. Navigation Requests (HTML pages)
     if (event.request.mode === 'navigate') {
+        const isSensitivePath = SENSITIVE_PATH_PREFIXES.some((prefix) =>
+            requestUrl.pathname.startsWith(prefix)
+        );
+        if (isSensitivePath) {
+            event.respondWith(
+                fetch(event.request, { cache: 'no-store' })
+                    .catch(() => caches.match(OFFLINE_URL))
+            );
+            return;
+        }
         // Special handling for Update Container Record -> serve Add Container Record shell if offline
         if (requestUrl.pathname.includes('/update-container-record/')) {
              event.respondWith(
