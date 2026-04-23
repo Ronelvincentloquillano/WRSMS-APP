@@ -420,8 +420,15 @@ $(document).ready(function () {
         const t = (selectedText || selection.label || '').toLowerCase().trim();
         const $cash = $('#payment-cash-section');
         const $gcash = $('#payment-gcash-section');
+        const isPaid = $('#is_paid').is(':checked');
         $cash.addClass('hidden');
         $gcash.addClass('hidden');
+        if (!isPaid) {
+            return;
+        }
+        // Always show the GCash amount block while paid is checked, so cashier can proceed
+        // even if radio label matching fails in some deployed DOM variants.
+        $gcash.removeClass('hidden');
         if (selection.isGcash || paymentLabelIsGcash(selectedText)) {
             $gcash.removeClass('hidden');
         } else if (selection.isCashOnly || t.includes('cash')) {
@@ -432,6 +439,7 @@ $(document).ready(function () {
     function syncGcashQr(grandTotal, selectedText) {
         const selection = getPaymentTypeSelection();
         const isGcash = selection.isGcash || paymentLabelIsGcash(selectedText);
+        const hasGcashAmountInput = ($('#gcash-confirm-amount').val() || '').trim() !== '';
         const matches = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
@@ -447,7 +455,9 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        if (!isGcash || !matches) {
+        // Fallback: allow QR flow when amount is explicitly entered even if
+        // payment radio detection fails due to frontend rendering differences.
+        if ((!isGcash && !hasGcashAmountInput) || !matches) {
             hideQr();
             return;
         }
