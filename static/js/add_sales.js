@@ -449,8 +449,6 @@ $(document).ready(function () {
     }
 
     function syncGcashQr(grandTotal, selectedText) {
-        const selection = getPaymentTypeSelection();
-        const isGcash = selection.isGcash || paymentLabelIsGcash(selectedText);
         const hasGcashAmountInput = parseMoney($('#gcash-confirm-amount').val()) !== null;
         const entryState = getGcashEntryState(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
@@ -468,9 +466,8 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Fallback: allow QR flow when amount is explicitly entered even if
-        // payment radio detection fails due to frontend rendering differences.
-        if ((!isGcash && !hasGcashAmountInput) || !entryState.ready) {
+        // Primary gate: show QR only after item total and entered amount are both present.
+        if (!hasGcashAmountInput || !entryState.ready) {
             hideQr();
             if ($hint.length) {
                 $hint
