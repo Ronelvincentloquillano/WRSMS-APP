@@ -2,11 +2,13 @@
     "name": "SmartDynamic Refilling",
     "short_name": "SDR",
     "description": "Smart Dynamic Refilling App",
+    "id": "/",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#000000",
+    "background_color": "#e2e8f0",
+    "theme_color": "#0ea5e9",
+    "lang": "en-US",
     "orientation": "any",
     "icons": [
         {
