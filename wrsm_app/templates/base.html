@@ -455,21 +455,21 @@
         </section>
 
         {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' and settings_complete %}
-        <section class="md:hidden border-t border-blue-300/60 dark:border-slate-500/70 bg-blue-100/90 dark:bg-slate-700/85">
-            <nav class="mx-auto max-w-[1600px] px-3 py-2 overflow-x-auto whitespace-nowrap text-sm" aria-label="mobile quick links">
-                <a href="{% url 'wrsm_app:dashboard' %}" class="inline-block px-3 py-1.5 mr-1 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700">
+        <section class="md:hidden border-t border-blue-300/60 dark:border-slate-500/70 bg-blue-100/95 dark:bg-slate-700/95 shadow-sm">
+            <nav class="mx-auto max-w-[1600px] px-3 py-2 grid grid-cols-3 gap-2 text-[13px] sm:text-sm" aria-label="mobile quick links">
+                <a href="{% url 'wrsm_app:dashboard' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
                     Dashboard
                 </a>
-                <a href="{% url 'wrsm_app:sales' %}" class="inline-block px-3 py-1.5 mr-1 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:sales' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
                     Sales
                 </a>
-                <a href="{% url 'wrsm_app:container-management-list' %}" class="inline-block px-3 py-1.5 mr-1 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:container-management-list' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
                     Containers
                 </a>
-                <a href="{% url 'wrsm_app:customers' %}" class="inline-block px-3 py-1.5 mr-1 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:customers' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
                     Customers
                 </a>
-                <a href="{% url 'wrsm_app:products' %}" class="inline-block px-3 py-1.5 mr-1 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:products' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
                     Products
                 </a>
             </nav>
