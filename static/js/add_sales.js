@@ -466,7 +466,19 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Primary gate: show QR only after item total and entered amount are both present.
+        if (hasStationImg) {
+            if ($reveal.length) $reveal.removeClass('hidden');
+            if ($wrapper.length) $wrapper.addClass('hidden');
+            if ($hint.length) {
+                $hint
+                    .removeClass('text-emerald-600')
+                    .addClass('text-slate-500')
+                    .text('Scan the QR below. Enter exact amount to confirm payment.');
+            }
+            return;
+        }
+
+        // Primary gate: show generated QR only after item total and entered amount are both present.
         if (!hasGcashAmountInput || !entryState.ready) {
             hideQr();
             if ($hint.length) {

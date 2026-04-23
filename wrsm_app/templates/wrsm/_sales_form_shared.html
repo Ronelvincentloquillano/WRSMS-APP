@@ -131,7 +131,7 @@
             {% if gcash_account %}
             <p class="text-sm"><span class="text-slate-500">GCash number:</span> <span class="font-mono font-medium">{{ gcash_account }}</span></p>
             {% endif %}
-            <div id="gcash-qr-reveal" class="hidden rounded-lg border border-slate-200 bg-white p-4">
+            <div id="gcash-qr-reveal" class="rounded-lg border border-slate-200 bg-white p-4">
               <p class="text-sm font-semibold text-slate-800 mb-2">Scan to pay with GCash</p>
               <p class="text-xs text-slate-500 mb-3">{% if gcash_qr_url %}From your station settings.{% else %}Amount-only QR — upload your shop QR in Station Settings for a scannable code.{% endif %}</p>
               {% if gcash_qr_url %}
