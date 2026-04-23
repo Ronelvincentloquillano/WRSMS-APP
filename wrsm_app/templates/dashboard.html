@@ -30,25 +30,35 @@
            class="group bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 p-3 shadow hover:shadow-lg hover:-translate-y-0.5 transition block">
           <div class="flex items-start justify-between gap-2">
             <div class="h-12 w-12 shrink-0 rounded-lg bg-sky-50 dark:bg-slate-800 overflow-hidden border border-sky-100 dark:border-slate-600 shadow-sm">
-              {% with s_img=shortcut.image|hosted_media_url %}
-                {% if s_img %}
-                  <img src="{{ s_img }}" alt="{{ shortcut.name }}"
-                       class="h-full w-full object-cover shortcut-preview-image"
-                       data-fallback-src="{{ shortcut_tile_fallback }}">
-                {% elif shortcut.product %}
-                  {% with p_img=shortcut.product.image|hosted_media_url %}
-                    {% if p_img %}
-                      <img src="{{ p_img }}" alt="{{ shortcut.name }}"
-                           class="h-full w-full object-cover shortcut-preview-image"
-                           data-fallback-src="{{ shortcut_tile_fallback }}">
-                    {% else %}
-                      <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
-                    {% endif %}
-                  {% endwith %}
-                {% else %}
-                  <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
-                {% endif %}
-              {% endwith %}
+              {% if shortcut.product %}
+                {% with p_img=shortcut.product.image|hosted_media_url %}
+                  {% if p_img %}
+                    <img src="{{ p_img }}" alt="{{ shortcut.name }}"
+                         class="h-full w-full object-cover shortcut-preview-image"
+                         data-fallback-src="{{ shortcut_tile_fallback }}">
+                  {% else %}
+                    {% with s_img=shortcut.image|hosted_media_url %}
+                      {% if s_img %}
+                        <img src="{{ s_img }}" alt="{{ shortcut.name }}"
+                             class="h-full w-full object-cover shortcut-preview-image"
+                             data-fallback-src="{{ shortcut_tile_fallback }}">
+                      {% else %}
+                        <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
+                      {% endif %}
+                    {% endwith %}
+                  {% endif %}
+                {% endwith %}
+              {% else %}
+                {% with s_img=shortcut.image|hosted_media_url %}
+                  {% if s_img %}
+                    <img src="{{ s_img }}" alt="{{ shortcut.name }}"
+                         class="h-full w-full object-cover shortcut-preview-image"
+                         data-fallback-src="{{ shortcut_tile_fallback }}">
+                  {% else %}
+                    <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
             </div>
             <span class="text-[10px] sm:text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300">
               Qty first
