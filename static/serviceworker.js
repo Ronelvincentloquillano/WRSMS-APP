@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v59';
+const SW_VERSION = 'wrsm-v60';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -7,6 +7,7 @@ const OFFLINE_URL = '/offline/';
 const DATA_CACHE_NAME = 'wrsm-data-v1';
 const OFFLINE_DATA_URL = '/api/offline-master-data/';
 const SENSITIVE_PATH_PREFIXES = [
+    '/dashboard',
     '/add-sales',
     '/add-order',
     '/add-customer',
