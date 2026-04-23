@@ -422,11 +422,14 @@ $(document).ready(function () {
 
     function getGrandTotal() {
         let total = 0;
-        const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
-        for (let i = 0; i < totalForms; i++) {
-            const val = parseMoney($(`#id_sales_items-${i}-total`).val());
+        const $formset = $('#formset-container');
+        // Use form field suffix matching instead of hardcoded IDs so this works
+        // across add-sales variants and future formset prefix changes.
+        const $totalInputs = $formset.find('input[name$="-total"]');
+        $totalInputs.each(function () {
+            const val = parseMoney($(this).val());
             total += (val === null ? 0 : val);
-        }
+        });
         if (total <= 0) {
             const displayTotal = parseMoney($('#display-grand-total').text());
             if (displayTotal !== null) {
@@ -604,6 +607,10 @@ $(document).ready(function () {
                 reveal.style.display = 'block';
             }
         }
+        updatePaymentDisplay();
+    });
+    $(document).on('input change', '#formset-container input[name$="-total"]', function () {
+        gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
     });
     $('#is_paid').on('change', function () {
