@@ -408,6 +408,18 @@ $(document).ready(function () {
         return Math.round(entered * 100) === Math.round(grandTotal * 100);
     }
 
+    function getGcashEntryState(grandTotal) {
+        const entered = parseMoney($('#gcash-confirm-amount').val());
+        if (entered === null || entered <= 0 || grandTotal <= 0) {
+            return { ready: false, exact: false, entered: entered };
+        }
+        return {
+            ready: true,
+            exact: Math.round(entered * 100) === Math.round(grandTotal * 100),
+            entered: entered,
+        };
+    }
+
     function getGrandTotal() {
         let total = 0;
         const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
@@ -440,11 +452,12 @@ $(document).ready(function () {
         const selection = getPaymentTypeSelection();
         const isGcash = selection.isGcash || paymentLabelIsGcash(selectedText);
         const hasGcashAmountInput = parseMoney($('#gcash-confirm-amount').val()) !== null;
-        const matches = gcashConfirmMatchesSale(grandTotal);
+        const entryState = getGcashEntryState(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
         const $fallback = $('#gcash-qr-fallback');
+        const $hint = $('#gcash-confirm-hint');
         const canvas = document.getElementById('gcash-qr-canvas');
         const hasStationImg = $stationImg.length > 0;
 
@@ -457,12 +470,31 @@ $(document).ready(function () {
 
         // Fallback: allow QR flow when amount is explicitly entered even if
         // payment radio detection fails due to frontend rendering differences.
-        if ((!isGcash && !hasGcashAmountInput) || !matches) {
+        if ((!isGcash && !hasGcashAmountInput) || !entryState.ready) {
             hideQr();
+            if ($hint.length) {
+                $hint
+                    .removeClass('text-emerald-600')
+                    .addClass('text-slate-500')
+                    .text('QR appears after entering a GCash amount.');
+            }
             return;
         }
 
         if ($reveal.length) $reveal.removeClass('hidden');
+        if ($hint.length) {
+            if (entryState.exact) {
+                $hint
+                    .removeClass('text-slate-500')
+                    .addClass('text-emerald-600')
+                    .text('Exact match confirmed. QR ready to scan.');
+            } else {
+                $hint
+                    .removeClass('text-emerald-600')
+                    .addClass('text-slate-500')
+                    .text('QR shown. Enter exact total to confirm payment amount.');
+            }
+        }
 
         if (hasStationImg) {
             if ($wrapper.length) $wrapper.addClass('hidden');
@@ -477,7 +509,8 @@ $(document).ready(function () {
 
         if ($fallback.length) $fallback.removeClass('hidden');
 
-        const amountKey = Math.round(grandTotal * 100) / 100;
+        const amountBase = entryState.entered === null ? grandTotal : entryState.entered;
+        const amountKey = Math.round(amountBase * 100) / 100;
         if (gcashQrLastRenderedAmount !== null && Math.abs(gcashQrLastRenderedAmount - amountKey) < 0.0001 && !$wrapper.hasClass('hidden')) {
             $wrapper.removeClass('hidden');
             return;
