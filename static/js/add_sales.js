@@ -425,11 +425,23 @@ $(document).ready(function () {
         const $formset = $('#formset-container');
         // Use form field suffix matching instead of hardcoded IDs so this works
         // across add-sales variants and future formset prefix changes.
-        const $totalInputs = $formset.find('input[name$="-total"]');
+        const $totalInputs = $formset.find('input[name$="-total"], input[id$="-total"]');
         $totalInputs.each(function () {
             const val = parseMoney($(this).val());
             total += (val === null ? 0 : val);
         });
+        if (total <= 0) {
+            // Fallback: derive line totals from qty * unit_price when total fields
+            // are not being auto-populated in some environments.
+            const $rows = $formset.find('.form-row');
+            $rows.each(function () {
+                const qty = parseMoney($(this).find('input[name$="-quantity"], input[id$="-quantity"]').first().val());
+                const unitPrice = parseMoney($(this).find('input[name$="-unit_price"], input[id$="-unit_price"]').first().val());
+                if (qty !== null && unitPrice !== null) {
+                    total += qty * unitPrice;
+                }
+            });
+        }
         if (total <= 0) {
             const displayTotal = parseMoney($('#display-grand-total').text());
             if (displayTotal !== null) {
@@ -609,7 +621,11 @@ $(document).ready(function () {
         }
         updatePaymentDisplay();
     });
-    $(document).on('input change', '#formset-container input[name$="-total"]', function () {
+    $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
+        gcashQrLastRenderedAmount = null;
+        updatePaymentDisplay();
+    });
+    $(document).on('input change', '#formset-container input[name$="-quantity"], #formset-container input[id$="-quantity"], #formset-container input[name$="-unit_price"], #formset-container input[id$="-unit_price"]', function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
     });
