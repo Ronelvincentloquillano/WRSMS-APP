@@ -144,6 +144,9 @@ if USE_CLOUDINARY:
     STORAGES['default'] = {
         'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     }
+    # Backward-compatible hook used by some storage integrations.
+    # Keeps uploads on Cloudinary even if STORAGES resolution differs by environment.
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Auth Redirects
 LOGIN_REDIRECT_URL = '/dashboard/'
