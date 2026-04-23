@@ -362,6 +362,14 @@ $(document).ready(function () {
         return compact.includes('cash') && !compact.includes('gcash');
     }
 
+    function parseMoney(value) {
+        if (value === null || value === undefined) return null;
+        const normalized = String(value).replace(/,/g, '').trim();
+        if (!normalized) return null;
+        const n = parseFloat(normalized);
+        return Number.isFinite(n) ? n : null;
+    }
+
     function getPaymentTypeSelection() {
         const result = {
             value: null,
@@ -395,11 +403,9 @@ $(document).ready(function () {
     }
 
     function gcashConfirmMatchesSale(grandTotal) {
-        const raw = $('#gcash-confirm-amount').val();
-        if (raw === '' || raw === null || grandTotal <= 0) return false;
-        const v = parseFloat(String(raw).replace(/,/g, ''));
-        if (!Number.isFinite(v)) return false;
-        return Math.round(v * 100) === Math.round(grandTotal * 100);
+        const entered = parseMoney($('#gcash-confirm-amount').val());
+        if (entered === null || grandTotal <= 0) return false;
+        return Math.round(entered * 100) === Math.round(grandTotal * 100);
     }
 
     function getGrandTotal() {
@@ -408,8 +414,8 @@ $(document).ready(function () {
         for (let i = 0; i < totalForms; i++) {
             const $row = $(`#id_sales_items-${i}-total`).closest('.form-row');
             if ($row.length && $row.is(':visible')) {
-                const val = parseFloat($(`#id_sales_items-${i}-total`).val()) || 0;
-                total += val;
+                const val = parseMoney($(`#id_sales_items-${i}-total`).val());
+                total += (val === null ? 0 : val);
             }
         }
         return total;
@@ -433,7 +439,7 @@ $(document).ready(function () {
     function syncGcashQr(grandTotal, selectedText) {
         const selection = getPaymentTypeSelection();
         const isGcash = selection.isGcash || paymentLabelIsGcash(selectedText);
-        const hasGcashAmountInput = ($('#gcash-confirm-amount').val() || '').trim() !== '';
+        const hasGcashAmountInput = parseMoney($('#gcash-confirm-amount').val()) !== null;
         const matches = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
