@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'pwa',
 ]
 
-CLOUDINARY_URL = (env('CLOUDINARY_URL', default='') or '').strip()
+CLOUDINARY_URL = (env('CLOUDINARY_URL', default='') or '').strip().strip('"').strip("'")
 # Only enable when URL looks valid (whitespace alone must not turn Cloudinary on).
 USE_CLOUDINARY = CLOUDINARY_URL.startswith('cloudinary://')
 
