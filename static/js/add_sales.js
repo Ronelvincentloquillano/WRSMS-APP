@@ -422,16 +422,10 @@ $(document).ready(function () {
         const $gcash = $('#payment-gcash-section');
         const isPaid = $('#is_paid').is(':checked');
         $cash.addClass('hidden');
-        $gcash.addClass('hidden');
-        if (!isPaid) {
-            return;
-        }
-        // Always show the GCash amount block while paid is checked, so cashier can proceed
-        // even if radio label matching fails in some deployed DOM variants.
+        // Keep GCash section visible by default; only gate cash-specific block.
         $gcash.removeClass('hidden');
-        if (selection.isGcash || paymentLabelIsGcash(selectedText)) {
-            $gcash.removeClass('hidden');
-        } else if (selection.isCashOnly || t.includes('cash')) {
+        if (!isPaid) return;
+        if (selection.isCashOnly || t.includes('cash')) {
             $cash.removeClass('hidden');
         }
     }
