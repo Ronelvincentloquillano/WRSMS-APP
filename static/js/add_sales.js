@@ -357,6 +357,14 @@ $(document).ready(function () {
         return compact.includes('gcash');
     }
 
+    function gcashConfirmMatchesSale(grandTotal) {
+        const raw = $('#gcash-confirm-amount').val();
+        if (raw === '' || raw === null || grandTotal <= 0) return false;
+        const v = parseFloat(String(raw).replace(/,/g, ''));
+        if (!Number.isFinite(v)) return false;
+        return Math.round(v * 100) === Math.round(grandTotal * 100);
+    }
+
     function getGrandTotal() {
         let total = 0;
         const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
@@ -404,7 +412,7 @@ $(document).ready(function () {
         }
 
         const isPaid = $('#is_paid').is(':checked');
-        if (!isPaid || !isGcash || grandTotal <= 0) {
+        if (!isPaid || !isGcash || !gcashConfirmMatchesSale(grandTotal)) {
             hideQr();
             return;
         }
@@ -463,6 +471,7 @@ $(document).ready(function () {
         $('input[name="payment_type"], select[name="payment_type"], #id_amount_given').prop('disabled', !isPaid);
         if (!isPaid) {
             $('#payment-cash-section, #payment-gcash-section, #gcash-qr-reveal, #gcash-qr-wrapper').addClass('hidden');
+            $('#gcash-confirm-amount').val('');
         }
         updateAmountGivenRequired();
     }
@@ -497,12 +506,17 @@ $(document).ready(function () {
 
     $(document).on('change', 'input[name="payment_type"], select[name="payment_type"]', function () {
         gcashQrLastRenderedAmount = null;
+        if (!paymentLabelIsGcash(getPaymentTypeText())) $('#gcash-confirm-amount').val('');
         togglePaymentSections(getPaymentTypeText());
         updateAmountGivenRequired();
         updatePaymentDisplay();
     });
 
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
+    $(document).on('input change', '#gcash-confirm-amount', function () {
+        gcashQrLastRenderedAmount = null;
+        updatePaymentDisplay();
+    });
     $('#is_paid').on('change', function () {
         syncPaidPanelVisibility();
         togglePaymentSections(getPaymentTypeText());
