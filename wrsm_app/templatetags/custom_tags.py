@@ -1,5 +1,6 @@
 from django import template
 from django.conf import settings
+import os
 
 register = template.Library()
 
@@ -25,6 +26,11 @@ def hosted_media_url(fieldfile):
         or url.startswith('//')
     ):
         return url
+    # On Render, old DB paths usually point to missing /media files.
+    # Force template fallback instead of returning broken local paths.
+    is_render = os.environ.get('RENDER', '').lower() in ('1', 'true', 'yes')
+    if is_render:
+        return ''
     if getattr(settings, 'DEBUG', False):
         return url
     return ''
