@@ -77,8 +77,8 @@
             {% with qr_url=station_settings.gcash_qr_image|hosted_media_url %}
             {% if qr_url %}
               <img src="{{ qr_url }}" alt="GCash QR Code"
-                   class="w-10 h-10 object-contain border rounded p-1 bg-white"
-                   onerror="this.onerror=null;this.src='{{ qr_fallback }}';this.alt='GCash QR placeholder';">
+                   class="w-10 h-10 object-contain border rounded p-1 bg-white gcash-qr-preview-image"
+                   data-fallback-src="{{ qr_fallback }}">
             {% else %}
               <span class="text-gray-400 text-sm italic">Not uploaded</span>
             {% endif %}
@@ -129,4 +129,22 @@
     <a class="bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600 shadow-lg" href="{% url 'wrsm_app:discounts' %}">Discounts</a>
   </div>
 </div>
+<script>
+  (function () {
+    const images = document.querySelectorAll('.gcash-qr-preview-image[data-fallback-src]');
+    images.forEach((img) => {
+      const fallback = img.getAttribute('data-fallback-src');
+      const applyFallback = () => {
+        if (!fallback || img.dataset.fallbackApplied === '1') return;
+        img.dataset.fallbackApplied = '1';
+        img.src = fallback;
+        img.alt = 'GCash QR placeholder';
+      };
+      img.addEventListener('error', applyFallback);
+      if (img.complete && img.naturalWidth === 0) {
+        applyFallback();
+      }
+    });
+  })();
+</script>
 {% endblock %}

@@ -32,8 +32,8 @@
                 {% if gcash_qr_url %}
                 <div class="mt-4">
                     <img src="{{ gcash_qr_url }}" alt="GCash QR Code"
-                         class="w-full max-w-xs rounded-lg border border-gray-200 bg-white p-1 object-contain"
-                         onerror="this.onerror=null;this.src='{{ qr_fallback }}';this.alt='GCash QR placeholder';">
+                         class="w-full max-w-xs rounded-lg border border-gray-200 bg-white p-1 object-contain gcash-qr-preview-image"
+                         data-fallback-src="{{ qr_fallback }}">
                 </div>
                 {% else %}
                 <div class="mt-4 rounded-md bg-yellow-50 p-3 text-xs text-yellow-800">
@@ -143,6 +143,21 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const qrImages = document.querySelectorAll('.gcash-qr-preview-image[data-fallback-src]');
+        qrImages.forEach((img) => {
+            const fallback = img.getAttribute('data-fallback-src');
+            const applyFallback = () => {
+                if (!fallback || img.dataset.fallbackApplied === '1') return;
+                img.dataset.fallbackApplied = '1';
+                img.src = fallback;
+                img.alt = 'GCash QR placeholder';
+            };
+            img.addEventListener('error', applyFallback);
+            if (img.complete && img.naturalWidth === 0) {
+                applyFallback();
+            }
+        });
+
         const btnMonthly = document.getElementById('btnMonthly');
         const btnAnnual = document.getElementById('btnAnnual');
         const billingInput = document.getElementById('billing_cycle');

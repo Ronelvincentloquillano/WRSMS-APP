@@ -32,13 +32,15 @@
             <div class="h-12 w-12 shrink-0 rounded-lg bg-sky-50 dark:bg-slate-800 overflow-hidden border border-sky-100 dark:border-slate-600 shadow-sm">
               {% with s_img=shortcut.image|hosted_media_url %}
                 {% if s_img %}
-                  <img src="{{ s_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
-                       onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Shortcut image';">
+                  <img src="{{ s_img }}" alt="{{ shortcut.name }}"
+                       class="h-full w-full object-cover shortcut-preview-image"
+                       data-fallback-src="{{ shortcut_tile_fallback }}">
                 {% elif shortcut.product %}
                   {% with p_img=shortcut.product.image|hosted_media_url %}
                     {% if p_img %}
-                      <img src="{{ p_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
-                           onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Shortcut image';">
+                      <img src="{{ p_img }}" alt="{{ shortcut.name }}"
+                           class="h-full w-full object-cover shortcut-preview-image"
+                           data-fallback-src="{{ shortcut_tile_fallback }}">
                     {% else %}
                       <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
                     {% endif %}
@@ -136,6 +138,26 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function () {
+    const images = document.querySelectorAll('.shortcut-preview-image[data-fallback-src]');
+    images.forEach((img) => {
+      const fallback = img.getAttribute('data-fallback-src');
+      const applyFallback = () => {
+        if (!fallback || img.dataset.fallbackApplied === '1') return;
+        img.dataset.fallbackApplied = '1';
+        img.src = fallback;
+        img.classList.remove('object-cover');
+        img.classList.add('object-contain', 'p-1');
+        img.alt = 'Shortcut image';
+      };
+      img.addEventListener('error', applyFallback);
+      if (img.complete && img.naturalWidth === 0) {
+        applyFallback();
+      }
+    });
+  })();
+</script>
 <script>
   const colors = [
     '#34d399', '#f87171', '#60a5fa', '#fbbf24', '#a78bfa', '#2dd4bf', '#f472b6', '#fb923c'
