@@ -176,7 +176,7 @@
             {% if gcash_account %}
             <p class="text-sm"><span class="text-slate-500">GCash number:</span> <span class="font-mono font-medium">{{ gcash_account }}</span></p>
             {% endif %}
-            <div id="gcash-qr-reveal" class="hidden rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-600 dark:bg-slate-800/80">
+            <div id="gcash-qr-reveal" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-600 dark:bg-slate-800/80">
               <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">Scan to pay with GCash</p>
               <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{% if gcash_qr_url %}From your station settings.{% else %}Amount-only QR — upload your shop QR in Station Settings for a scannable code.{% endif %}</p>
               {% if gcash_qr_url %}
@@ -279,5 +279,5 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" crossorigin="anonymous"></script>
 <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
-<script src="{% static 'js/add_sales.js' %}?v=3.1"></script>
+<script src="{% static 'js/add_sales.js' %}?v=3.2"></script>
 {% endblock %}
