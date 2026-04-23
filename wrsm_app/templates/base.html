@@ -455,25 +455,25 @@
         </section>
 
         {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' and settings_complete %}
-        <section class="md:hidden border-t border-blue-300/60 dark:border-slate-500/70 bg-blue-100/95 dark:bg-slate-700/95 shadow-sm">
-            <nav class="mx-auto max-w-[1600px] px-3 py-2 grid grid-cols-3 gap-2 text-[13px] sm:text-sm" aria-label="mobile quick links">
-                <a href="{% url 'wrsm_app:dashboard' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
+        <aside class="md:hidden fixed left-0 top-[4.5rem] bottom-0 z-20 w-[5.25rem] border-r border-blue-300/70 dark:border-slate-600 bg-blue-100/95 dark:bg-slate-800/95 shadow-lg">
+            <nav class="h-full overflow-y-auto p-2 space-y-2 text-[11px] leading-tight" aria-label="mobile side links">
+                <a href="{% url 'wrsm_app:dashboard' %}" class="block text-center px-1.5 py-2 rounded-md bg-white text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-semibold border border-blue-200 dark:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-600">
                     Dashboard
                 </a>
-                <a href="{% url 'wrsm_app:sales' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:sales' %}" class="block text-center px-1.5 py-2 rounded-md bg-white text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-semibold border border-blue-200 dark:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-600">
                     Sales
                 </a>
-                <a href="{% url 'wrsm_app:container-management-list' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:container-management-list' %}" class="block text-center px-1.5 py-2 rounded-md bg-white text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-semibold border border-blue-200 dark:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-600">
                     Containers
                 </a>
-                <a href="{% url 'wrsm_app:customers' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:customers' %}" class="block text-center px-1.5 py-2 rounded-md bg-white text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-semibold border border-blue-200 dark:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-600">
                     Customers
                 </a>
-                <a href="{% url 'wrsm_app:products' %}" class="text-center px-2.5 py-2 rounded-lg bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100 font-medium border border-blue-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-slate-700">
+                <a href="{% url 'wrsm_app:products' %}" class="block text-center px-1.5 py-2 rounded-md bg-white text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-semibold border border-blue-200 dark:border-slate-500 hover:bg-blue-50 dark:hover:bg-slate-600">
                     Products
                 </a>
             </nav>
-        </section>
+        </aside>
         {% endif %}
 
         <section id="mobile-menu"
@@ -835,7 +835,7 @@
         {% endif %}
     </section>
 
-    <main class="mx-auto flex-grow min-h-screen w-full min-w-0 max-w-full px-3 sm:px-5 lg:px-8 pb-6 box-border">
+    <main class="mx-auto flex-grow min-h-screen w-full min-w-0 max-w-full px-3 sm:px-5 lg:px-8 pb-6 box-border {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' and settings_complete %}pl-[5.75rem] sm:pl-[6rem] md:pl-5 lg:pl-8{% endif %}">
         <div class="flex justify-center mt-2 md:hidden px-2">
             <h5 class="text-lg text-center break-words max-w-full">{% if request.user.is_authenticated %}{{ station }}{% endif %}</h5>
         </div>
