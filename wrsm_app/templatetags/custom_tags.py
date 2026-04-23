@@ -19,7 +19,11 @@ def hosted_media_url(fieldfile):
         url = fieldfile.url
     except ValueError:
         return ''
-    if url.startswith('https://') or url.startswith('http://'):
+    if (
+        url.startswith('https://')
+        or url.startswith('http://')
+        or url.startswith('//')
+    ):
         return url
     if getattr(settings, 'DEBUG', False):
         return url

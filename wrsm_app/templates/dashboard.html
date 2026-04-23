@@ -3,6 +3,7 @@
 {% load math_filters %}
 {% load l10n %}
 {% load custom_tags %}
+{% static 'img/water-container.svg' as shortcut_tile_fallback %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -31,17 +32,19 @@
             <div class="h-12 w-12 shrink-0 rounded-lg bg-sky-50 dark:bg-slate-800 overflow-hidden border border-sky-100 dark:border-slate-600 shadow-sm">
               {% with s_img=shortcut.image|hosted_media_url %}
                 {% if s_img %}
-                  <img src="{{ s_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover">
+                  <img src="{{ s_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
+                       onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Water container';">
                 {% elif shortcut.product %}
                   {% with p_img=shortcut.product.image|hosted_media_url %}
                     {% if p_img %}
-                      <img src="{{ p_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover">
+                      <img src="{{ p_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
+                           onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Water container';">
                     {% else %}
-                      <img src="{% static 'img/water-container.svg' %}" alt="Water container" class="h-full w-full object-contain p-1">
+                      <img src="{{ shortcut_tile_fallback }}" alt="Water container" class="h-full w-full object-contain p-1">
                     {% endif %}
                   {% endwith %}
                 {% else %}
-                  <img src="{% static 'img/water-container.svg' %}" alt="Water container" class="h-full w-full object-contain p-1">
+                  <img src="{{ shortcut_tile_fallback }}" alt="Water container" class="h-full w-full object-contain p-1">
                 {% endif %}
               {% endwith %}
             </div>
