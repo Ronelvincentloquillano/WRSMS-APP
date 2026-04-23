@@ -365,6 +365,13 @@ $(document).ready(function () {
         return Math.round(v * 100) === Math.round(grandTotal * 100);
     }
 
+    function getGcashEnteredAmount() {
+        const raw = $('#gcash-confirm-amount').val();
+        if (raw === '' || raw === null) return null;
+        const v = parseFloat(String(raw).replace(/,/g, ''));
+        return Number.isFinite(v) ? v : null;
+    }
+
     function getGrandTotal() {
         let total = 0;
         const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
@@ -397,12 +404,15 @@ $(document).ready(function () {
 
     function syncGcashQr(grandTotal, selectedText) {
         const isGcash = paymentLabelIsGcash(selectedText);
+        const matches = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
         const $fallback = $('#gcash-qr-fallback');
+        const $debug = $('#gcash-debug-status');
         const canvas = document.getElementById('gcash-qr-canvas');
         const hasStationImg = $stationImg.length > 0;
+        const enteredAmount = getGcashEnteredAmount();
 
         function hideQr() {
             gcashQrLastRenderedAmount = null;
@@ -412,7 +422,18 @@ $(document).ready(function () {
         }
 
         const isPaid = $('#is_paid').is(':checked');
-        if (!isPaid || !isGcash || !gcashConfirmMatchesSale(grandTotal)) {
+        if ($debug.length) {
+            if (!isGcash) {
+                $debug.addClass('hidden').text('');
+            } else {
+                const enteredText = enteredAmount === null ? 'none' : enteredAmount.toFixed(2);
+                const totalText = grandTotal.toFixed(2);
+                const statusText = !isPaid ? 'unpaid' : (matches ? 'matched' : 'not matched');
+                $debug.removeClass('hidden').text('Debug: total=' + totalText + ', entered=' + enteredText + ', status=' + statusText);
+            }
+        }
+
+        if (!isPaid || !isGcash || !matches) {
             hideQr();
             return;
         }
