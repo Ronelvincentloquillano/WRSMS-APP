@@ -463,6 +463,9 @@ $(document).ready(function () {
         const $wrap = $('#payment_details_wrap');
         const $isPaid = $('#is_paid');
         if (!$wrap.length || !$isPaid.length) return;
+        // Some sales pages still render this panel with `hidden` by default.
+        // Ensure it's always visible, then control interactivity via disabled styles.
+        $wrap.removeClass('hidden');
         const isPaid = $isPaid.is(':checked');
         // Keep payment options visible so cashier can immediately choose Cash/GCash.
         $wrap.toggleClass('opacity-60', !isPaid);
