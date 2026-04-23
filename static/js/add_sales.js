@@ -378,6 +378,15 @@ $(document).ready(function () {
             isCashOnly: false,
         };
 
+        function classify(valueText, labelText) {
+            const valueCompact = (valueText || '').toLowerCase().replace(/[\s_-]+/g, '');
+            const labelCompact = (labelText || '').toLowerCase().replace(/[\s_-]+/g, '');
+            const combined = valueCompact + ' ' + labelCompact;
+            const isGcash = combined.includes('gcash');
+            const isCashOnly = combined.includes('cash') && !combined.includes('gcash');
+            return { isGcash: isGcash, isCashOnly: isCashOnly };
+        }
+
         const $radios = $('input[name="payment_type"]');
         if ($radios.length) {
             const $checked = $radios.filter(':checked').first();
@@ -386,8 +395,9 @@ $(document).ready(function () {
             result.value = $checked.val();
             const labelText = $checked.closest('label').text().trim();
             result.label = labelText;
-            result.isGcash = paymentLabelIsGcash(labelText);
-            result.isCashOnly = paymentLabelIsCashOnly(labelText);
+            const radioClass = classify(result.value, labelText);
+            result.isGcash = radioClass.isGcash;
+            result.isCashOnly = radioClass.isCashOnly;
             return result;
         }
 
@@ -396,8 +406,9 @@ $(document).ready(function () {
             result.value = $sel.val();
             const labelText = $sel.find('option:selected').text();
             result.label = labelText;
-            result.isGcash = paymentLabelIsGcash(labelText);
-            result.isCashOnly = paymentLabelIsCashOnly(labelText);
+            const selectClass = classify(result.value, labelText);
+            result.isGcash = selectClass.isGcash;
+            result.isCashOnly = selectClass.isCashOnly;
         }
         return result;
     }
@@ -451,6 +462,20 @@ $(document).ready(function () {
         return total;
     }
 
+    function hasItemTypeSelected() {
+        let hasSelectedProduct = false;
+        $('#formset-container .form-row').each(function () {
+            const $row = $(this);
+            const isDeleted = $row.find('input[name$="-DELETE"]').is(':checked');
+            if (isDeleted) return;
+            const productValue = $row.find('select[name$="-product"], select[id$="-product"]').first().val();
+            if (productValue) {
+                hasSelectedProduct = true;
+            }
+        });
+        return hasSelectedProduct;
+    }
+
     function togglePaymentSections(selectedText) {
         const selection = getPaymentTypeSelection();
         const t = (selectedText || selection.label || '').toLowerCase().trim();
@@ -468,8 +493,10 @@ $(document).ready(function () {
 
     function syncGcashQr(grandTotal, selectedText) {
         const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
-        const hasGcashAmountInput = enteredAmount !== null;
-        const entryState = getGcashEntryState(grandTotal);
+        const selection = getPaymentTypeSelection();
+        const isPaid = $('#is_paid').is(':checked');
+        const hasItems = hasItemTypeSelected();
+        const exactMatch = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -485,32 +512,46 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Deterministic gate: show only when both amount and total are positive.
-        const shouldShowQr = hasGcashAmountInput && enteredAmount > 0 && grandTotal > 0;
+        // Strict gate requested by user:
+        // paid + gcash selected + with item type + exact amount match to sale total.
+        const shouldShowQr =
+            isPaid &&
+            selection.isGcash &&
+            hasItems &&
+            enteredAmount !== null &&
+            enteredAmount > 0 &&
+            grandTotal > 0 &&
+            exactMatch;
+
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
+                let hintText = 'QR appears only when this exactly matches the sale total.';
+                if (!isPaid) {
+                    hintText = 'Mark "Customer paid now" first to enable GCash QR checking.';
+                } else if (!selection.isGcash) {
+                    hintText = 'Select GCash as payment method to show QR.';
+                } else if (!hasItems || grandTotal <= 0) {
+                    hintText = 'Add at least one item with total greater than 0.';
+                } else if (enteredAmount === null || enteredAmount <= 0) {
+                    hintText = 'Enter the exact GCash amount to reveal the QR.';
+                } else if (!exactMatch) {
+                    hintText = 'Amount must exactly match the sale total before QR appears.';
+                }
                 $hint
                     .removeClass('text-emerald-600')
                     .addClass('text-slate-500')
-                    .text('QR appears after entering GCash amount and having a non-zero sale total.');
+                    .text(hintText);
             }
             return;
         }
 
         if ($reveal.length) $reveal.removeClass('hidden');
         if ($hint.length) {
-            if (entryState.exact) {
-                $hint
-                    .removeClass('text-slate-500')
-                    .addClass('text-emerald-600')
-                    .text('Exact match confirmed. QR ready to scan.');
-            } else {
-                $hint
-                    .removeClass('text-emerald-600')
-                    .addClass('text-slate-500')
-                    .text('QR shown. Enter exact total to confirm payment amount.');
-            }
+            $hint
+                .removeClass('text-slate-500')
+                .addClass('text-emerald-600')
+                .text('Exact match confirmed. QR ready to scan.');
         }
 
         if (hasStationImg) {
@@ -610,15 +651,6 @@ $(document).ready(function () {
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
     $(document).on('input change', '#gcash-confirm-amount', function () {
         gcashQrLastRenderedAmount = null;
-        const entered = parseMoney($('#gcash-confirm-amount').val());
-        const totalNow = getGrandTotal();
-        if (entered !== null && entered > 0 && totalNow > 0) {
-            const reveal = document.getElementById('gcash-qr-reveal');
-            if (reveal) {
-                reveal.classList.remove('hidden');
-                reveal.style.display = 'block';
-            }
-        }
         updatePaymentDisplay();
     });
     $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
