@@ -357,14 +357,6 @@ $(document).ready(function () {
         return compact.includes('gcash');
     }
 
-    function gcashConfirmMatchesSale(grandTotal) {
-        const raw = $('#gcash-confirm-amount').val();
-        if (raw === '' || raw === null || grandTotal <= 0) return false;
-        const v = parseFloat(String(raw).replace(/,/g, ''));
-        if (!Number.isFinite(v)) return false;
-        return Math.round(v * 100) === Math.round(grandTotal * 100);
-    }
-
     function getGrandTotal() {
         let total = 0;
         const totalForms = parseInt($('#id_sales_items-TOTAL_FORMS').val()) || 0;
@@ -382,8 +374,12 @@ $(document).ready(function () {
         const t = (selectedText || '').toLowerCase().trim();
         const $cash = $('#payment-cash-section');
         const $gcash = $('#payment-gcash-section');
+        const isPaid = $('#is_paid').is(':checked');
         $cash.addClass('hidden');
         $gcash.addClass('hidden');
+        if (!isPaid) {
+            return;
+        }
         if (paymentLabelIsGcash(selectedText)) {
             $gcash.removeClass('hidden');
         } else if (t.includes('cash')) {
@@ -407,7 +403,8 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        if (!isGcash || !gcashConfirmMatchesSale(grandTotal)) {
+        const isPaid = $('#is_paid').is(':checked');
+        if (!isPaid || !isGcash || grandTotal <= 0) {
             hideQr();
             return;
         }
@@ -458,8 +455,15 @@ $(document).ready(function () {
         const $wrap = $('#payment_details_wrap');
         const $isPaid = $('#is_paid');
         if (!$wrap.length || !$isPaid.length) return;
-        if ($isPaid.is(':checked')) $wrap.removeClass('hidden');
-        else $wrap.addClass('hidden');
+        const isPaid = $isPaid.is(':checked');
+        // Keep payment options visible so cashier can immediately choose Cash/GCash.
+        $wrap.toggleClass('opacity-60', !isPaid);
+        $wrap.toggleClass('bg-slate-50', !isPaid);
+        $wrap.toggleClass('border-slate-300', !isPaid);
+        $('input[name="payment_type"], select[name="payment_type"], #id_amount_given').prop('disabled', !isPaid);
+        if (!isPaid) {
+            $('#payment-cash-section, #payment-gcash-section, #gcash-qr-reveal, #gcash-qr-wrapper').addClass('hidden');
+        }
         updateAmountGivenRequired();
     }
 
@@ -493,17 +497,12 @@ $(document).ready(function () {
 
     $(document).on('change', 'input[name="payment_type"], select[name="payment_type"]', function () {
         gcashQrLastRenderedAmount = null;
-        if (!paymentLabelIsGcash(getPaymentTypeText())) $('#gcash-confirm-amount').val('');
         togglePaymentSections(getPaymentTypeText());
         updateAmountGivenRequired();
         updatePaymentDisplay();
     });
 
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
-    $(document).on('input change', '#gcash-confirm-amount', function () {
-        gcashQrLastRenderedAmount = null;
-        updatePaymentDisplay();
-    });
     $('#is_paid').on('change', function () {
         syncPaidPanelVisibility();
         togglePaymentSections(getPaymentTypeText());
