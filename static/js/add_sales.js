@@ -346,31 +346,10 @@ $(document).ready(function () {
 
     function getPaymentTypeText() {
         const $radio = $('input[name="payment_type"]:checked');
-        if ($radio.length) {
-            const fromSibling = $radio.siblings('span').first().text().trim();
-            if (fromSibling) return fromSibling;
-            return $radio.closest('label').text().trim();
-        }
+        if ($radio.length) return $radio.closest('label').text().trim();
         const $sel = $('select[name="payment_type"]');
         if ($sel.length) return $sel.find('option:selected').text();
         return '';
-    }
-
-    function isPaidChecked() {
-        const $paidById = $('#is_paid');
-        if ($paidById.length) return $paidById.is(':checked');
-        const $paidByName = $('input[name="is_paid"]');
-        if ($paidByName.length) return $paidByName.is(':checked');
-        return false;
-    }
-
-    function isGcashSelected(selectedText) {
-        const $radio = $('input[name="payment_type"]:checked');
-        if ($radio.length) {
-            const radioLabel = ($radio.siblings('span').first().text() || $radio.closest('label').text() || '').trim();
-            return paymentLabelIsGcash(radioLabel);
-        }
-        return paymentLabelIsGcash(selectedText);
     }
 
     function paymentLabelIsGcash(label) {
@@ -384,13 +363,6 @@ $(document).ready(function () {
         const v = parseFloat(String(raw).replace(/,/g, ''));
         if (!Number.isFinite(v)) return false;
         return Math.round(v * 100) === Math.round(grandTotal * 100);
-    }
-
-    function getGcashEnteredAmount() {
-        const raw = $('#gcash-confirm-amount').val();
-        if (raw === '' || raw === null) return null;
-        const v = parseFloat(String(raw).replace(/,/g, ''));
-        return Number.isFinite(v) ? v : null;
     }
 
     function getGrandTotal() {
@@ -410,10 +382,9 @@ $(document).ready(function () {
         const t = (selectedText || '').toLowerCase().trim();
         const $cash = $('#payment-cash-section');
         const $gcash = $('#payment-gcash-section');
-        const gcashSelected = isGcashSelected(selectedText);
         $cash.addClass('hidden');
         $gcash.addClass('hidden');
-        if (gcashSelected) {
+        if (paymentLabelIsGcash(selectedText)) {
             $gcash.removeClass('hidden');
         } else if (t.includes('cash')) {
             $cash.removeClass('hidden');
@@ -421,16 +392,14 @@ $(document).ready(function () {
     }
 
     function syncGcashQr(grandTotal, selectedText) {
-        const isGcash = isGcashSelected(selectedText);
+        const isGcash = paymentLabelIsGcash(selectedText);
         const matches = gcashConfirmMatchesSale(grandTotal);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
         const $fallback = $('#gcash-qr-fallback');
-        const $debug = $('#gcash-debug-status');
         const canvas = document.getElementById('gcash-qr-canvas');
         const hasStationImg = $stationImg.length > 0;
-        const enteredAmount = getGcashEnteredAmount();
 
         function hideQr() {
             gcashQrLastRenderedAmount = null;
@@ -439,19 +408,7 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        const isPaid = isPaidChecked();
-        if ($debug.length) {
-            if (!isGcash) {
-                $debug.addClass('hidden').text('');
-            } else {
-                const enteredText = enteredAmount === null ? 'none' : enteredAmount.toFixed(2);
-                const totalText = grandTotal.toFixed(2);
-                const statusText = !isPaid ? 'unpaid' : (matches ? 'matched' : 'not matched');
-                $debug.removeClass('hidden').text('Debug: total=' + totalText + ', entered=' + enteredText + ', status=' + statusText);
-            }
-        }
-
-        if (!isPaid || !isGcash || !matches) {
+        if (!isGcash || !matches) {
             hideQr();
             return;
         }
@@ -491,7 +448,7 @@ $(document).ready(function () {
     }
 
     function updateAmountGivenRequired() {
-        const paid = isPaidChecked();
+        const paid = $('#is_paid').is(':checked');
         const selectedText = getPaymentTypeText();
         const t = selectedText.toLowerCase();
         const cashOnly = t.includes('cash') && !paymentLabelIsGcash(selectedText);
@@ -502,15 +459,10 @@ $(document).ready(function () {
         const $wrap = $('#payment_details_wrap');
         const $isPaid = $('#is_paid');
         if (!$wrap.length || !$isPaid.length) return;
-        // Some sales pages still render this panel with `hidden` by default.
-        // Ensure it's always visible, then control interactivity via disabled styles.
-        $wrap.removeClass('hidden');
-        const isPaid = isPaidChecked();
-        // Keep payment options visible so cashier can immediately choose Cash/GCash.
-        $wrap.toggleClass('opacity-60', !isPaid);
-        $wrap.toggleClass('bg-slate-50', !isPaid);
-        $wrap.toggleClass('border-slate-300', !isPaid);
-        $('input[name="payment_type"], select[name="payment_type"], #id_amount_given').prop('disabled', !isPaid);
+        const isPaid = $isPaid.is(':checked');
+        if (isPaid) $wrap.removeClass('hidden');
+        else $wrap.addClass('hidden');
+        $('input[name="payment_type"], select[name="payment_type"], #id_amount_given').prop('disabled', false);
         if (!isPaid) {
             $('#payment-cash-section, #payment-gcash-section, #gcash-qr-reveal, #gcash-qr-wrapper').addClass('hidden');
             $('#gcash-confirm-amount').val('');
@@ -560,11 +512,6 @@ $(document).ready(function () {
         updatePaymentDisplay();
     });
     $('#is_paid').on('change', function () {
-        syncPaidPanelVisibility();
-        togglePaymentSections(getPaymentTypeText());
-        updatePaymentDisplay();
-    });
-    $('input[name="is_paid"]').on('change', function () {
         syncPaidPanelVisibility();
         togglePaymentSections(getPaymentTypeText());
         updatePaymentDisplay();
