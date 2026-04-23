@@ -3,7 +3,7 @@
 {% load math_filters %}
 {% load l10n %}
 {% load custom_tags %}
-{% static 'img/water-container.svg' as shortcut_tile_fallback %}
+{% static 'img/SDR_thumbnail.png' as shortcut_tile_fallback %}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -33,18 +33,18 @@
               {% with s_img=shortcut.image|hosted_media_url %}
                 {% if s_img %}
                   <img src="{{ s_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
-                       onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Water container';">
+                       onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Shortcut image';">
                 {% elif shortcut.product %}
                   {% with p_img=shortcut.product.image|hosted_media_url %}
                     {% if p_img %}
                       <img src="{{ p_img }}" alt="{{ shortcut.name }}" class="h-full w-full object-cover"
-                           onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Water container';">
+                           onerror="this.onerror=null;this.src='{{ shortcut_tile_fallback }}';this.classList.remove('object-cover');this.classList.add('object-contain','p-1');this.alt='Shortcut image';">
                     {% else %}
-                      <img src="{{ shortcut_tile_fallback }}" alt="Water container" class="h-full w-full object-contain p-1">
+                      <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
                     {% endif %}
                   {% endwith %}
                 {% else %}
-                  <img src="{{ shortcut_tile_fallback }}" alt="Water container" class="h-full w-full object-contain p-1">
+                  <img src="{{ shortcut_tile_fallback }}" alt="Shortcut image" class="h-full w-full object-contain p-1">
                 {% endif %}
               {% endwith %}
             </div>
