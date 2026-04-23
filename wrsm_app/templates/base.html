@@ -207,14 +207,6 @@
             .sd-sidebar-aside {
                 width: min(86vw, 20rem);
             }
-            /* Keep authenticated page content visible on small screens even when
-               desktop wrapper uses hidden md:flex; hide desktop sidebar there. */
-            .sd-desktop-shell {
-                display: block !important;
-            }
-            .sd-desktop-shell > aside {
-                display: none !important;
-            }
         }
     </style>
 
@@ -645,8 +637,8 @@
 
     <!-- Desktop layout -->
     {% if request.user.is_authenticated and request.resolver_match.view_name != 'wrsm_app:setup-wizard' %}
-    <div class="hidden md:flex flex-1 min-h-screen w-full sd-desktop-shell">
-        <aside class="sd-sidebar-aside lg:w-64 xl:w-72 shrink-0 flex flex-col border-r border-slate-600/70 bg-slate-900 text-slate-100 z-30" style="width: 15rem;">
+    <div class="flex flex-1 min-h-screen w-full">
+        <aside class="sd-sidebar-aside hidden md:flex lg:w-64 xl:w-72 shrink-0 flex-col border-r border-slate-600/70 bg-slate-900 text-slate-100 z-30" style="width: 15rem;">
             <div class="shrink-0 border-b border-slate-700 px-3 py-4 shadow-md shadow-black/20">
                 <a href="{% url 'wrsm_app:dashboard' %}"
                    class="block text-center no-underline transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded-sm">
