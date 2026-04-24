@@ -12,6 +12,7 @@ $(document).ready(function () {
     const urlCustomer = $form.data("url-customer");
     const urlOrdertype = $form.data("url-ordertype");
     const urlProduct = $form.data("url-product");
+    const productInfoCache = {};
     
     console.log("Add Sales Script Loaded. URLs:", {urlCustomer, urlOrdertype, urlProduct});
 
@@ -104,6 +105,55 @@ $(document).ready(function () {
         let qty = parseFloat($qtyInput.val()) || 0;
         $totalInput.val((qty * finalPrice).toFixed(2));
         if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
+    }
+
+    function recalculateRowFromElement(el) {
+        const $row = $(el).closest('.form-row');
+        if (!$row.length) return;
+        const $product = $row.find('select[name$="-product"], select[id$="-product"]').first();
+        const $qty = $row.find('input[name$="-quantity"], input[id$="-quantity"]').first();
+        const $unit = $row.find('input[name$="-unit_price"], input[id$="-unit_price"]').first();
+        const $total = $row.find('input[name$="-total"], input[id$="-total"]').first();
+        if (!$qty.length || !$unit.length || !$total.length) return;
+
+        const finalize = () => {
+            const qty = parseFloat($qty.val()) || 0;
+            const unit = parseFloat($unit.val()) || 0;
+            $total.val((qty * unit).toFixed(2));
+            if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
+        };
+
+        const productId = $product.val();
+        if (!productId) {
+            finalize();
+            return;
+        }
+
+        const cached = $product.data('product-info') || productInfoCache[productId];
+        if (cached) {
+            $product.data('product-info', cached);
+            if (!$unit.val() || Number($unit.val()) === 0) {
+                const suggested = parseFloat(cached.unit_price) || 0;
+                $unit.val(suggested.toFixed(2));
+            }
+            finalize();
+            return;
+        }
+
+        $.getJSON(`${urlProduct}?id_product=${productId}`)
+            .done(function (data) {
+                productInfoCache[productId] = data;
+                $product.data('product-info', data);
+                const suggested = parseFloat(data.unit_price) || 0;
+                if (!$unit.val() || Number($unit.val()) === 0) {
+                    $unit.val(suggested.toFixed(2));
+                }
+                finalize();
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Delegated Product Fetch Failed:", textStatus, errorThrown);
+                finalize();
+            });
     }
 
     function recalculateAllRows() {
@@ -726,6 +776,10 @@ $(document).ready(function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
         forceGcashRevealFromDom();
+    });
+    // Hard delegated fallback: always compute row totals even when row-specific bindings fail.
+    $(document).on('input change', '#formset-container input[name$="-quantity"], #formset-container input[id$="-quantity"], #formset-container select[name$="-product"], #formset-container select[id$="-product"]', function () {
+        recalculateRowFromElement(this);
     });
     $('#is_paid').on('change', function () {
         syncPaidPanelVisibility();
