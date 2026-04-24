@@ -11,6 +11,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.conf import settings
 from django.core.mail import send_mail
+from django.core.cache import cache
 from django.urls import reverse_lazy, reverse
 from django.db.models import Sum, Max, F, ExpressionWrapper, DecimalField, Count, Q
 from collections import defaultdict
@@ -78,6 +79,19 @@ def _ensure_station_settings(station):
         default_payment_type=default_payment_type,
         initial_jug_count=0,
     )
+
+
+def _is_duplicate_offline_submission(request, station, action='add_sales'):
+    """
+    Idempotency guard for offline sync retries.
+    Returns True when this offline_request_id was already processed recently.
+    """
+    offline_request_id = (request.POST.get('offline_request_id') or '').strip()
+    if not offline_request_id:
+        return False
+    cache_key = f"offline-sync:{action}:{station.id}:{offline_request_id}"
+    # cache.add returns False if key already exists
+    return not cache.add(cache_key, True, timeout=60 * 60 * 24)
 
 class StationSetupRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -496,6 +510,8 @@ def add_sales(request):
     
 
     if request.method == 'POST':
+        if _is_duplicate_offline_submission(request, station, action='add_sales'):
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
         if is_transaction_limit_reached(station):
             check_transaction_limit(station, request)
             messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
@@ -687,6 +703,8 @@ def add_sales_retro(request):
     
 
     if request.method == 'POST':
+        if _is_duplicate_offline_submission(request, station, action='add_sales_retro'):
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales'))
         if is_transaction_limit_reached(station):
             check_transaction_limit(station, request)
             messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")
@@ -901,6 +919,8 @@ def add_sales_from_order(request, order_id):
     customer = models.Customer.objects.get(id=order_obj.customer.id) if order_obj.customer else None
 
     if request.method == 'POST':
+        if _is_duplicate_offline_submission(request, station, action='add_sales_from_order'):
+            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
         if is_transaction_limit_reached(station):
             check_transaction_limit(station, request)
             messages.error(request, "Transaction limit reached for this month. Please upgrade your plan.")

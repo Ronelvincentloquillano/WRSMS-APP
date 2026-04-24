@@ -5,6 +5,13 @@ const STORE_NAME = 'offline_requests';
 const DB_VERSION = 1;
 let syncInProgress = false;
 
+function generateOfflineRequestId() {
+    if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+    }
+    return 'offline-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+
 function stableStringify(value) {
     if (Array.isArray(value)) {
         return '[' + value.map(stableStringify).join(',') + ']';
@@ -61,6 +68,9 @@ const saveOfflineRequest = async (url, method, formData) => {
             // If strictly needed, we can handle duplicate keys here.
             data[key] = value;
         });
+        if (!data.offline_request_id) {
+            data.offline_request_id = generateOfflineRequestId();
+        }
 
         const requestRecord = {
             url: url,
