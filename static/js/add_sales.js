@@ -494,7 +494,10 @@ $(document).ready(function () {
     function syncGcashQr(grandTotal, selectedText) {
         const selection = getPaymentTypeSelection();
         const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
-        const hasItems = hasItemTypeSelected();
+        const hasItems = grandTotal > 0;
+        const selectedLabel = (selectedText || selection.label || '').toLowerCase();
+        const isGcashSelected = selection.isGcash || selectedLabel.includes('gcash');
+        const isExactAmount = enteredAmount !== null && Math.round(enteredAmount * 100) === Math.round(grandTotal * 100);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -512,18 +515,20 @@ $(document).ready(function () {
 
         // Show QR only after GCash is selected, with at least one item
         // and a positive entered GCash payment amount.
-        const shouldShowQr = selection.isGcash && hasItems && enteredAmount !== null && enteredAmount > 0;
+        const shouldShowQr = isGcashSelected && hasItems && enteredAmount !== null && enteredAmount > 0 && isExactAmount;
 
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
                 let hintText = 'QR appears when GCash is selected, with item and payment amount.';
-                if (!selection.isGcash) {
+                if (!isGcashSelected) {
                     hintText = 'Select GCash as payment method to show QR.';
                 } else if (!hasItems || grandTotal <= 0) {
                     hintText = 'Add at least one item first.';
                 } else if (enteredAmount === null || enteredAmount <= 0) {
                     hintText = 'Enter GCash payment amount to show QR.';
+                } else if (!isExactAmount) {
+                    hintText = 'Payment amount must exactly match total amount.';
                 }
                 $hint
                     .removeClass('text-emerald-600')
@@ -538,7 +543,7 @@ $(document).ready(function () {
             $hint
                 .removeClass('text-slate-500')
                 .addClass('text-emerald-600')
-                .text('GCash amount received. QR ready to scan.');
+                .text('Exact amount confirmed. QR ready to scan.');
         }
 
         if (hasStationImg) {
