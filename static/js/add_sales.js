@@ -493,6 +493,8 @@ $(document).ready(function () {
 
     function syncGcashQr(grandTotal, selectedText) {
         const selection = getPaymentTypeSelection();
+        const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
+        const hasItems = hasItemTypeSelected();
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -508,16 +510,20 @@ $(document).ready(function () {
             clearGcashQrCanvas();
         }
 
-        // Requested flow:
-        // show QR as soon as staff selects GCash.
-        const shouldShowQr = selection.isGcash;
+        // Show QR only after GCash is selected, with at least one item
+        // and a positive entered GCash payment amount.
+        const shouldShowQr = selection.isGcash && hasItems && enteredAmount !== null && enteredAmount > 0;
 
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
-                let hintText = 'Select GCash to show QR.';
+                let hintText = 'QR appears when GCash is selected, with item and payment amount.';
                 if (!selection.isGcash) {
                     hintText = 'Select GCash as payment method to show QR.';
+                } else if (!hasItems || grandTotal <= 0) {
+                    hintText = 'Add at least one item first.';
+                } else if (enteredAmount === null || enteredAmount <= 0) {
+                    hintText = 'Enter GCash payment amount to show QR.';
                 }
                 $hint
                     .removeClass('text-emerald-600')
@@ -532,7 +538,7 @@ $(document).ready(function () {
             $hint
                 .removeClass('text-slate-500')
                 .addClass('text-emerald-600')
-                .text('GCash selected. QR ready to scan.');
+                .text('GCash amount received. QR ready to scan.');
         }
 
         if (hasStationImg) {
@@ -628,6 +634,10 @@ $(document).ready(function () {
     });
 
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
+    $(document).on('input change', '#gcash-confirm-amount', function () {
+        gcashQrLastRenderedAmount = null;
+        updatePaymentDisplay();
+    });
     $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();

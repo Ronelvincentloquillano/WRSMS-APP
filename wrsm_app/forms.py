@@ -139,7 +139,8 @@ class CreateSalesForm(forms.ModelForm):
             self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station).order_by('-type')
             self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
             self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
-            self.fields['payment_type'].empty_label = 'Select payment (Cash, GCash, etc.)'
+            self.fields['payment_type'].empty_label = None
+            self.fields['payment_type'].required = True
             if settings:
                 self.fields['order_type'].initial = settings.default_order_type
                 if settings.default_payment_type:
@@ -261,7 +262,8 @@ class CreateSalesFromOrderForm(forms.ModelForm):
             settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
             self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station.pk).order_by('-type')
             self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
-            self.fields['payment_type'].empty_label = 'Select payment (Cash, GCash, etc.)'
+            self.fields['payment_type'].empty_label = None
+            self.fields['payment_type'].required = True
             if settings:
                 self.fields['order_type'].initial = settings.default_order_type
                 if settings.default_payment_type:
