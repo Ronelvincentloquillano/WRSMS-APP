@@ -413,6 +413,15 @@ $(document).ready(function () {
         return result;
     }
 
+    function isGcashCurrentlySelected() {
+        const selection = getPaymentTypeSelection();
+        if (selection.isGcash) return true;
+        const radioText = $('input[name="payment_type"]:checked').closest('label').text().toLowerCase();
+        if (radioText.includes('gcash')) return true;
+        const selectText = $('select[name="payment_type"] option:selected').text().toLowerCase();
+        return selectText.includes('gcash');
+    }
+
     function gcashConfirmMatchesSale(grandTotal) {
         const entered = parseMoney($('#gcash-confirm-amount').val());
         if (entered === null || grandTotal <= 0) return false;
@@ -481,12 +490,13 @@ $(document).ready(function () {
         const t = (selectedText || selection.label || '').toLowerCase().trim();
         const $cash = $('#payment-cash-section');
         const $gcash = $('#payment-gcash-section');
-        const isPaid = $('#is_paid').is(':checked');
         $cash.addClass('hidden');
-        // Keep GCash section visible by default; only gate cash-specific block.
-        $gcash.removeClass('hidden');
-        if (!isPaid) return;
-        if (selection.isCashOnly || t.includes('cash')) {
+        $gcash.addClass('hidden');
+        if (selection.isGcash || t.includes('gcash')) {
+            $gcash.removeClass('hidden');
+            return;
+        }
+        if (selection.isCashOnly || (t.includes('cash') && !t.includes('gcash'))) {
             $cash.removeClass('hidden');
         }
     }
@@ -495,8 +505,7 @@ $(document).ready(function () {
         const selection = getPaymentTypeSelection();
         const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
         const hasItems = grandTotal > 0;
-        const selectedLabel = (selectedText || selection.label || '').toLowerCase();
-        const isGcashSelected = selection.isGcash || selectedLabel.includes('gcash');
+        const isGcashSelected = isGcashCurrentlySelected();
         const isExactAmount = enteredAmount !== null && Math.round(enteredAmount * 100) === Math.round(grandTotal * 100);
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
@@ -520,7 +529,7 @@ $(document).ready(function () {
         if (!shouldShowQr) {
             hideQr();
             if ($hint.length) {
-                let hintText = 'QR appears when GCash is selected, with item and payment amount.';
+                let hintText = 'QR appears when GCash is selected, with item and exact payment amount.';
                 if (!isGcashSelected) {
                     hintText = 'Select GCash as payment method to show QR.';
                 } else if (!hasItems || grandTotal <= 0) {
