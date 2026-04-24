@@ -3,6 +3,17 @@
 const DB_NAME = 'WrsmOfflineDB';
 const STORE_NAME = 'offline_requests';
 const DB_VERSION = 1;
+let syncInProgress = false;
+
+function stableStringify(value) {
+    if (Array.isArray(value)) {
+        return '[' + value.map(stableStringify).join(',') + ']';
+    }
+    if (value && typeof value === 'object') {
+        return '{' + Object.keys(value).sort().map((k) => JSON.stringify(k) + ':' + stableStringify(value[k])).join(',') + '}';
+    }
+    return JSON.stringify(value);
+}
 
 function getCookie(name) {
     let cookieValue = null;
@@ -59,10 +70,34 @@ const saveOfflineRequest = async (url, method, formData) => {
             display_name: document.title // To show user what is pending
         };
 
+        // Prevent accidental duplicate queueing from rapid double-submit/retry.
+        const allReq = store.getAll();
+        const existingItems = await new Promise((resolve) => {
+            allReq.onsuccess = () => resolve(allReq.result || []);
+            allReq.onerror = () => resolve([]);
+        });
+        const newSignature = stableStringify({
+            url: requestRecord.url,
+            method: requestRecord.method,
+            data: requestRecord.data,
+        });
+        const duplicate = existingItems.some((item) => {
+            const oldSignature = stableStringify({
+                url: item.url,
+                method: item.method,
+                data: item.data,
+            });
+            const withinWindow = Math.abs((requestRecord.timestamp || 0) - (item.timestamp || 0)) < 15000;
+            return withinWindow && oldSignature === newSignature;
+        });
+        if (duplicate) {
+            return { saved: false, duplicate: true };
+        }
+
         store.add(requestRecord);
         
         return new Promise((resolve, reject) => {
-            tx.oncomplete = () => resolve(true);
+            tx.oncomplete = () => resolve({ saved: true, duplicate: false });
             tx.onerror = () => reject(tx.error);
         });
     } catch (e) {
@@ -73,6 +108,11 @@ const saveOfflineRequest = async (url, method, formData) => {
 
 const syncOfflineRequests = async () => {
     if (!navigator.onLine) return;
+    if (syncInProgress) {
+        console.log('Offline sync already running. Skipping duplicate trigger.');
+        return;
+    }
+    syncInProgress = true;
 
     try {
         const db = await openDB();
@@ -151,6 +191,8 @@ const syncOfflineRequests = async () => {
         };
     } catch (e) {
         console.error("Error during sync process", e);
+    } finally {
+        syncInProgress = false;
     }
 };
 
@@ -456,7 +498,11 @@ function setupOfflineForm(formId) {
 
 async function handleOfflineSave(url, method, formData, form, isActuallyOffline) {
     try {
-        await saveOfflineRequest(url, method, formData);
+        const saveResult = await saveOfflineRequest(url, method, formData);
+        if (saveResult && saveResult.duplicate) {
+            showToast('Already saved offline. Waiting to sync when online.', 'warning');
+            return;
+        }
         if (isActuallyOffline) {
             showToast('Offline! Record saved locally. Will sync when online.', 'warning');
         } else {

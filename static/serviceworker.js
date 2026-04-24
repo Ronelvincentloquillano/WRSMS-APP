@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v63';
+const SW_VERSION = 'wrsm-v65';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -26,7 +26,7 @@ const ASSETS_TO_CACHE = [
     '/static/js/menu.js',
     '/static/js/add_sales.js',
     '/static/js/offline_forms.js',
-    '/static/js/offline_forms.js?v=2.4',
+    '/static/js/offline_forms.js?v=2.5',
     '/static/js/sales_list_offline.js',
     '/static/js/order_list_offline.js',
     '/static/js/container_management_list_offline.js',
@@ -68,6 +68,32 @@ async function getMasterData() {
         console.error('[ServiceWorker] Error getting master data:', e);
     }
     return null;
+}
+
+function withTrailingSlash(pathname) {
+    if (!pathname) return '/';
+    return pathname.endsWith('/') ? pathname : pathname + '/';
+}
+
+function withoutTrailingSlash(pathname) {
+    if (!pathname) return '/';
+    if (pathname === '/') return '/';
+    return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+}
+
+function getSensitiveFallbackPaths(pathname) {
+    const p = pathname || '/';
+    const pWith = withTrailingSlash(p);
+    const pWithout = withoutTrailingSlash(p);
+    const candidates = [p, pWith, pWithout];
+
+    if (p.startsWith('/add-sales')) candidates.push('/add-sales/', '/add-sales');
+    if (p.startsWith('/add-order')) candidates.push('/add-order/', '/add-order');
+    if (p.startsWith('/add-customer')) candidates.push('/add-customer/', '/add-customer');
+    if (p.startsWith('/add-container-record')) candidates.push('/add-container-record/', '/add-container-record');
+    if (p.startsWith('/dashboard')) candidates.push('/dashboard/', '/dashboard');
+
+    return [...new Set(candidates)];
 }
 
 // Install Event: Cache core assets with error handling
@@ -211,16 +237,24 @@ self.addEventListener('fetch', (event) => {
                             const responseClone = networkResponse.clone();
                             caches.open(CACHE_NAME).then((cache) => {
                                 cache.put(event.request, responseClone);
+                                const canonicalPath = withTrailingSlash(requestUrl.pathname);
+                                if (canonicalPath !== requestUrl.pathname) {
+                                    cache.put(canonicalPath, networkResponse.clone());
+                                }
                             });
                         }
                         return networkResponse;
                     })
                     .catch(() =>
-                        caches.match(event.request).then((cachedResponse) => {
-                            if (cachedResponse) {
-                                return cachedResponse;
+                        caches.open(CACHE_NAME).then(async (cache) => {
+                            const fallbackPaths = getSensitiveFallbackPaths(requestUrl.pathname);
+                            for (const path of fallbackPaths) {
+                                const cachedResponse = await cache.match(path);
+                                if (cachedResponse) return cachedResponse;
                             }
-                            return caches.match(OFFLINE_URL);
+                            const reqMatch = await cache.match(event.request);
+                            if (reqMatch) return reqMatch;
+                            return cache.match(OFFLINE_URL);
                         })
                     )
             );
