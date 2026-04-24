@@ -216,6 +216,35 @@ $(document).ready(function () {
         if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
     }
 
+    function hardAutofillAllRows() {
+        $('#formset-container .form-row').each(function () {
+            const $row = $(this);
+            const $product = $row.find('select[name$="-product"], select[id$="-product"]').first();
+            const $qty = $row.find('input[name$="-quantity"], input[id$="-quantity"]').first();
+            const $unit = $row.find('input[name$="-unit_price"], input[id$="-unit_price"]').first();
+            const $total = $row.find('input[name$="-total"], input[id$="-total"]').first();
+            if (!$qty.length || !$unit.length || !$total.length) return;
+
+            const qtyVal = parseFloat($qty.val()) || 0;
+            const productId = String($product.val() || '');
+            let resolvedUnit = 0;
+
+            if (productId && productFallbackById[productId]) {
+                resolvedUnit = parseFloat(productFallbackById[productId].unit_price) || 0;
+            } else {
+                const info = $product.data('product-info');
+                if (info) resolvedUnit = parseFloat(info.unit_price) || 0;
+            }
+
+            if (qtyVal > 0 && resolvedUnit > 0) {
+                $unit.val(resolvedUnit.toFixed(2));
+                $total.val((qtyVal * resolvedUnit).toFixed(2));
+            }
+        });
+        if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
+        forceGcashRevealFromDom();
+    }
+
     // Customer Change Handler
     $customerSelect.on("change", function () {
       const customerId = $(this).val();
@@ -848,6 +877,10 @@ $(document).ready(function () {
             recalculateRowFromElement(this);
         });
     }, 400);
+    setTimeout(hardAutofillAllRows, 500);
+    setTimeout(hardAutofillAllRows, 1000);
+    setTimeout(hardAutofillAllRows, 1500);
+    setInterval(hardAutofillAllRows, 2000);
     forceGcashRevealFromDom();
     setTimeout(forceGcashRevealFromDom, 250);
     setTimeout(forceGcashRevealFromDom, 800);
