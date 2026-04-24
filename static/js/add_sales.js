@@ -197,7 +197,6 @@ $(document).ready(function () {
 
       $product.on("change", function () {
         const productID = $(this).val();
-        $qty.val(''); // Clear quantity
         
         if (productID) {
           $.getJSON(`${urlProduct}?id_product=${productID}`)
@@ -215,6 +214,21 @@ $(document).ready(function () {
           calculateTotal();
         }
       });
+
+      // On initial render/edit state, ensure selected product loads price data
+      // so entering quantity immediately computes unit price and total.
+      if ($product.val() && !$product.data('product-info')) {
+        $.getJSON(`${urlProduct}?id_product=${$product.val()}`)
+          .done(function (data) {
+            $product.data('product-info', data);
+            recalculateRowPrice(i);
+          })
+          .fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("Initial Product Fetch Failed:", textStatus, errorThrown);
+          });
+      } else if ($product.val()) {
+        recalculateRowPrice(i);
+      }
 
       let $freeButton = $(`.free-button[data-id="free${i}"]`);
       $freeButton.off('click').on('click', function () {
