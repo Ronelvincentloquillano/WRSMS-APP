@@ -36,10 +36,12 @@ $(document).ready(function () {
     }
 
     function recalculateRowPrice(i) {
-        const $productSelect = $(`#id_sales_items-${i}-product`);
-        const $unitPriceInput = $(`#id_sales_items-${i}-unit_price`);
-        const $qtyInput = $(`#id_sales_items-${i}-quantity`);
-        const $totalInput = $(`#id_sales_items-${i}-total`);
+        const $row = $('#formset-container .form-row').eq(i);
+        if (!$row.length) return;
+        const $productSelect = $row.find('select[name$="-product"], select[id$="-product"]').first();
+        const $unitPriceInput = $row.find('input[name$="-unit_price"], input[id$="-unit_price"]').first();
+        const $qtyInput = $row.find('input[name$="-quantity"], input[id$="-quantity"]').first();
+        const $totalInput = $row.find('input[name$="-total"], input[id$="-total"]').first();
         const $freeButton = $(`.free-button[data-id="free${i}"]`);
 
         // Check if free
@@ -180,10 +182,11 @@ $(document).ready(function () {
 
     // Formset Handling
     function bindEventsToForm(i) {
-      let $qty = $(`#id_sales_items-${i}-quantity`);
-      let $unit_price = $(`#id_sales_items-${i}-unit_price`);
-      let $total = $(`#id_sales_items-${i}-total`);
-      let $product = $(`#id_sales_items-${i}-product`);
+      let $row = $('#formset-container .form-row').eq(i);
+      let $qty = $row.find('input[name$="-quantity"], input[id$="-quantity"]').first();
+      let $unit_price = $row.find('input[name$="-unit_price"], input[id$="-unit_price"]').first();
+      let $total = $row.find('input[name$="-total"], input[id$="-total"]').first();
+      let $product = $row.find('select[name$="-product"], select[id$="-product"]').first();
 
       function calculateTotal() {
         var qty = parseFloat($qty.val()) || 0;
@@ -272,7 +275,6 @@ $(document).ready(function () {
       });
 
       // Remove button handler
-      let $row = $product.closest('.form-row');
       let $deleteBtn = $row.find('.remove-form');
       $deleteBtn.off('click').on('click', function() {
            let $deleteInput = $row.find('input[name$="-DELETE"]');
