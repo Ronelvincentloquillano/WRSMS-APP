@@ -198,6 +198,87 @@
           <a href="{% url 'wrsm_app:sales' %}" class="ux-btn ux-btn-secondary ml-3">Cancel</a>
         </div>
       </form>
+      <script>
+        (function () {
+          const mapNode = document.getElementById('product-price-map');
+          let priceMap = {};
+          try { priceMap = mapNode ? JSON.parse(mapNode.textContent || '{}') : {}; } catch (e) { priceMap = {}; }
+
+          function toNum(v) {
+            const n = parseFloat(String(v ?? '').replace(/,/g, '').trim());
+            return Number.isFinite(n) ? n : 0;
+          }
+
+          function gcashSelected() {
+            const checked = document.querySelector('input[name="payment_type"]:checked');
+            if (!checked) return false;
+            const label = (checked.closest('label')?.innerText || '').toLowerCase();
+            return label.includes('gcash');
+          }
+
+          function applyRow(row) {
+            const product = row.querySelector('select[name$="-product"], select[id$="-product"]');
+            const qty = row.querySelector('input[name$="-quantity"], input[id$="-quantity"]');
+            const unit = row.querySelector('input[name$="-unit_price"], input[id$="-unit_price"]');
+            const total = row.querySelector('input[name$="-total"], input[id$="-total"]');
+            if (!product || !qty || !unit || !total) return;
+            const pid = String(product.value || '');
+            const q = toNum(qty.value);
+            const p = priceMap[pid] ? toNum(priceMap[pid].unit_price) : 0;
+            if (q > 0 && p > 0) {
+              unit.value = p.toFixed(2);
+              total.value = (q * p).toFixed(2);
+            }
+          }
+
+          function computeGrandTotal() {
+            let sum = 0;
+            document.querySelectorAll('#formset-container input[name$="-total"], #formset-container input[id$="-total"]').forEach((el) => {
+              sum += toNum(el.value);
+            });
+            return sum;
+          }
+
+          function refreshQr() {
+            const reveal = document.getElementById('gcash-qr-reveal');
+            const hint = document.getElementById('gcash-confirm-hint');
+            const entered = toNum(document.getElementById('gcash-confirm-amount')?.value || 0);
+            const grand = computeGrandTotal();
+            const ok = gcashSelected() && entered > 0 && grand > 0 && Math.abs(entered - grand) < 0.01;
+            if (reveal) {
+              if (ok) {
+                reveal.classList.remove('hidden');
+                reveal.style.display = 'block';
+              } else {
+                reveal.classList.add('hidden');
+              }
+            }
+            if (hint && ok) {
+              hint.textContent = 'Exact amount confirmed. QR ready to scan.';
+            }
+          }
+
+          function tick() {
+            document.querySelectorAll('#formset-container .form-row').forEach(applyRow);
+            refreshQr();
+          }
+
+          document.addEventListener('input', function (e) {
+            if (e.target.matches('#formset-container input, #formset-container select, #gcash-confirm-amount, input[name="payment_type"]')) {
+              tick();
+            }
+          });
+          document.addEventListener('change', function (e) {
+            if (e.target.matches('#formset-container input, #formset-container select, #gcash-confirm-amount, input[name="payment_type"]')) {
+              tick();
+            }
+          });
+
+          setTimeout(tick, 200);
+          setTimeout(tick, 700);
+          setInterval(tick, 1500);
+        })();
+      </script>
     </div>
   </div>
 </div>
