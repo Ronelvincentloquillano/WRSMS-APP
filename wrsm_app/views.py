@@ -81,6 +81,21 @@ def _ensure_station_settings(station):
     )
 
 
+def _build_product_price_map(station):
+    price_map = {}
+    products = models.Product.objects.filter(station=station).values(
+        'id', 'product_name', 'unit_price', 'product_type', 'jug_size__size_in_liters'
+    )
+    for p in products:
+        price_map[str(p['id'])] = {
+            'product_name': p.get('product_name') or '',
+            'unit_price': float(p.get('unit_price') or 0),
+            'product_type': p.get('product_type') or '',
+            'jug_size_in_liters': float(p.get('jug_size__size_in_liters') or 0),
+        }
+    return price_map
+
+
 def _is_duplicate_offline_submission(request, station, action='add_sales'):
     """
     Idempotency guard for offline sync retries.
@@ -693,6 +708,7 @@ def add_sales(request):
         'limit_reached': limit_reached,
         'gcash_qr_url': gcash_qr_url,
         'gcash_account': (st_settings.gcash_account or '') if st_settings else '',
+        'product_price_map': _build_product_price_map(station),
     })
 
 
@@ -907,6 +923,7 @@ def add_sales_retro(request):
         'limit_reached': limit_reached,
         'gcash_qr_url': gcash_qr_retro,
         'gcash_account': (st_retro.gcash_account or '') if st_retro else '',
+        'product_price_map': _build_product_price_map(station),
     })
 
 
@@ -1155,6 +1172,7 @@ def add_sales_from_order(request, order_id):
         'limit_reached': limit_reached,
         'gcash_qr_url': gcash_qr_url,
         'gcash_account': (station_settings.gcash_account or '') if station_settings else '',
+        'product_price_map': _build_product_price_map(station),
     })
 
 

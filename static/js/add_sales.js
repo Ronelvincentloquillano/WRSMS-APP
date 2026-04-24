@@ -15,6 +15,20 @@ $(document).ready(function () {
     const productInfoCache = {};
     const productFallbackById = {};
     let productFallbackList = [];
+    const productPriceMapTag = document.getElementById('product-price-map');
+    if (productPriceMapTag && productPriceMapTag.textContent) {
+        try {
+            const serverMap = JSON.parse(productPriceMapTag.textContent);
+            Object.keys(serverMap || {}).forEach((id) => {
+                const p = serverMap[id];
+                if (!p) return;
+                productFallbackById[String(id)] = p;
+                productFallbackList.push(p);
+            });
+        } catch (e) {
+            console.warn('Failed to parse server product-price-map', e);
+        }
+    }
     
     console.log("Add Sales Script Loaded. URLs:", {urlCustomer, urlOrdertype, urlProduct});
 

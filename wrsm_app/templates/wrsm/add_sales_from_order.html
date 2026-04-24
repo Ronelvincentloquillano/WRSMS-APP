@@ -100,6 +100,7 @@
         data-url-product="{% url 'wrsm_app:get_product_data' %}"
         data-has-station-gcash-qr="{% if gcash_qr_url %}true{% else %}false{% endif %}"
       >
+        {{ product_price_map|default:"{}"|json_script:"product-price-map" }}
         {% csrf_token %}
 
         <div class="mt-2 flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
@@ -273,5 +274,5 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" crossorigin="anonymous"></script>
 <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
-<script src="{% static 'js/add_sales.js' %}?v=5.0"></script>
+<script src="{% static 'js/add_sales.js' %}?v=5.1"></script>
 {% endblock %}

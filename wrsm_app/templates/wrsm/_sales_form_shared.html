@@ -50,6 +50,7 @@
         data-url-ordertype="{% url 'wrsm_app:get_ordertype_data' %}"
         data-url-product="{% url 'wrsm_app:get_product_data' %}"
         data-has-station-gcash-qr="{% if gcash_qr_url %}true{% else %}false{% endif %}">
+        {{ product_price_map|default:"{}"|json_script:"product-price-map" }}
         {% csrf_token %}
 
         {% if show_created_date %}
