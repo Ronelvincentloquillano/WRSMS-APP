@@ -13,6 +13,8 @@ $(document).ready(function () {
     const urlOrdertype = $form.data("url-ordertype");
     const urlProduct = $form.data("url-product");
     const productInfoCache = {};
+    const productFallbackById = {};
+    let productFallbackList = [];
     
     console.log("Add Sales Script Loaded. URLs:", {urlCustomer, urlOrdertype, urlProduct});
 
@@ -124,12 +126,27 @@ $(document).ready(function () {
         };
 
         const productId = $product.val();
+        const selectedOptionText = ($product.find('option:selected').text() || '').toLowerCase();
         if (!productId) {
+            // Fallback: try name-based match when option value is unexpectedly empty.
+            if (selectedOptionText) {
+                const matchedByName = productFallbackList.find((p) =>
+                    selectedOptionText.includes(String(p.product_name || '').toLowerCase())
+                );
+                if (matchedByName) {
+                    const suggestedByName = parseFloat(matchedByName.unit_price) || 0;
+                    if (!$unit.val() || Number($unit.val()) === 0) {
+                        $unit.val(suggestedByName.toFixed(2));
+                    }
+                    finalize();
+                    return;
+                }
+            }
             finalize();
             return;
         }
 
-        const cached = $product.data('product-info') || productInfoCache[productId];
+        const cached = $product.data('product-info') || productInfoCache[productId] || productFallbackById[String(productId)];
         if (cached) {
             $product.data('product-info', cached);
             if (!$unit.val() || Number($unit.val()) === 0) {
@@ -152,8 +169,29 @@ $(document).ready(function () {
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("Delegated Product Fetch Failed:", textStatus, errorThrown);
+                const fallback = productFallbackById[String(productId)];
+                if (fallback && (!$unit.val() || Number($unit.val()) === 0)) {
+                    const suggested = parseFloat(fallback.unit_price) || 0;
+                    $unit.val(suggested.toFixed(2));
+                }
                 finalize();
             });
+    }
+
+    function hydrateProductFallbackData() {
+        fetch('/api/offline-master-data/', { credentials: 'same-origin' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (!data || !data.products) return;
+                productFallbackList = [];
+                Object.keys(data.products).forEach((id) => {
+                    const p = data.products[id];
+                    if (!p) return;
+                    productFallbackById[String(id)] = p;
+                    productFallbackList.push(p);
+                });
+            })
+            .catch(() => {});
     }
 
     function recalculateAllRows() {
@@ -418,6 +456,7 @@ $(document).ready(function () {
             $ordertypeSelect.trigger('change');
         }
     }
+    hydrateProductFallbackData();
 
     // --- Payment: Cash / GCash (QR shows only after exact amount match) ---
     let gcashQrLastRenderedAmount = null;
@@ -790,6 +829,11 @@ $(document).ready(function () {
     syncPaidPanelVisibility();
     togglePaymentSections(getPaymentTypeText());
     updatePaymentDisplay();
+    setTimeout(function () {
+        $('#formset-container .form-row').each(function () {
+            recalculateRowFromElement(this);
+        });
+    }, 400);
     forceGcashRevealFromDom();
     setTimeout(forceGcashRevealFromDom, 250);
     setTimeout(forceGcashRevealFromDom, 800);
