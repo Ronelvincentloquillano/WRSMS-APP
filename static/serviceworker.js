@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v62';
+const SW_VERSION = 'wrsm-v63';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -201,9 +201,28 @@ self.addEventListener('fetch', (event) => {
             requestUrl.pathname.startsWith(prefix)
         );
         if (isSensitivePath) {
+            // Still prefer fresh HTML when online (no-store), but cache successful
+            // navigations so Add Sales / Add Order / Dashboard shells work offline after
+            // the user has visited them at least once while online.
             event.respondWith(
                 fetch(event.request, { cache: 'no-store' })
-                    .catch(() => caches.match(OFFLINE_URL))
+                    .then((networkResponse) => {
+                        if (networkResponse && networkResponse.status === 200) {
+                            const responseClone = networkResponse.clone();
+                            caches.open(CACHE_NAME).then((cache) => {
+                                cache.put(event.request, responseClone);
+                            });
+                        }
+                        return networkResponse;
+                    })
+                    .catch(() =>
+                        caches.match(event.request).then((cachedResponse) => {
+                            if (cachedResponse) {
+                                return cachedResponse;
+                            }
+                            return caches.match(OFFLINE_URL);
+                        })
+                    )
             );
             return;
         }

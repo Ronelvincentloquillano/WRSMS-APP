@@ -49,6 +49,9 @@
         main {
             overflow-wrap: anywhere;
         }
+        body.pwa-offline-banner-visible {
+            padding-top: 2.75rem;
+        }
         .overflow-x-auto {
             -webkit-overflow-scrolling: touch;
         }
@@ -234,6 +237,11 @@
 
 <body
     class="text-base text-slate-800 bg-slate-200 dark:bg-slate-800 scheme-light flex flex-col dark:text-slate-300 dark:scheme-dark min-h-screen w-full max-w-[100vw] overflow-x-hidden antialiased">
+    <div id="pwa-offline-banner"
+        class="hidden fixed top-0 left-0 right-0 z-[100] border-b border-amber-800/30 bg-amber-400 px-3 py-2 text-center text-sm font-semibold text-amber-950 shadow-md dark:bg-amber-500 dark:text-amber-950"
+        role="status" aria-live="polite">
+        Offline mode — you can keep working. Pending saves sync automatically when you are back online.
+    </div>
     <!-- Logged-in: mobile-only (desktop uses sidebar). Guests: show this bar on all screen sizes so nav is never missing. -->
     <header class="sticky top-0 z-10 w-full min-w-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 {% if request.user.is_authenticated %}md:hidden{% endif %}">
         <section class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
@@ -859,6 +867,24 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 3000);
+    </script>
+    <script>
+        (function () {
+            var banner = document.getElementById('pwa-offline-banner');
+            if (!banner) return;
+            function syncOfflineBanner() {
+                if (navigator.onLine) {
+                    banner.classList.add('hidden');
+                    document.body.classList.remove('pwa-offline-banner-visible');
+                } else {
+                    banner.classList.remove('hidden');
+                    document.body.classList.add('pwa-offline-banner-visible');
+                }
+            }
+            syncOfflineBanner();
+            window.addEventListener('online', syncOfflineBanner);
+            window.addEventListener('offline', syncOfflineBanner);
+        })();
     </script>
     <script>
         (function () {
