@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v65';
+const SW_VERSION = 'wrsm-v66';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -20,6 +20,15 @@ const SENSITIVE_PATH_PREFIXES = [
 
 const ASSETS_TO_CACHE = [
     OFFLINE_URL,
+    '/',
+    '/dashboard/',
+    '/sales/',
+    '/sales-and-orders/',
+    '/add-sales/',
+    '/add-order/',
+    '/add-customer/',
+    '/add-container-record/',
+    '/add-payment/',
     // OFFLINE_DATA_URL is cached dynamically by the app when online, not during install
     '/static/css/output.css',
     '/static/js/jquery-3.7.1.min.js',
