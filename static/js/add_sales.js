@@ -192,7 +192,30 @@ $(document).ready(function () {
         if (typeof updatePaymentDisplay === 'function') updatePaymentDisplay();
       }
 
-      $qty.on('input', calculateTotal);
+      function ensureProductInfoThenRecalculate() {
+        const productID = $product.val();
+        if (!productID) {
+          calculateTotal();
+          return;
+        }
+        const existingProductInfo = $product.data('product-info');
+        if (existingProductInfo) {
+          recalculateRowPrice(i);
+          return;
+        }
+        $.getJSON(`${urlProduct}?id_product=${productID}`)
+          .done(function (data) {
+            $product.data('product-info', data);
+            recalculateRowPrice(i);
+          })
+          .fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("Qty-trigger Product Fetch Failed:", textStatus, errorThrown);
+            calculateTotal();
+          });
+      }
+
+      // Quantity input should auto-populate unit price and line total.
+      $qty.on('input change', ensureProductInfoThenRecalculate);
       $unit_price.on('input', calculateTotal);
 
       $product.on("change", function () {
