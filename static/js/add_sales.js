@@ -506,7 +506,7 @@ $(document).ready(function () {
         const enteredAmount = parseMoney($('#gcash-confirm-amount').val());
         const hasItems = grandTotal > 0;
         const isGcashSelected = isGcashCurrentlySelected();
-        const isExactAmount = enteredAmount !== null && Math.round(enteredAmount * 100) === Math.round(grandTotal * 100);
+        const isExactAmount = enteredAmount !== null && Math.abs(enteredAmount - grandTotal) < 0.01;
         const $reveal = $('#gcash-qr-reveal');
         const $wrapper = $('#gcash-qr-wrapper');
         const $stationImg = $('#gcash-station-qr-img');
@@ -537,7 +537,7 @@ $(document).ready(function () {
                 } else if (enteredAmount === null || enteredAmount <= 0) {
                     hintText = 'Enter GCash payment amount to show QR.';
                 } else if (!isExactAmount) {
-                    hintText = 'Payment amount must exactly match total amount.';
+                    hintText = `Payment amount must match total amount (Total: ₱${grandTotal.toFixed(2)}).`;
                 }
                 $hint
                     .removeClass('text-emerald-600')
@@ -548,6 +548,8 @@ $(document).ready(function () {
         }
 
         if ($reveal.length) $reveal.removeClass('hidden');
+        // Hard fallback for prod timing/CSS race: force visible when gate is met.
+        if ($reveal.length) $reveal.css('display', 'block');
         if ($hint.length) {
             $hint
                 .removeClass('text-slate-500')
@@ -650,6 +652,11 @@ $(document).ready(function () {
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
     $(document).on('input change', '#gcash-confirm-amount', function () {
         gcashQrLastRenderedAmount = null;
+        const totalNow = getGrandTotal();
+        const enteredNow = parseMoney($('#gcash-confirm-amount').val());
+        if (isGcashCurrentlySelected() && enteredNow !== null && enteredNow > 0 && totalNow > 0 && Math.abs(enteredNow - totalNow) < 0.01) {
+            $('#gcash-qr-reveal').removeClass('hidden').css('display', 'block');
+        }
         updatePaymentDisplay();
     });
     $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
