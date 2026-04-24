@@ -590,6 +590,23 @@ $(document).ready(function () {
         });
     }
 
+    function forceGcashRevealFromDom() {
+        const totalNow = getGrandTotal();
+        const enteredNow = parseMoney($('#gcash-confirm-amount').val());
+        const selectedNow = isGcashCurrentlySelected();
+        const exactNow = enteredNow !== null && Math.abs((enteredNow || 0) - (totalNow || 0)) < 0.01;
+        const $reveal = $('#gcash-qr-reveal');
+        const $hint = $('#gcash-confirm-hint');
+        if (!$reveal.length) return;
+
+        if (selectedNow && totalNow > 0 && enteredNow !== null && enteredNow > 0 && exactNow) {
+            $reveal.removeClass('hidden').css('display', 'block');
+            if ($hint.length) {
+                $hint.removeClass('text-slate-500').addClass('text-emerald-600').text('Exact amount confirmed. QR ready to scan.');
+            }
+        }
+    }
+
     function updateAmountGivenRequired() {
         const paid = $('#is_paid').is(':checked');
         const selection = getPaymentTypeSelection();
@@ -647,6 +664,7 @@ $(document).ready(function () {
         togglePaymentSections(getPaymentTypeText());
         updateAmountGivenRequired();
         updatePaymentDisplay();
+        forceGcashRevealFromDom();
     });
 
     $(document).on('input', '#id_amount_given', updatePaymentDisplay);
@@ -658,14 +676,17 @@ $(document).ready(function () {
             $('#gcash-qr-reveal').removeClass('hidden').css('display', 'block');
         }
         updatePaymentDisplay();
+        forceGcashRevealFromDom();
     });
     $(document).on('input change', '#formset-container input[name$="-total"], #formset-container input[id$="-total"]', function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
+        forceGcashRevealFromDom();
     });
     $(document).on('input change', '#formset-container input[name$="-quantity"], #formset-container input[id$="-quantity"], #formset-container input[name$="-unit_price"], #formset-container input[id$="-unit_price"]', function () {
         gcashQrLastRenderedAmount = null;
         updatePaymentDisplay();
+        forceGcashRevealFromDom();
     });
     $('#is_paid').on('change', function () {
         syncPaidPanelVisibility();
@@ -676,4 +697,7 @@ $(document).ready(function () {
     syncPaidPanelVisibility();
     togglePaymentSections(getPaymentTypeText());
     updatePaymentDisplay();
+    forceGcashRevealFromDom();
+    setTimeout(forceGcashRevealFromDom, 250);
+    setTimeout(forceGcashRevealFromDom, 800);
 });
