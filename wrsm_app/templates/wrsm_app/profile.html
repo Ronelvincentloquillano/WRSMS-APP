@@ -106,12 +106,17 @@
                 </div>
 
                 <div class="mt-6">
-                    <form action="{% url 'account:logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="w-full justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <div class="rounded-md border border-red-200 bg-red-50 p-3">
+                        <h4 class="text-sm font-semibold text-red-800">Account Actions</h4>
+                        <p class="mt-1 text-xs text-red-700">Use logout when you are done, especially on shared devices.</p>
+                        <button
+                            type="button"
+                            id="open-logout-confirm"
+                            class="mt-3 w-full justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
                             Log Out
                         </button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -144,4 +149,74 @@
 
     </div>
 </div>
+
+<!-- Logout Confirm Modal -->
+<div id="logout-modal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/50" id="logout-modal-overlay"></div>
+    <div class="relative z-10 min-h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-lg bg-white shadow-xl">
+            <div class="px-5 py-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">Confirm Logout</h3>
+            </div>
+            <div class="px-5 py-4 text-sm text-gray-700">
+                Are you sure you want to log out of your account?
+            </div>
+            <div class="px-5 py-4 border-t flex items-center justify-end gap-2">
+                <button type="button" id="cancel-logout" class="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <form action="{% url 'account:logout' %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700">
+                        Confirm Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sticky Logout -->
+<div class="md:hidden fixed bottom-4 left-4 right-4 z-40">
+    <button
+        type="button"
+        id="open-logout-confirm-mobile"
+        class="w-full px-4 py-3 text-sm font-semibold rounded-lg text-red-700 bg-red-100 border border-red-200 shadow-sm hover:bg-red-200"
+    >
+        Log Out
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const modal = document.getElementById('logout-modal');
+        const openDesktop = document.getElementById('open-logout-confirm');
+        const openMobile = document.getElementById('open-logout-confirm-mobile');
+        const cancelBtn = document.getElementById('cancel-logout');
+        const overlay = document.getElementById('logout-modal-overlay');
+
+        function openModal() {
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal() {
+            if (!modal) return;
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        if (openDesktop) openDesktop.addEventListener('click', openModal);
+        if (openMobile) openMobile.addEventListener('click', openModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', closeModal);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    })();
+</script>
 {% endblock %}
