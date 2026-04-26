@@ -773,6 +773,11 @@
                     </div>
                 </details>
 
+                <a href="{% url 'wrsm_app:profile' %}"
+                    class="sd-sidebar-link {% if vn == 'wrsm_app:profile' %}is-active{% endif %}">
+                    My Profile
+                </a>
+
                 <form action="{% url 'account:logout' %}" method="post" class="mt-3">
                     {% csrf_token %}
                     <button type="submit" class="sd-sidebar-link w-full text-left">
