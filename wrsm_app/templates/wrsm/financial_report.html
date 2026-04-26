@@ -12,6 +12,36 @@
     <h2 class="text-2xl sm:text-3xl font-bold">Monthly Financial Reports</h2>
   </div>
 
+  {% if system_generated_report %}
+  <section class="w-full bg-white dark:bg-slate-700 rounded-lg shadow p-4 text-slate-800 dark:text-slate-100">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <h3 class="text-lg font-semibold">System Generated Report</h3>
+      <span class="text-xs text-slate-500 dark:text-slate-300">{{ system_generated_report.month_label }}</span>
+    </div>
+    <p class="text-sm">
+      Status: <span class="font-semibold">{{ system_generated_report.performance_label }}</span>
+      | Net: <span class="font-semibold">{{ system_generated_report.net|floatformat:2|intcomma }}</span>
+      | Margin: <span class="font-semibold">{{ system_generated_report.margin_pct|floatformat:2 }}%</span>
+    </p>
+    <p class="text-sm mt-1">
+      Sales: {{ system_generated_report.sales|floatformat:2|intcomma }}
+      | Expenses: {{ system_generated_report.expenses|floatformat:2|intcomma }}
+      | Transactions: {{ system_generated_report.transactions|intcomma }}
+      | Avg ticket: {{ system_generated_report.avg_ticket|floatformat:2|intcomma }}
+      | Liters: {{ system_generated_report.liters|floatformat:2|intcomma }}
+    </p>
+    <p class="text-sm mt-2">{{ system_generated_report.trend_note }}</p>
+    {% if system_generated_report.sales_change_pct != None or system_generated_report.expense_change_pct != None or system_generated_report.net_change_pct != None %}
+    <p class="text-xs mt-1 text-slate-500 dark:text-slate-300">
+      Month-over-month:
+      {% if system_generated_report.sales_change_pct != None %} Sales {{ system_generated_report.sales_change_pct|floatformat:2 }}% {% endif %}
+      {% if system_generated_report.expense_change_pct != None %}| Expenses {{ system_generated_report.expense_change_pct|floatformat:2 }}% {% endif %}
+      {% if system_generated_report.net_change_pct != None %}| Net {{ system_generated_report.net_change_pct|floatformat:2 }}% {% endif %}
+    </p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="hidden md:block w-full max-w-full min-w-0 bg-white dark:bg-slate-700 rounded-lg shadow p-2 text-slate-800 dark:text-slate-100">
     <div class="w-full overflow-x-auto">
     <table class="w-full min-w-[720px] text-sm">

@@ -3356,6 +3356,64 @@ def monthly_financial_report(request):
     grand_liters = sum(item['total_liters'] for item in monthly_report)
     grand_transactions = sum(item['total_transactions'] for item in monthly_report)
 
+    system_generated_report = None
+    if monthly_report:
+        latest_month = monthly_report[0]
+        latest_sales = float(latest_month.get('total_sales') or 0)
+        latest_expenses = float(latest_month.get('total_expenses') or 0)
+        latest_transactions = int(latest_month.get('total_transactions') or 0)
+        latest_liters = float(latest_month.get('total_liters') or 0)
+        latest_net = latest_sales - latest_expenses
+        latest_margin_pct = (latest_net / latest_sales * 100) if latest_sales > 0 else 0
+        avg_ticket = (latest_sales / latest_transactions) if latest_transactions > 0 else 0
+
+        performance_label = "Profitable"
+        if latest_net < 0:
+            performance_label = "At Loss"
+        elif latest_net == 0:
+            performance_label = "Break-even"
+
+        previous_month = monthly_report[1] if len(monthly_report) > 1 else None
+        sales_change_pct = None
+        expense_change_pct = None
+        net_change_pct = None
+        trend_note = "No previous month data available for trend comparison."
+
+        if previous_month:
+            prev_sales = float(previous_month.get('total_sales') or 0)
+            prev_expenses = float(previous_month.get('total_expenses') or 0)
+            prev_net = prev_sales - prev_expenses
+
+            if prev_sales != 0:
+                sales_change_pct = ((latest_sales - prev_sales) / prev_sales) * 100
+            if prev_expenses != 0:
+                expense_change_pct = ((latest_expenses - prev_expenses) / prev_expenses) * 100
+            if prev_net != 0:
+                net_change_pct = ((latest_net - prev_net) / prev_net) * 100
+
+            if latest_net > prev_net:
+                trend_note = "Net performance improved compared to the previous month."
+            elif latest_net < prev_net:
+                trend_note = "Net performance declined compared to the previous month."
+            else:
+                trend_note = "Net performance is unchanged compared to the previous month."
+
+        system_generated_report = {
+            'month_label': latest_month['month'].strftime('%B %Y'),
+            'sales': latest_sales,
+            'expenses': latest_expenses,
+            'net': latest_net,
+            'margin_pct': latest_margin_pct,
+            'transactions': latest_transactions,
+            'liters': latest_liters,
+            'avg_ticket': avg_ticket,
+            'performance_label': performance_label,
+            'sales_change_pct': sales_change_pct,
+            'expense_change_pct': expense_change_pct,
+            'net_change_pct': net_change_pct,
+            'trend_note': trend_note,
+        }
+
     context = {
         'monthly_report': monthly_report,
         'annual_summary': annual_summary,
@@ -3365,6 +3423,7 @@ def monthly_financial_report(request):
         'annual_expenses': grand_expenses,
         'annual_liters': grand_liters,
         'annual_transactions': grand_transactions,
+        'system_generated_report': system_generated_report,
     }
 
     return render(request, 'wrsm/financial_report.html', context)
