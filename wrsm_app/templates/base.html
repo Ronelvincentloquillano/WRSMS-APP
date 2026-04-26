@@ -336,7 +336,7 @@
                         <a href="{% url 'wrsm_app:customers' %}" class="block px-4 py-2 hover:bg-blue-400">Customers</a>
                         <a href="{% url 'wrsm_app:customer-map' %}" class="block px-4 py-2 hover:bg-blue-400">Customer
                             Map</a>
-                        <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:bg-blue-400">Products</a>
+                        <a href="{% url 'wrsm_app:products' %}" class="block px-4 py-2 hover:bg-blue-400">Product Inventory</a>
                         <a href="{% url 'wrsm_app:price-history' %}" class="block px-4 py-2 hover:bg-blue-400">Product price history</a>
                         <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:bg-blue-400">Order
                             Forecast</a>
@@ -542,7 +542,7 @@
                             <a href="{% url 'wrsm_app:customer-map' %}"
                                 class="block px-4 py-2 hover:opacity-60">Customer Map</a>
                             <a href="{% url 'wrsm_app:products' %}"
-                                class="block px-4 py-2 hover:opacity-60">Products</a>
+                                class="block px-4 py-2 hover:opacity-60">Product Inventory</a>
                             <a href="{% url 'wrsm_app:order-forecast' %}" class="block px-4 py-2 hover:opacity-60">Order
                                 Forecast</a>
                             <a href="{% url 'wrsm_app:expenses' %}"
@@ -676,7 +676,7 @@
                 </a>
                 <a href="{% url 'wrsm_app:products' %}"
                     class="sd-sidebar-link {% if vn == 'wrsm_app:products' or vn == 'wrsm_app:add-product' or vn == 'wrsm_app:update-product' %}is-active{% endif %}">
-                    Products
+                    Product Inventory
                 </a>
                 <a href="{% url 'wrsm_app:price-history' %}"
                     class="sd-sidebar-link {% if vn == 'wrsm_app:price-history' or vn == 'wrsm_app:product-price-history' %}is-active{% endif %}">
