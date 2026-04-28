@@ -52,31 +52,10 @@ $(document).ready(function () {
       customerData = {};
     }
 
-    function getSelectedOrderTypeText() {
-        const selectedText = ($ordertypeSelect.find('option:selected').text() || '').toLowerCase().trim();
-        if (selectedText) return selectedText;
-        return (orderTypeData.order_type || '').toLowerCase().trim();
-    }
-
-    function isDeliveryOrderTypeSelected() {
-        const orderTypeName = getSelectedOrderTypeText();
-        return orderTypeName.includes('delivery');
-    }
-
-    function isPickupOrderTypeSelected() {
-        const orderTypeName = getSelectedOrderTypeText();
-        return orderTypeName.includes('pick up') || orderTypeName.includes('pickup');
-    }
-
-    function getDeliveryRate() {
-        const rate = parseFloat(orderTypeData.default_delivery_rate);
-        if (Number.isFinite(rate) && rate > 0) return rate;
-        const orderTypeUnitPrice = parseFloat(orderTypeData.ot_unit_price);
-        return Number.isFinite(orderTypeUnitPrice) && orderTypeUnitPrice > 0 ? orderTypeUnitPrice : 0;
-    }
-
-    function getPickupRate() {
-        return 25;
+    function getStationBaseUnitPrice() {
+        const stationRate = parseFloat(orderTypeData.default_unit_price);
+        if (Number.isFinite(stationRate) && stationRate > 0) return stationRate;
+        return 0;
     }
 
     function recalculateRowPrice(i) {
@@ -100,14 +79,9 @@ $(document).ready(function () {
         if (!productData) return;
 
         let finalPrice = parseFloat(productData.unit_price) || 0;
-        const isDelivery = isDeliveryOrderTypeSelected();
-        const isPickup = isPickupOrderTypeSelected();
-        const deliveryRate = getDeliveryRate();
-        const pickupRate = getPickupRate();
-        if (isDelivery && deliveryRate > 0) {
-            finalPrice = deliveryRate;
-        } else if (isPickup && pickupRate > 0) {
-            finalPrice = pickupRate;
+        const stationBasePrice = getStationBaseUnitPrice();
+        if (stationBasePrice > 0) {
+            finalPrice = stationBasePrice;
         }
 
         // Logic Scope: Standard Refill (18-22L covers 5gal/20L variants)
@@ -127,7 +101,7 @@ $(document).ready(function () {
         });
 
         
-        if (is20LRefill && !isDelivery && !isPickup) {
+        if (is20LRefill && !(stationBasePrice > 0)) {
             const hasCustomer = !!$customerSelect.val() || !!$("#customer").length; 
             const customerDiscount = parseFloat(customerData.discount_rate) || 0;
 
@@ -185,13 +159,10 @@ $(document).ready(function () {
         const cached = $product.data('product-info') || productInfoCache[productId] || productFallbackById[String(productId)];
         if (cached) {
             $product.data('product-info', cached);
-            const deliveryRate = getDeliveryRate();
-            const pickupRate = getPickupRate();
-            const isDelivery = isDeliveryOrderTypeSelected();
-            const isPickup = isPickupOrderTypeSelected();
-            const suggested = isDelivery && deliveryRate > 0
-                ? deliveryRate
-                : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(cached.unit_price) || 0));
+            const stationBasePrice = getStationBaseUnitPrice();
+            const suggested = stationBasePrice > 0
+                ? stationBasePrice
+                : (parseFloat(cached.unit_price) || 0);
             $unit.val(suggested.toFixed(2));
             finalize();
             return;
@@ -201,13 +172,10 @@ $(document).ready(function () {
             .done(function (data) {
                 productInfoCache[productId] = data;
                 $product.data('product-info', data);
-                const deliveryRate = getDeliveryRate();
-                const pickupRate = getPickupRate();
-                const isDelivery = isDeliveryOrderTypeSelected();
-                const isPickup = isPickupOrderTypeSelected();
-                const suggested = isDelivery && deliveryRate > 0
-                    ? deliveryRate
-                    : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(data.unit_price) || 0));
+                const stationBasePrice = getStationBaseUnitPrice();
+                const suggested = stationBasePrice > 0
+                    ? stationBasePrice
+                    : (parseFloat(data.unit_price) || 0);
                 $unit.val(suggested.toFixed(2));
                 finalize();
             })
@@ -215,13 +183,10 @@ $(document).ready(function () {
                 console.error("Delegated Product Fetch Failed:", textStatus, errorThrown);
                 const fallback = productFallbackById[String(productId)];
                 if (fallback) {
-                    const deliveryRate = getDeliveryRate();
-                    const pickupRate = getPickupRate();
-                    const isDelivery = isDeliveryOrderTypeSelected();
-                    const isPickup = isPickupOrderTypeSelected();
-                    const suggested = isDelivery && deliveryRate > 0
-                        ? deliveryRate
-                        : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(fallback.unit_price) || 0));
+                    const stationBasePrice = getStationBaseUnitPrice();
+                    const suggested = stationBasePrice > 0
+                        ? stationBasePrice
+                        : (parseFloat(fallback.unit_price) || 0);
                     $unit.val(suggested.toFixed(2));
                 }
                 finalize();
@@ -264,15 +229,10 @@ $(document).ready(function () {
             const qtyVal = parseFloat($qty.val()) || 0;
             const productId = String($product.val() || '');
             let resolvedUnit = 0;
-            const deliveryRate = getDeliveryRate();
-            const pickupRate = getPickupRate();
-            const isDelivery = isDeliveryOrderTypeSelected();
-            const isPickup = isPickupOrderTypeSelected();
+            const stationBasePrice = getStationBaseUnitPrice();
 
-            if (isDelivery && deliveryRate > 0) {
-                resolvedUnit = deliveryRate;
-            } else if (isPickup && pickupRate > 0) {
-                resolvedUnit = pickupRate;
+            if (stationBasePrice > 0) {
+                resolvedUnit = stationBasePrice;
             } else if (productId && productFallbackById[productId]) {
                 resolvedUnit = parseFloat(productFallbackById[productId].unit_price) || 0;
             } else {
