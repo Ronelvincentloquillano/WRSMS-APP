@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.urls import reverse_lazy, reverse
+from django.db import transaction
 from django.db.models import Sum, Max, F, ExpressionWrapper, DecimalField, Count, Q
 from collections import defaultdict
 from django.db.models.functions import TruncMonth, TruncDate
@@ -519,6 +520,7 @@ def custom_logout_view(request):
 
 
 @login_required
+@transaction.atomic
 def add_sales(request):
     station = request.user.profile.station
     user = models.Profile.objects.get(user=request.user)
@@ -713,6 +715,7 @@ def add_sales(request):
 
 
 @login_required
+@transaction.atomic
 def add_sales_retro(request):
     station = request.user.profile.station
     user = models.Profile.objects.get(user=request.user)
@@ -928,6 +931,7 @@ def add_sales_retro(request):
 
 
 @login_required
+@transaction.atomic
 def add_sales_from_order(request, order_id):
     station = request.user.profile.station
     station_settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
@@ -2110,6 +2114,7 @@ def cancel_order(request, order_id):
 
 
 @login_required
+@transaction.atomic
 def add_payment(request, customer_id):
     station = request.user.profile.station
     customer = models.Customer.objects.get(pk=customer_id)
@@ -3541,6 +3546,7 @@ def delete_sales(request, pk):
 
 
 @login_required
+@transaction.atomic
 def update_sales(request, pk):
     # Authorization: Ensure user is linked to a station and is in the 'station owner/admin' group
     is_authorized = request.user.is_superuser or request.user.groups.filter(name='station owner/admin').exists()
