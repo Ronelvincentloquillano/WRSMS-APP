@@ -1598,8 +1598,22 @@ def delivery_map(request):
     today_orders = models.Order.objects.filter(
         station=station,
         created_date__date=current_date,
+        customer__isnull=False,
         customer__latitude__isnull=False,
         customer__longitude__isnull=False
+    )
+    # Include Add Sales entries tagged as Delivery so they also appear on map.
+    today_delivery_sales = (
+        models.Sales.objects.filter(
+            station=station,
+            created_date__date=current_date,
+            customer__isnull=False,
+            customer__latitude__isnull=False,
+            customer__longitude__isnull=False,
+            order_type__type__icontains='delivery',
+        )
+        .select_related('customer', 'order_type')
+        .prefetch_related('sales_items')
     )
 
     # Serialize data for the map
@@ -1614,6 +1628,18 @@ def delivery_map(request):
             'quantity': o.quantity,
             'note': o.note or o.payment_note,
             'url': reverse('wrsm_app:update-order', args=[o.pk]) # Assuming update-order takes pk based on urls.py
+        })
+    for s in today_delivery_sales:
+        total_qty = sum((item.quantity or 0) for item in s.sales_items.all())
+        orders_data.append({
+            'customer': s.customer.name,
+            'lat': s.customer.latitude,
+            'lng': s.customer.longitude,
+            'status': 'Completed',
+            'order_type': str(s.order_type),
+            'quantity': total_qty if total_qty > 0 else None,
+            'note': s.note,
+            'url': reverse('wrsm_app:update-sales', args=[s.pk]),
         })
     
     context = {
