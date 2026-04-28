@@ -827,6 +827,21 @@ $(document).ready(function () {
             $('#display-change-wrap').addClass('hidden');
         }
 
+        const enteredAmount = parseMoney($('#gcash-confirm-amount').val()) || 0;
+        const expectedChange = enteredAmount - grandTotal;
+        const $expectedWrap = $('#display-expected-change-wrap');
+        const $expectedVal = $('#display-expected-change');
+        if ($expectedWrap.length && $expectedVal.length) {
+            if (enteredAmount > 0) {
+                $expectedVal.text(expectedChange.toFixed(2));
+                $expectedWrap.removeClass('hidden');
+                if (expectedChange < 0) $expectedVal.removeClass('text-emerald-700').addClass('text-red-600');
+                else $expectedVal.removeClass('text-red-600').addClass('text-emerald-700');
+            } else {
+                $expectedWrap.addClass('hidden');
+            }
+        }
+
         syncGcashQr(grandTotal, selectedText);
     }
 
