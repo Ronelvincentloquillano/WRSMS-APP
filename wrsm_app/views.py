@@ -1952,10 +1952,6 @@ def add_order(request):
     station = request.user.profile.station
     customers = models.Customer.objects.filter(station=station).order_by('name')
     station_setting = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
-    has_active_orders = models.Order.objects.filter(station=station, status__in=['Pending', 'In Progress']).exists()
-    if has_active_orders and request.method != 'POST':
-        messages.info(request, "May active order ka pa. I-complete o i-cancel muna bago mag-add ng bagong order.")
-        return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
     if station_setting is None:
         messages.warning(
             request,
@@ -1963,10 +1959,6 @@ def add_order(request):
         )
         return HttpResponseRedirect(reverse_lazy('wrsm_app:station-setting-update'))
     if request.method == 'POST':
-        # Re-check to prevent double orders (race condition / double-click)
-        if models.Order.objects.filter(station=station, status__in=['Pending', 'In Progress']).exists():
-            messages.info(request, "May active order ka pa. I-complete o i-cancel muna bago mag-add ng bagong order.")
-            return HttpResponseRedirect(reverse_lazy('wrsm_app:sales-and-orders'))
         form = forms.CreateOrderForm(request.POST, station=station)
         if form.is_valid():
             instance = form.save(commit=False)
