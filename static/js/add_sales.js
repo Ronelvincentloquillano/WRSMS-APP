@@ -52,6 +52,25 @@ $(document).ready(function () {
       customerData = {};
     }
 
+    function isDeliveryOrderTypeSelected() {
+        const orderTypeName = (orderTypeData.order_type || '').toLowerCase().trim();
+        return orderTypeName.includes('delivery');
+    }
+
+    function isPickupOrderTypeSelected() {
+        const orderTypeName = (orderTypeData.order_type || '').toLowerCase().trim();
+        return orderTypeName.includes('pick up') || orderTypeName.includes('pickup');
+    }
+
+    function getDeliveryRate() {
+        const rate = parseFloat(orderTypeData.default_delivery_rate);
+        return Number.isFinite(rate) && rate > 0 ? rate : 0;
+    }
+
+    function getPickupRate() {
+        return 25;
+    }
+
     function recalculateRowPrice(i) {
         const $row = $('#formset-container .form-row').eq(i);
         if (!$row.length) return;
@@ -73,6 +92,15 @@ $(document).ready(function () {
         if (!productData) return;
 
         let finalPrice = parseFloat(productData.unit_price) || 0;
+        const isDelivery = isDeliveryOrderTypeSelected();
+        const isPickup = isPickupOrderTypeSelected();
+        const deliveryRate = getDeliveryRate();
+        const pickupRate = getPickupRate();
+        if (isDelivery && deliveryRate > 0) {
+            finalPrice = deliveryRate;
+        } else if (isPickup && pickupRate > 0) {
+            finalPrice = pickupRate;
+        }
 
         // Logic Scope: Standard Refill (18-22L covers 5gal/20L variants)
         const size = parseFloat(productData.jug_size_in_liters);
@@ -91,28 +119,14 @@ $(document).ready(function () {
         });
 
         
-        if (is20LRefill) {
-            const orderTypeName = (orderTypeData.order_type || "").toLowerCase().trim();
+        if (is20LRefill && !isDelivery && !isPickup) {
             const hasCustomer = !!$customerSelect.val() || !!$("#customer").length; 
-            const defaultDeliveryRate = parseFloat(orderTypeData.default_delivery_rate) || 0;
             const customerDiscount = parseFloat(customerData.discount_rate) || 0;
 
-            if (orderTypeName.includes('delivery')) {
-                if (hasCustomer) {
-                    // Customer + Delivery
-                    if (customerDiscount > 0) {
-                        finalPrice = customerDiscount;
-                    } else {
-                        // Customer + Delivery + No Discount Code
-                        finalPrice = defaultDeliveryRate;
-                    }
-                } else {
-                    // No Customer + Delivery
-                    finalPrice = defaultDeliveryRate;
-                }
+            // Keep discount override behavior for non-delivery 20L refill customers.
+            if (hasCustomer && customerDiscount > 0) {
+                finalPrice = customerDiscount;
             }
-            // For Pickup or any other non-delivery type, we don't override.
-            // It will use finalPrice = productData.unit_price.
         }
 
         $unitPriceInput.val(finalPrice);
@@ -163,10 +177,14 @@ $(document).ready(function () {
         const cached = $product.data('product-info') || productInfoCache[productId] || productFallbackById[String(productId)];
         if (cached) {
             $product.data('product-info', cached);
-            if (!$unit.val() || Number($unit.val()) === 0) {
-                const suggested = parseFloat(cached.unit_price) || 0;
-                $unit.val(suggested.toFixed(2));
-            }
+            const deliveryRate = getDeliveryRate();
+            const pickupRate = getPickupRate();
+            const isDelivery = isDeliveryOrderTypeSelected();
+            const isPickup = isPickupOrderTypeSelected();
+            const suggested = isDelivery && deliveryRate > 0
+                ? deliveryRate
+                : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(cached.unit_price) || 0));
+            $unit.val(suggested.toFixed(2));
             finalize();
             return;
         }
@@ -175,17 +193,27 @@ $(document).ready(function () {
             .done(function (data) {
                 productInfoCache[productId] = data;
                 $product.data('product-info', data);
-                const suggested = parseFloat(data.unit_price) || 0;
-                if (!$unit.val() || Number($unit.val()) === 0) {
-                    $unit.val(suggested.toFixed(2));
-                }
+                const deliveryRate = getDeliveryRate();
+                const pickupRate = getPickupRate();
+                const isDelivery = isDeliveryOrderTypeSelected();
+                const isPickup = isPickupOrderTypeSelected();
+                const suggested = isDelivery && deliveryRate > 0
+                    ? deliveryRate
+                    : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(data.unit_price) || 0));
+                $unit.val(suggested.toFixed(2));
                 finalize();
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
                 console.error("Delegated Product Fetch Failed:", textStatus, errorThrown);
                 const fallback = productFallbackById[String(productId)];
-                if (fallback && (!$unit.val() || Number($unit.val()) === 0)) {
-                    const suggested = parseFloat(fallback.unit_price) || 0;
+                if (fallback) {
+                    const deliveryRate = getDeliveryRate();
+                    const pickupRate = getPickupRate();
+                    const isDelivery = isDeliveryOrderTypeSelected();
+                    const isPickup = isPickupOrderTypeSelected();
+                    const suggested = isDelivery && deliveryRate > 0
+                        ? deliveryRate
+                        : (isPickup && pickupRate > 0 ? pickupRate : (parseFloat(fallback.unit_price) || 0));
                     $unit.val(suggested.toFixed(2));
                 }
                 finalize();
@@ -228,8 +256,16 @@ $(document).ready(function () {
             const qtyVal = parseFloat($qty.val()) || 0;
             const productId = String($product.val() || '');
             let resolvedUnit = 0;
+            const deliveryRate = getDeliveryRate();
+            const pickupRate = getPickupRate();
+            const isDelivery = isDeliveryOrderTypeSelected();
+            const isPickup = isPickupOrderTypeSelected();
 
-            if (productId && productFallbackById[productId]) {
+            if (isDelivery && deliveryRate > 0) {
+                resolvedUnit = deliveryRate;
+            } else if (isPickup && pickupRate > 0) {
+                resolvedUnit = pickupRate;
+            } else if (productId && productFallbackById[productId]) {
                 resolvedUnit = parseFloat(productFallbackById[productId].unit_price) || 0;
             } else {
                 const info = $product.data('product-info');
