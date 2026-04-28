@@ -301,9 +301,22 @@ class Order(models.Model):
     
 
 class Sales(models.Model):
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    )
     station = models.ForeignKey(to=Station, null=True, on_delete=models.CASCADE)
     created_date = models.DateTimeField(auto_now_add=True)
     order_type = models.ForeignKey(OrderType, null=True, on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        choices=STATUS_CHOICES,
+        default='Completed',
+    )
     note = models.CharField(max_length=100, null=True, blank=True)
     customer = models.ForeignKey(Customer, blank=True, null=True, on_delete=models.SET_NULL)
     is_paid = models.BooleanField(null=True, default=False)

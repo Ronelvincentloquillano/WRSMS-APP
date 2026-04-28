@@ -1635,7 +1635,7 @@ def delivery_map(request):
             'customer': s.customer.name,
             'lat': s.customer.latitude,
             'lng': s.customer.longitude,
-            'status': 'Completed',
+            'status': s.status or 'Completed',
             'order_type': str(s.order_type),
             'quantity': total_qty if total_qty > 0 else None,
             'note': s.note,

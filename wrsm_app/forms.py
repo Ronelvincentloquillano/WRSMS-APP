@@ -95,10 +95,11 @@ class SalesUpdateForm(forms.Form):
 class CreateSalesForm(forms.ModelForm):
     class Meta:
         model = models.Sales
-        fields = ['customer', 'order_type', 'note', 'is_paid', 'payment_type', 'amount_given']
+        fields = ['customer', 'order_type', 'status', 'note', 'is_paid', 'payment_type', 'amount_given']
         exclude = ['created_date', 'station', 'total_liters']
         labels = {
             'order_type': 'Sales type',
+            'status': 'Delivery status',
             'customer': 'Customer',
             'note': 'Note',
             'is_paid': 'Paid',
@@ -138,6 +139,7 @@ class CreateSalesForm(forms.ModelForm):
             settings = models.StationSetting.objects.filter(station=station).order_by('-pk').first()
             self.fields['order_type'].queryset = models.OrderType.objects.filter(station=station).order_by('-type')
             self.fields['customer'].queryset = models.Customer.objects.filter(station=station).order_by('name')
+            self.fields['status'].initial = 'Completed'
             self.fields['payment_type'].queryset = models.PaymentType.objects.filter(station=station).order_by('sort_number')
             self.fields['payment_type'].empty_label = None
             self.fields['payment_type'].required = True
