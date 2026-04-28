@@ -52,19 +52,27 @@ $(document).ready(function () {
       customerData = {};
     }
 
+    function getSelectedOrderTypeText() {
+        const selectedText = ($ordertypeSelect.find('option:selected').text() || '').toLowerCase().trim();
+        if (selectedText) return selectedText;
+        return (orderTypeData.order_type || '').toLowerCase().trim();
+    }
+
     function isDeliveryOrderTypeSelected() {
-        const orderTypeName = (orderTypeData.order_type || '').toLowerCase().trim();
+        const orderTypeName = getSelectedOrderTypeText();
         return orderTypeName.includes('delivery');
     }
 
     function isPickupOrderTypeSelected() {
-        const orderTypeName = (orderTypeData.order_type || '').toLowerCase().trim();
+        const orderTypeName = getSelectedOrderTypeText();
         return orderTypeName.includes('pick up') || orderTypeName.includes('pickup');
     }
 
     function getDeliveryRate() {
         const rate = parseFloat(orderTypeData.default_delivery_rate);
-        return Number.isFinite(rate) && rate > 0 ? rate : 0;
+        if (Number.isFinite(rate) && rate > 0) return rate;
+        const orderTypeUnitPrice = parseFloat(orderTypeData.ot_unit_price);
+        return Number.isFinite(orderTypeUnitPrice) && orderTypeUnitPrice > 0 ? orderTypeUnitPrice : 0;
     }
 
     function getPickupRate() {
