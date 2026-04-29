@@ -773,6 +773,8 @@
                     </div>
                 </details>
 
+                {% endif %}
+
                 <a href="{% url 'wrsm_app:profile' %}"
                     class="sd-sidebar-link {% if vn == 'wrsm_app:profile' %}is-active{% endif %}">
                     My Profile
@@ -784,8 +786,6 @@
                         Log out
                     </button>
                 </form>
-
-                {% endif %}
             {% endwith %}
             </nav>
 
