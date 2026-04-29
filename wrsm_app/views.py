@@ -3070,10 +3070,19 @@ class ForecastListView(LoginRequiredMixin, ListView):
         if station:
             forecast = models.Forecast.objects.filter(station=station).order_by('-next_order_date')
         today = date.today()
-        due_forecast_ids = [
-            item.id for item in forecast
-            if item.next_order_date and item.next_order_date <= today
-        ]
+        due_forecast_ids = []
+        if station:
+            # Keep highlight focused for demo readability: mark only a small sample
+            # of actionable rows (top 3 due/overdue customers).
+            due_forecast_ids = list(
+                models.Forecast.objects.filter(
+                    station=station,
+                    next_order_date__isnull=False,
+                    next_order_date__lte=today,
+                )
+                .order_by('-next_order_date', 'id')
+                .values_list('id', flat=True)[:3]
+            )
         context = super().get_context_data(**kwargs)
         context = {
             'forecast': forecast,
