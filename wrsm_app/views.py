@@ -3066,7 +3066,7 @@ class ForecastListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         station = self.request.user.profile.station
         forecast = models.Forecast.objects.filter(station=station).order_by('-next_order_date')
-        today = timezone.localdate()
+        today = date.today()
         due_forecast_ids = list(
             forecast.filter(next_order_date__isnull=False, next_order_date__lte=today)
             .values_list('id', flat=True)
