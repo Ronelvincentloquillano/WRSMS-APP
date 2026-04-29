@@ -841,8 +841,8 @@
 
     <div id="ios-install-modal" class="hidden fixed inset-0 z-[9999] bg-black/50 items-center justify-center p-4">
         <div class="max-w-sm w-full rounded-lg bg-white dark:bg-slate-700 p-4 shadow-xl">
-            <h3 class="text-base font-semibold text-slate-900 dark:text-white">Install on iPhone/iPad</h3>
-            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">
+            <h3 id="install-modal-title" class="text-base font-semibold text-slate-900 dark:text-white">Install SmartDynamic Refilling</h3>
+            <p id="install-modal-body" class="mt-2 text-sm text-slate-700 dark:text-slate-200">
                 Open this app in Safari, tap Share, then choose Add to Home Screen.
             </p>
             <div class="mt-4 flex justify-end">
@@ -896,7 +896,9 @@
             const installButtons = Array.from(document.querySelectorAll('.pwa-install-btn'));
             const iosModal = document.getElementById('ios-install-modal');
             const iosClose = document.getElementById('ios-install-close');
-            if (!installButtons.length || !iosModal || !iosClose) {
+            const installModalTitle = document.getElementById('install-modal-title');
+            const installModalBody = document.getElementById('install-modal-body');
+            if (!installButtons.length || !iosModal || !iosClose || !installModalTitle || !installModalBody) {
                 return;
             }
 
@@ -920,6 +922,13 @@
                 });
             }
 
+            function showInstallHelp(title, body) {
+                installModalTitle.textContent = title;
+                installModalBody.textContent = body;
+                iosModal.classList.remove('hidden');
+                iosModal.classList.add('flex');
+            }
+
             if (isIos) {
                 showInstallButtons();
             }
@@ -934,11 +943,16 @@
                 btn.addEventListener('click', async function () {
                     if (!deferredPrompt) {
                         if (isIos) {
-                            iosModal.classList.remove('hidden');
-                            iosModal.classList.add('flex');
+                            showInstallHelp(
+                                'Install on iPhone/iPad',
+                                'Open this app in Safari, tap Share, then choose Add to Home Screen.'
+                            );
                             return;
                         }
-                        alert('Install prompt is not ready yet. Please continue browsing and try again.');
+                        showInstallHelp(
+                            'Install Prompt Not Ready Yet',
+                            'Continue browsing this app for a few moments, then try again. You can also use your browser menu and choose Install App or Add to Home Screen.'
+                        );
                         return;
                     }
                     deferredPrompt.prompt();
