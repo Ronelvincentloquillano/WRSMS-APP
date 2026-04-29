@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v78';
+const SW_VERSION = 'wrsm-v79';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -41,6 +41,8 @@ const ASSETS_TO_CACHE = [
     '/static/js/order_list_offline.js',
     '/static/js/container_management_list_offline.js',
     '/static/img/SDR_thumbnail.png',
+    '/static/img/pwa-icon-192.png',
+    '/static/img/pwa-icon-512.png',
     '/static/img/SDR.png',
     '/static/manifest.json',
     // Ionicons
