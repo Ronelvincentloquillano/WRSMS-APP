@@ -3064,13 +3064,16 @@ class ForecastListView(LoginRequiredMixin, ListView):
     model = models.Forecast
 
     def get_context_data(self, **kwargs):
-        station = self.request.user.profile.station
-        forecast = models.Forecast.objects.filter(station=station).order_by('-next_order_date')
+        profile = getattr(self.request.user, 'profile', None)
+        station = getattr(profile, 'station', None)
+        forecast = models.Forecast.objects.none()
+        if station:
+            forecast = models.Forecast.objects.filter(station=station).order_by('-next_order_date')
         today = date.today()
-        due_forecast_ids = list(
-            forecast.filter(next_order_date__isnull=False, next_order_date__lte=today)
-            .values_list('id', flat=True)
-        )
+        due_forecast_ids = [
+            item.id for item in forecast
+            if item.next_order_date and item.next_order_date <= today
+        ]
         context = super().get_context_data(**kwargs)
         context = {
             'forecast': forecast,
