@@ -27,7 +27,9 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
         {% for shortcut in dashboard_shortcuts %}
         <a href="{% url 'wrsm_app:process-shortcut' pk=shortcut.pk %}?prompt_qty=1"
-           class="group bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 p-3 shadow hover:shadow-lg hover:-translate-y-0.5 transition block">
+           data-shortcut-name="{{ shortcut.name }}"
+           class="js-shortcut-link group bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 p-3 shadow hover:shadow-lg hover:-translate-y-0.5 transition block"
+        >
           <div class="flex items-start justify-between gap-2">
             <div class="h-12 w-12 shrink-0 rounded-lg bg-sky-50 dark:bg-slate-800 overflow-hidden border border-sky-100 dark:border-slate-600 shadow-sm">
               {% with s_img=shortcut.image|hosted_media_url %}
@@ -332,6 +334,7 @@
   });
 </script>
 <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+<script src="{% static 'js/dashboard_shortcuts_offline.js' %}?v=1.0"></script>
 <script>
   $(document).ready(function() {
     const forecastDateSelect = $('#forecastDateSelect');

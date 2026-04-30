@@ -9,11 +9,8 @@
     {% for shortcut in shortcuts %}
     <div class="flex shadow-lg text-center">
       <a href="{% url 'wrsm_app:process-shortcut' pk=shortcut.pk %}"
-        {% if shortcut.is_paid %}
-        class="bg-green-500 text-slate-900 p-5 rounded-lg w-full"
-        {% else %}
-        class="bg-red-400 text-slate-900 p-5 rounded-lg w-full"
-        {% endif %}>
+        data-shortcut-name="{{ shortcut.name }}"
+        class="js-shortcut-link {% if shortcut.is_paid %}bg-green-500{% else %}bg-red-400{% endif %} text-slate-900 p-5 rounded-lg w-full">
         <ion-icon name="link-outline"></ion-icon>
         {{ shortcut.name }}
       </a>
@@ -80,4 +77,8 @@
   </section>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/dashboard_shortcuts_offline.js' %}?v=1.0"></script>
 {% endblock %}
