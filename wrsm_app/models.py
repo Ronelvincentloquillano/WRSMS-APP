@@ -298,7 +298,13 @@ class Order(models.Model):
         null=True,
         help_text='Timestamp when offline order was synced to server',
     )
-    
+
+    def save(self, *args, **kwargs):
+        # Business rule: completed orders are treated as paid.
+        if self.status == 'Completed':
+            self.is_paid = True
+        super().save(*args, **kwargs)
+
 
 class Sales(models.Model):
     STATUS_CHOICES = (
