@@ -575,11 +575,15 @@ async function handleOfflineSave(url, method, formData, form, isActuallyOffline)
             input.value = localIso;
         });
         
-        // If this is the Add Order form, leave the form page immediately (UX: "mawawala agad yung form")
+        // Leave create forms after offline save so users can immediately see pending rows.
         try {
             const u = (typeof url === 'string') ? url : '';
             if (u.includes('add-order')) {
                 window.location.href = '/sales-and-orders/';
+                return;
+            }
+            if (u.includes('add-sales') || u.includes('process-shortcut')) {
+                window.location.href = '/sales/';
                 return;
             }
         } catch (e) {

@@ -1,5 +1,5 @@
 // static/serviceworker.js
-const SW_VERSION = 'wrsm-v81';
+const SW_VERSION = 'wrsm-v82';
 console.log('[ServiceWorker] Initializing version:', SW_VERSION);
 
 const CACHE_NAME = SW_VERSION;
@@ -35,7 +35,7 @@ const ASSETS_TO_CACHE = [
     '/static/js/menu.js',
     '/static/js/add_sales.js',
     '/static/js/offline_forms.js',
-    '/static/js/offline_forms.js?v=2.7',
+    '/static/js/offline_forms.js?v=2.8',
     '/static/js/dashboard_shortcuts_offline.js',
     '/static/js/dashboard_shortcuts_offline.js?v=1.0',
     '/static/js/sales_list_offline.js',
