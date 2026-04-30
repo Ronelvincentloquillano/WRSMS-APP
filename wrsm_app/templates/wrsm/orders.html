@@ -65,7 +65,7 @@
             <td class="px-3 py-2">{% if item.quantity %}{{ item.quantity }}{% else %}?{% endif %}</td>
             <td class="px-3 py-2">{{ item.order_type }}</td>
             <td class="px-3 py-2">
-              {% if item.is_paid == True %}
+              {% if item.status == 'Completed' or item.is_paid == True %}
                 <span class="px-2 py-1 rounded text-white bg-green-600 text-xs">paid</span>
               {% elif item.is_paid == False %}
                 <span class="px-2 py-1 rounded text-white bg-red-600 text-xs">unpaid</span>
@@ -162,7 +162,7 @@
               <td class="px-3 py-2 border-b border-gray-300">{{ item.order_type }}</td>
               <td class="px-3 py-2 border-b border-gray-300">
                 <!-- Payment badge -->
-                {% if item.is_paid == True %}
+                {% if item.status == 'Completed' or item.is_paid == True %}
                   <span class="px-2 py-1 rounded text-white bg-green-600 text-xs">paid</span>
                 {% elif item.is_paid == False %}
                   <span class="px-2 py-1 rounded text-white bg-red-600 text-xs">unpaid</span>
@@ -172,7 +172,7 @@
               </td>
               <td class="px-3 py-2 border-b border-gray-300">{{ item.created_by.user }}</td>
             </tr>
-            {% if item.is_paid %}
+            {% if item.status == 'Completed' or item.is_paid %}
             <tr class="text-left">
               <th class="px-3 py-2 border-b border-gray-300">Paid amount:</th>
               <td class="px-3 py-2 border-b border-gray-300">
