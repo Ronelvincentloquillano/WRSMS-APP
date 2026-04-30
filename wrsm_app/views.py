@@ -295,7 +295,10 @@ def dashboard(request):
     # Chart Data
     # 1. Forecast
     forecasts = models.Forecast.objects.filter(station=station)
-    today_forecast_count = forecasts.filter(next_order_date=current_date).count()
+    today_forecast_count = forecasts.filter(
+        next_order_date__isnull=False,
+        next_order_date__lte=current_date,
+    ).count()
     total_forecast_count = forecasts.count()
     rest_forecast_count = max(0, total_forecast_count - today_forecast_count)
 
@@ -1541,7 +1544,10 @@ def get_forecast_data(request):
         target_date = timezone.now().date()
         
     forecasts = models.Forecast.objects.filter(station=station)
-    target_forecast_count = forecasts.filter(next_order_date=target_date).count()
+    target_forecast_count = forecasts.filter(
+        next_order_date__isnull=False,
+        next_order_date__lte=target_date,
+    ).count()
     total_forecast_count = forecasts.count()
     rest_forecast_count = max(0, total_forecast_count - target_forecast_count)
     
