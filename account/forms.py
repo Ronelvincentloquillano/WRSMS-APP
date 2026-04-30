@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import PasswordResetForm
+from django.db.models import Q
 from wrsm_app.models import Station
 
 class StationOwnerSignupForm(forms.Form):
@@ -34,3 +36,16 @@ class StationOwnerSignupForm(forms.Form):
             raise forms.ValidationError("Passwords do not match")
         
         return cleaned_data
+
+
+class UsernameOrEmailPasswordResetForm(PasswordResetForm):
+    """
+    Allow forgot-password lookup by either email field or username.
+    This project often stores login email in username.
+    """
+    def get_users(self, email):
+        email_field_name = User.get_email_field_name()
+        return User._default_manager.filter(
+            Q(**{f"{email_field_name}__iexact": email}) | Q(username__iexact=email),
+            is_active=True,
+        )
