@@ -1,17 +1,35 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, logout
+from django.contrib.auth import views as auth_views
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.template.loader import render_to_string
+import logging
 from .forms import StationOwnerSignupForm
 from .models import PendingRegistration, StationSubscription, SubscriptionPlan
 from wrsm_app.models import Station, Profile
 from django.contrib.auth.hashers import make_password
 import datetime
+
+logger = logging.getLogger(__name__)
+
+
+class SafePasswordResetView(auth_views.PasswordResetView):
+    """Avoid 500 errors when SMTP is slow/unavailable."""
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except Exception:
+            logger.exception("Password reset email send failed.")
+            messages.error(
+                self.request,
+                "We couldn't send the reset email right now. Please try again in a moment."
+            )
+            return self.render_to_response(self.get_context_data(form=form))
 
 
 def logout_view(request):

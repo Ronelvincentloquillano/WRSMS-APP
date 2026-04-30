@@ -22,7 +22,7 @@ urlpatterns = [
     ), name='password_change_done'),
 
     # Password Reset
-    path('password_reset/', auth_views.PasswordResetView.as_view(
+    path('password_reset/', views.SafePasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.html',
         success_url='/account/password_reset/done/'
