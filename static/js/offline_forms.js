@@ -365,6 +365,8 @@ function showToastWithRetryAndDiscard(message, retryCallback) {
 function setupOfflineForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
+    if (form.dataset.offlineBound === '1') return;
+    form.dataset.offlineBound = '1';
 
     form.addEventListener('submit', async function(e) {
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -506,6 +508,48 @@ function setupOfflineForm(formId) {
     });
 }
 
+function shouldSkipOfflineBinding(form) {
+    if (!form) return true;
+    if ((form.method || '').toUpperCase() !== 'POST') return true;
+    if (form.hasAttribute('data-offline-ignore')) return true;
+
+    // Auth/session and admin actions should always stay online-only.
+    const action = String(form.action || '').toLowerCase();
+    if (
+        action.includes('/logout') ||
+        action.includes('/admin/') ||
+        action.includes('/account/')
+    ) {
+        return true;
+    }
+
+    // Multipart/file uploads are not reliably replayable via URLSearchParams sync.
+    if (form.enctype && form.enctype.toLowerCase().includes('multipart/form-data')) {
+        return true;
+    }
+    if (form.querySelector('input[type="file"]')) {
+        return true;
+    }
+
+    return false;
+}
+
+function autoBindOfflineForms() {
+    const forms = document.querySelectorAll('form[method]');
+    let autoIdCounter = 0;
+    forms.forEach((form) => {
+        const method = String(form.getAttribute('method') || '').toUpperCase();
+        if (method !== 'POST') return;
+        if (shouldSkipOfflineBinding(form)) return;
+
+        if (!form.id) {
+            autoIdCounter += 1;
+            form.id = `offline_auto_form_${autoIdCounter}`;
+        }
+        setupOfflineForm(form.id);
+    });
+}
+
 async function handleOfflineSave(url, method, formData, form, isActuallyOffline) {
     try {
         const saveResult = await saveOfflineRequest(url, method, formData);
@@ -597,6 +641,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupOfflineForm('update_container_management_form');
     setupOfflineForm('delete_container_management_form');
     setupOfflineForm('add_payment_form');
+    // Catch all other eligible POST forms so offline behavior is consistent
+    // across sales, orders, expenses, forecast, and other transaction screens.
+    autoBindOfflineForms();
     
     // Prime the Offline Master Data Cache
     if (navigator.onLine) {
@@ -623,6 +670,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Expose for scripts that create forms dynamically (e.g. shortcut offline handler).
+window.setupOfflineForm = setupOfflineForm;
 
 // Re-apply locks after sync finishes
 document.addEventListener('offline-sync-completed', () => {
