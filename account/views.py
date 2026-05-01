@@ -21,13 +21,29 @@ logger = logging.getLogger(__name__)
 class SafePasswordResetView(auth_views.PasswordResetView):
     """Avoid 500 errors when SMTP is slow/unavailable."""
     def form_valid(self, form):
+        # Django default is silent for unknown emails/usernames.
+        # For this project support flow, show an explicit message instead.
+        identifier = (form.cleaned_data.get('email') or '').strip()
+        try:
+            matched_users = list(form.get_users(identifier))
+        except Exception:
+            matched_users = []
+
+        if not matched_users:
+            messages.error(
+                self.request,
+                "No active account matches that email/username. Please check and try again."
+            )
+            return self.render_to_response(self.get_context_data(form=form))
+
         try:
             return super().form_valid(form)
-        except Exception:
+        except Exception as exc:
             logger.exception("Password reset email send failed.")
             messages.error(
                 self.request,
-                "We couldn't send the reset email right now. Please try again in a moment."
+                f"We couldn't send the reset email right now ({exc.__class__.__name__}). "
+                "Please verify email service settings and try again."
             )
             return self.render_to_response(self.get_context_data(form=form))
 
