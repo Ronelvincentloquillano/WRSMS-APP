@@ -32,7 +32,9 @@ class OfflineSyncTest(TestCase):
             station=self.station,
             default_delivery_rate=0,
             default_unit_price=25,
-            default_minimum_delivery_qty=1
+            default_minimum_delivery_qty=1,
+            default_order_type=self.order_type,
+            default_payment_type=self.payment_type,
         )
 
         # Create Valid Subscription
@@ -58,7 +60,8 @@ class OfflineSyncTest(TestCase):
         data = {
             'customer': self.customer.id,
             'order_type': self.order_type.id,
-            # 'is_paid': 'on', # Optional
+            'status': 'Completed',
+            'payment_type': self.payment_type.id,
             'note': 'Synced from offline',
             
             # Formset Management Form (Critical)
@@ -77,14 +80,6 @@ class OfflineSyncTest(TestCase):
         }
         
         response = self.client.post(url, data)
-        
-        # Expect redirect on success (302)
-        if response.status_code != 302:
-            print("Form Errors:", response.context['form'].errors if 'form' in response.context else "No form context")
-            if 'item_formset' in response.context:
-                print("Formset Errors:", response.context['item_formset'].errors)
-                print("Non-form Errors:", response.context['item_formset'].non_form_errors())
-
         self.assertEqual(response.status_code, 302)
         
         # Verify Sales Created

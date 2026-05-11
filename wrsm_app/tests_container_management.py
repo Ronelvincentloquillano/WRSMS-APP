@@ -1,3 +1,6 @@
+import unittest
+
+from django.db import connection
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
@@ -5,6 +8,11 @@ from wrsm_app.models import Station, Profile, Customer, ContainerManagement
 from account.models import StationSubscription, SubscriptionPlan
 from django.utils import timezone
 
+
+@unittest.skipUnless(
+    connection.vendor == 'postgresql',
+    'Container management list uses PostgreSQL-specific DISTINCT ON; use DATABASE_URL=postgres for this class.',
+)
 class ContainerManagementManagementTest(TestCase):
     def setUp(self):
         self.client = Client()

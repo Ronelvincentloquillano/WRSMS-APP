@@ -52,18 +52,22 @@ class AuditLogSalesTest(TestCase):
             default_jug_size=self.jug_size
         )
         
-        # Create a Sale
+        # Create a Sale (with customer + line item so update POST matches CreateSalesForm + formset)
+        self.customer_sale = Customer.objects.create(name='Walk-in Sale', station=self.station)
         self.sale = Sales.objects.create(
             station=self.station,
             order_type=self.order_type,
-            created_by=self.profile
+            customer=self.customer_sale,
+            status='Completed',
+            payment_type=self.payment_type,
+            created_by=self.profile,
         )
-        SalesItem.objects.create(
+        self.sales_item = SalesItem.objects.create(
             sales=self.sale,
             product=self.product,
             quantity=2,
             unit_price=25,
-            total=50
+            total=50,
         )
         
         self.client.login(username='admin', password='password')
@@ -95,28 +99,26 @@ class AuditLogSalesTest(TestCase):
         # Creating a new item implies updating the Sale record (saving it).
         
         data = {
+            'customer': self.customer_sale.pk,
             'order_type': self.order_type.pk,
+            'status': 'Completed',
+            'payment_type': self.payment_type.pk,
             'is_paid': False,
+            'amount_given': '',
+            'note': '',
             'sales_items-TOTAL_FORMS': '1',
-            'sales_items-INITIAL_FORMS': '0', 
+            'sales_items-INITIAL_FORMS': '1',
             'sales_items-MIN_NUM_FORMS': '0',
             'sales_items-MAX_NUM_FORMS': '1000',
-            
+            'sales_items-0-id': self.sales_item.pk,
             'sales_items-0-product': self.product.pk,
-            'sales_items-0-quantity': 5, # Changed quantity
+            'sales_items-0-quantity': 5,
             'sales_items-0-unit_price': 25,
             'sales_items-0-total': 125,
             'sales_items-0-DELETE': '',
         }
-        
+
         response = self.client.post(url, data)
-        
-        # If form invalid, it returns 200 with errors.
-        if response.status_code == 200:
-            print(response.context['form'].errors)
-            if 'item_formset' in response.context:
-                print(response.context['item_formset'].errors)
-                
         self.assertRedirects(response, reverse('wrsm_app:sales'))
         
         # Check Audit Log
