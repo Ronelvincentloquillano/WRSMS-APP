@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import login, logout
 from django.contrib.auth import views as auth_views
@@ -46,7 +47,20 @@ class SafePasswordResetView(auth_views.PasswordResetView):
             return self.render_to_response(self.get_context_data(form=form))
 
         try:
-            return super().form_valid(form)
+            # Match django.contrib.auth.views.PasswordResetView.form_valid, but
+            # force HTTPS links in production when the proxy does not set is_secure().
+            opts = {
+                "use_https": self.request.is_secure() or not settings.DEBUG,
+                "token_generator": self.token_generator,
+                "from_email": self.from_email,
+                "email_template_name": self.email_template_name,
+                "subject_template_name": self.subject_template_name,
+                "request": self.request,
+                "html_email_template_name": self.html_email_template_name,
+                "extra_email_context": self.extra_email_context,
+            }
+            form.save(**opts)
+            return HttpResponseRedirect(self.get_success_url())
         except Exception as exc:
             logger.exception("Password reset email send failed.")
             messages.error(

@@ -210,6 +210,8 @@ PWA_APP_LANG = 'en-us'
 PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static', 'serviceworker.js')
 
 
+# Outbound mail (password reset, signup, etc.). On Render, set EMAIL_* in the dashboard.
+# Brevo example: EMAIL_HOST=smtp-relay.brevo.com EMAIL_PORT=587 EMAIL_USE_TLS=True EMAIL_USE_SSL=False
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtpout.secureserver.net')
 EMAIL_PORT = env.int('EMAIL_PORT', default=465)
@@ -217,7 +219,7 @@ EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
 EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=10)
+EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=25)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='WRSMS Support <rvloquillano07@gmail.com>')
 GCASH_ACCOUNT_NAME = env('GCASH_ACCOUNT_NAME', default='RONEL VINCENT CASEÑAS LOQUILLANO')
 GCASH_ACCOUNT_NUMBER = env('GCASH_ACCOUNT_NUMBER', default='09669733621')

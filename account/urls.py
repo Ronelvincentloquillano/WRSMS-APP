@@ -25,6 +25,7 @@ urlpatterns = [
     # Password Reset
     path('password_reset/', views.SafePasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
+        subject_template_name='registration/password_reset_subject.txt',
         email_template_name='registration/password_reset_email.html',
         form_class=UsernameOrEmailPasswordResetForm,
         success_url='/account/password_reset/done/'

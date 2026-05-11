@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
+
 from wrsm_app.models import Station
 
 class StationOwnerSignupForm(forms.Form):
@@ -41,9 +43,24 @@ class StationOwnerSignupForm(forms.Form):
 class UsernameOrEmailPasswordResetForm(PasswordResetForm):
     """
     Allow forgot-password lookup by either email field or username.
-    This project often stores login email in username.
+    Django's default PasswordResetForm uses EmailField, which rejects plain
+    usernames — many users only know their login name, not their stored email.
     """
+    email = forms.CharField(
+        label=_("Email or username"),
+        max_length=254,
+        strip=True,
+        widget=forms.TextInput(
+            attrs={"autocomplete": "username", "autocapitalize": "none"}
+        ),
+    )
+
+    def clean_email(self):
+        return (self.cleaned_data.get("email") or "").strip()
+
     def get_users(self, email):
+        if not email:
+            return User._default_manager.none()
         email_field_name = User.get_email_field_name()
         return User._default_manager.filter(
             Q(**{f"{email_field_name}__iexact": email}) | Q(username__iexact=email),
