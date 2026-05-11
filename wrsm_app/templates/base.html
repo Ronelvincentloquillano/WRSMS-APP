@@ -1,5 +1,4 @@
 {% load static %}
-{% load pwa %}
 {% load custom_tags %}
 
 <!DOCTYPE html>
@@ -213,19 +212,6 @@
         }
     </style>
 
-    <!-- Capture install prompt ASAP so we never miss it before footer scripts run (common on login/first paint). -->
-    <script>
-        (function () {
-            window.__pwaDeferredInstallPrompt = null;
-            window.addEventListener('beforeinstallprompt', function (e) {
-                e.preventDefault();
-                window.__pwaDeferredInstallPrompt = e;
-                try {
-                    window.dispatchEvent(new CustomEvent('pwa-install-available'));
-                } catch (err) {}
-            });
-        })();
-    </script>
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker
@@ -449,10 +435,6 @@
                         </form>
                     </div>
                 </div>
-                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-secondary text-xs sm:text-sm">
-                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
-                    <span>Install App</span>
-                </button>
 
                 {% else %} <!-- User is unauthenticated -->
                 <!-- Left links (flex-grow pushes login to the right) -->
@@ -467,10 +449,6 @@
                 <div class="shrink-0 pl-4 sm:pl-6 ml-auto sm:ml-0 border-l border-blue-400/50 dark:border-slate-600/80">
                     <a href="{% url 'account:login' %}" class="inline-flex items-center px-3 py-2 rounded-lg font-semibold text-xl lg:text-2xl hover:bg-white/50 dark:hover:bg-slate-500/30 hover:opacity-90">Login</a>
                 </div>
-                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-secondary text-xs sm:text-sm">
-                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
-                    <span>Install App</span>
-                </button>
                 {% endif %}
             </nav>
         </section>
@@ -648,10 +626,6 @@
                     <a href="{% url 'account:login' %}" class="hover:opacity-90">Login</a>
                 </div>
                 {% endif %}
-                <button type="button" class="pwa-install-btn hidden ux-btn ux-btn-primary mt-2">
-                    <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
-                    <span>Install App</span>
-                </button>
             </nav>
         </section>
     </header>
@@ -852,18 +826,6 @@
         {% endblock %}
     </main>
 
-    <div id="ios-install-modal" class="hidden fixed inset-0 z-[9999] bg-black/50 items-center justify-center p-4">
-        <div class="max-w-sm w-full rounded-lg bg-white dark:bg-slate-700 p-4 shadow-xl">
-            <h3 id="install-modal-title" class="text-base font-semibold text-slate-900 dark:text-white">Install SmartDynamic Refilling</h3>
-            <p id="install-modal-body" class="mt-2 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line">
-                Open this app in Safari, tap Share, then choose Add to Home Screen.
-            </p>
-            <div class="mt-4 flex justify-end">
-                <button id="ios-install-close" type="button" class="ux-btn ux-btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-
     <footer
         class="bottom-0 bg-blue-200 dark:bg-slate-400 shadow-md dark:text-gray-900 text-xs sm:text-sm text-center justify-center p-3 sm:p-4 mt-auto">
         <p class="px-2">&copy; 2026 SmartDynamic Refilling. All Rights Reserved.</p>
@@ -902,128 +864,6 @@
             syncOfflineBanner();
             window.addEventListener('online', syncOfflineBanner);
             window.addEventListener('offline', syncOfflineBanner);
-        })();
-    </script>
-    <script>
-        (function () {
-            const installButtons = Array.from(document.querySelectorAll('.pwa-install-btn'));
-            const iosModal = document.getElementById('ios-install-modal');
-            const iosClose = document.getElementById('ios-install-close');
-            const installModalTitle = document.getElementById('install-modal-title');
-            const installModalBody = document.getElementById('install-modal-body');
-            if (!installButtons.length || !iosModal || !iosClose || !installModalTitle || !installModalBody) {
-                return;
-            }
-
-            const ua = window.navigator.userAgent || '';
-            const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-            function isIosLike() {
-                if (/iphone|ipad|ipod/i.test(ua)) return true;
-                if (/CriOS|FxiOS/i.test(ua)) return true;
-                if (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1) return true;
-                return false;
-            }
-
-            /** Browsers where a programmatic install prompt is common (still needs beforeinstallprompt for our button). */
-            function likelySupportsWebAppInstallPrompt() {
-                if (isIosLike()) return false;
-                return /Chrome\//.test(ua) || /Edg\//.test(ua) || /SamsungBrowser/i.test(ua) || /OPR\//.test(ua);
-            }
-
-            if (isInStandaloneMode) {
-                return;
-            }
-
-            const isIos = isIosLike();
-
-            function syncDeferredPrompt() {
-                return window.__pwaDeferredInstallPrompt || null;
-            }
-
-            function showInstallButtons() {
-                installButtons.forEach(function (btn) {
-                    btn.classList.remove('hidden');
-                });
-            }
-
-            function hideInstallButtons() {
-                installButtons.forEach(function (btn) {
-                    btn.classList.add('hidden');
-                });
-            }
-
-            function showInstallHelp(title, body) {
-                installModalTitle.textContent = title;
-                installModalBody.textContent = body;
-                iosModal.classList.remove('hidden');
-                iosModal.classList.add('flex');
-            }
-
-            function refreshInstallAvailability() {
-                if (syncDeferredPrompt()) {
-                    showInstallButtons();
-                }
-            }
-
-            if (isIos || likelySupportsWebAppInstallPrompt()) {
-                showInstallButtons();
-            }
-
-            window.addEventListener('pwa-install-available', refreshInstallAvailability);
-            refreshInstallAvailability();
-
-            if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-                navigator.serviceWorker.ready.then(function () {
-                    refreshInstallAvailability();
-                    [800, 2500, 6000].forEach(function (ms) {
-                        setTimeout(refreshInstallAvailability, ms);
-                    });
-                }).catch(function () {});
-            }
-
-            installButtons.forEach(function (btn) {
-                btn.addEventListener('click', async function () {
-                    const pe = syncDeferredPrompt();
-                    if (pe) {
-                        pe.prompt();
-                        await pe.userChoice.catch(function () {});
-                        window.__pwaDeferredInstallPrompt = null;
-                        hideInstallButtons();
-                        return;
-                    }
-                    if (isIos) {
-                        showInstallHelp(
-                            'Install on iPhone/iPad',
-                            'Open this app in Safari, tap Share (square-and-arrow icon), then choose Add to Home Screen.\n\nIf you use Chrome on iOS, Safari is required for Add to Home Screen.'
-                        );
-                        return;
-                    }
-                    showInstallHelp(
-                        'Install from your browser',
-                        'Chrome or Edge desktop:\n• Click ⋮ or … (menu).\n• Choose Install SmartDynamic Refilling, Install page, Install app, or Save and share → Install.\n\nAndroid Chrome:\n• Menu ⋮ → Install app or Add to Home screen.\n\nIf Install is missing, browse the site a bit, wait until the address bar/install icon appears, then try Install App again—or refresh.'
-                    );
-                });
-            });
-
-            window.addEventListener('appinstalled', function () {
-                window.__pwaDeferredInstallPrompt = null;
-                hideInstallButtons();
-                iosModal.classList.add('hidden');
-                iosModal.classList.remove('flex');
-            });
-
-            iosClose.addEventListener('click', function () {
-                iosModal.classList.add('hidden');
-                iosModal.classList.remove('flex');
-            });
-
-            iosModal.addEventListener('click', function (event) {
-                if (event.target === iosModal) {
-                    iosModal.classList.add('hidden');
-                    iosModal.classList.remove('flex');
-                }
-            });
         })();
     </script>
 </body>
