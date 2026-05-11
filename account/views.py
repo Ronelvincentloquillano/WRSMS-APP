@@ -36,6 +36,15 @@ class SafePasswordResetView(auth_views.PasswordResetView):
             )
             return self.render_to_response(self.get_context_data(form=form))
 
+        users_with_email = [u for u in matched_users if str(getattr(u, "email", "") or "").strip()]
+        if not users_with_email:
+            messages.error(
+                self.request,
+                "Your account was found, but no recovery email is saved yet. "
+                "Please contact admin to update your account email."
+            )
+            return self.render_to_response(self.get_context_data(form=form))
+
         try:
             return super().form_valid(form)
         except Exception as exc:

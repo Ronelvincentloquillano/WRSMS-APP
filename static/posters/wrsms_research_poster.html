@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WRSMS Research Poster — SmartDynamic Refilling</title>
+  <style>
+    :root {
+      --brown-dark: #4a3728;
+      --brown-mid: #6b4f3a;
+      --tan: #e8d5c4;
+      --cream: #faf6f2;
+      --accent: #8b6914;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--cream);
+      color: #1a1a1a;
+      line-height: 1.35;
+    }
+    .poster {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 32px 40px;
+      background: #fff;
+      min-height: 100vh;
+    }
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      border-bottom: 3px solid var(--brown-dark);
+      padding-bottom: 16px;
+    }
+    .logo-slot {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--tan), #d4b896);
+      border: 3px solid var(--brown-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      text-align: center;
+      color: var(--brown-dark);
+      flex-shrink: 0;
+    }
+    .title-block {
+      flex: 1;
+      text-align: center;
+      padding: 0 12px;
+    }
+    .title-block h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.15rem, 2.5vw, 1.65rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #111;
+      line-height: 1.2;
+    }
+    .authors {
+      font-size: 0.85rem;
+      color: #333;
+    }
+    .section-tag {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 22px 0 12px;
+    }
+    .section-tag .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--brown-mid);
+      flex-shrink: 0;
+    }
+    .section-tag .label {
+      background: var(--brown-dark);
+      color: #fff;
+      padding: 8px 22px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
+    }
+    .obj-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 20px;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 768px) {
+      .obj-grid { grid-template-columns: 1fr; }
+    }
+    .obj-card {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      background: var(--cream);
+      border-radius: 12px;
+      border: 1px solid #ddd5cc;
+    }
+    .obj-icon {
+      font-size: 1.75rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .obj-card p {
+      margin: 0;
+      font-size: 0.88rem;
+    }
+    .mid-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .mid-grid { grid-template-columns: 1fr; }
+    }
+    .results-box {
+      background: var(--brown-dark);
+      color: #fff;
+      padding: 22px 24px;
+      border-radius: 16px;
+      min-height: 280px;
+    }
+    .results-box h3 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .results-box p {
+      margin: 0;
+      font-size: 0.88rem;
+      opacity: 0.95;
+    }
+    .method-box {
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 2px solid var(--brown-mid);
+      background: #fff;
+      min-height: 280px;
+    }
+    .method-box h3 {
+      margin: 0 0 14px;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--brown-dark);
+      text-transform: uppercase;
+    }
+    .cycle {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--brown-dark);
+      margin: 16px 0;
+    }
+    .cycle span {
+      background: var(--tan);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--brown-mid);
+    }
+    .cycle .arrow {
+      color: var(--accent);
+      font-weight: 900;
+    }
+    .method-note {
+      font-size: 0.82rem;
+      color: #333;
+      margin: 0;
+    }
+    .intro-box {
+      margin-top: 20px;
+      padding: 22px 26px;
+      background: var(--tan);
+      border-radius: 16px;
+      border: 1px solid #c9b09a;
+    }
+    .intro-box p {
+      margin: 0;
+      font-size: 0.9rem;
+      text-align: justify;
+    }
+    .refs {
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 2px solid var(--brown-dark);
+    }
+    .refs h4 {
+      margin: 0 0 10px;
+      font-size: 0.85rem;
+      color: var(--brown-dark);
+    }
+    .refs ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 0.68rem;
+      color: #333;
+      line-height: 1.45;
+    }
+    @media print {
+      body { background: #fff; }
+      .poster { max-width: none; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header-row">
+      <div class="logo-slot">College<br />Logo</div>
+      <div class="title-block">
+        <h1>SmartDynamic Refilling (WRSMS): A Secure, Scalable, Mobile-Responsive PWA for Managing Sales, Inventory, Expenses, and Forecasts — Case: Elle’s Water Refilling Station</h1>
+        <p class="authors">
+          <!-- Replace with your manuscript author line -->
+          [Author Names] | Bachelor of Science in Information Technology | Palawan State University
+        </p>
+      </div>
+      <div class="logo-slot">University<br />Logo</div>
+    </div>
+
+    <div class="section-tag">
+      <span class="dot"></span>
+      <span class="label">Objectives of the Study</span>
+    </div>
+    <div class="obj-grid">
+      <div class="obj-card">
+        <span class="obj-icon" aria-hidden="true">🔐</span>
+        <p><strong>General objective.</strong> Design, develop, and deploy SmartDynamic Refilling as a secure, scalable, mobile-responsive PWA for real-time and offline management of sales, products, expenses, and forecasts.</p>
+      </div>
+      <div class="obj-card">
+        <span class="obj-icon" aria-hidden="true">🗄️</span>
+        <p><strong>Data layer.</strong> Develop secure storage and retrieval using Python, Django, and PostgreSQL; core modules for sales, orders, inventory/container tracking, and expenses with validation and consistent identifiers.</p>
+      </div>
+      <div class="obj-card">
+        <span class="obj-icon" aria-hidden="true">📈</span>
+        <p><strong>Analytics &amp; continuity.</strong> Develop forecasting and analytics from historical data; implement PWA offline use and sync with deduplication safeguards.</p>
+      </div>
+      <div class="obj-card">
+        <span class="obj-icon" aria-hidden="true">☁️</span>
+        <p><strong>Deployment.</strong> SaaS-style hosting on Render with GitHub version control and auto-deployment for maintainable, collaborative delivery.</p>
+      </div>
+    </div>
+
+    <div class="mid-grid">
+      <div class="results-box">
+        <h3>Results</h3>
+        <p>
+          <strong>WRSMS-PWA</strong> was implemented for <strong>Elle’s Water Refilling Station</strong>: role-based dashboards (Owner/Admin, Staff, Delivery),
+          sales and payments (including offline queue + sync with <code>offline_request_id</code> idempotency),
+          inventory and container tracking, expenses, customer and delivery workflows, reports, basic demand forecasting, and
+          <strong>subscription-based access control</strong>. The stack matches the manuscript:
+          <strong>Django</strong>, <strong>PostgreSQL</strong>, <strong>HTML5 / Tailwind CSS / JavaScript</strong>, <strong>HTTPS</strong>, and
+          <strong>Render</strong> hosting with GitHub auto-deploy. Validation followed the documented strategy:
+          <strong>unit, integration, and system testing</strong>, plus structured evaluation with station stakeholders (including questionnaires aligned with TAM).
+        </p>
+      </div>
+      <div class="method-box">
+        <h3>Methodology</h3>
+        <p class="method-note" style="text-align:center;margin-bottom:8px;">
+          <strong>Hybrid, iterative approach</strong> guided by the <strong>Software Development Life Cycle (SDLC)</strong>:
+          requirements (interviews, observation, literature) → design (DFD, ERD, architecture) → iterative build/test → cloud deployment → refinement after user feedback.
+        </p>
+        <div class="cycle" aria-label="SDLC cycle">
+          <span>Requirements</span><span class="arrow">→</span>
+          <span>Design</span><span class="arrow">→</span>
+          <span>Implement</span><span class="arrow">→</span>
+          <span>Test</span><span class="arrow">→</span>
+          <span>Deploy</span><span class="arrow">→</span>
+          <span>Maintain</span><span class="arrow">→</span>
+          <span>Requirements</span>
+        </div>
+        <p class="method-note">
+          Major modules (sales, orders, inventory/containers, expenses, reporting, forecasting, PWA/offline) were refined across iterations.
+          Ethical safeguards followed RA 10173 (Data Privacy Act); production use enforces authentication, RBAC, and encrypted transmission.
+        </p>
+      </div>
+    </div>
+
+    <div class="section-tag" style="margin-top:26px;">
+      <span class="dot"></span>
+      <span class="label">Introduction</span>
+    </div>
+    <div class="intro-box">
+      <p>
+        Philippine water refilling SMEs often depend on <strong>manual processes</strong>, causing delays, errors, and weak visibility over
+        stock, sales, and expenses. <strong>SmartDynamic Refilling</strong> addresses this through a <strong>relational, web-based platform</strong>
+        for inventory, sales, expenses, and reporting, with a <strong>mobile-responsive</strong> UI. The updated system adds
+        <strong>PWA</strong> capabilities—offline access, queued transactions with sync on reconnect, visibility of pending records, and safeguards against duplicate posting.
+        While the architecture supports multi-station SaaS growth, this study centers on first practical deployment at <strong>Elle’s Water Refilling Station</strong>,
+        demonstrating centralized digital workflows, monitoring, and decision-ready outputs for the sector.
+      </p>
+    </div>
+
+    <div class="refs">
+      <h4>References <span style="font-weight:400;">(abbreviated — use full APA 7th from Chapter 2 in final poster)</span></h4>
+      <ol>
+        <li>Tanaman et al. (2023). Online inventory systems for small retail enterprises in the Philippines.</li>
+        <li>Baylen (2020). Inventory management practices among small eateries in Quezon Province.</li>
+        <li>Madcom (2022). Operational optimization of a potable water refilling station (inventory &amp; supply).</li>
+        <li>Bucao et al. (2020). Computerized inventory system for a water refilling station.</li>
+        <li>Hidalgo et al. (2020). ICT adoption among SMEs in the Philippines.</li>
+        <li>Lo &amp; Madcom (2022). Sales and inventory tracking in water refilling stations.</li>
+        <li>Angga (2021). Web-based inventory with demand forecasting (moving average).</li>
+        <li>Agboola et al. (2022). Real-time inventory tracking systems.</li>
+        <li>Seethamraju (2014). SaaS acceptance among SMEs.</li>
+        <li>Alfonso-Gautier et al. (2023). Water refilling station management system.</li>
+        <li>Lingolu &amp; Dobbala (2022). Progressive Web Applications (PWA) utility and accessibility.</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

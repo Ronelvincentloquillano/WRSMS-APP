@@ -64,7 +64,10 @@
 
     form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach((el) => {
       if (el.type === 'file') return;
-      el.classList.add('w-full', 'rounded-md', 'border', 'border-slate-300', 'px-3', 'py-2', 'text-sm', 'dark:bg-slate-800', 'dark:border-slate-600');
+      el.classList.add(
+        'w-full', 'rounded-md', 'border', 'border-slate-300',
+        'px-3', 'py-2', 'text-sm', 'bg-white', 'text-slate-900', 'placeholder:text-slate-400'
+      );
     });
 
     const fileInput = document.getElementById('id_image');
