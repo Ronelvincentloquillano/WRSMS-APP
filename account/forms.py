@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
+from django.core.mail import EmailMultiAlternatives
 from django.db.models import Q
+from django.template import loader
 from django.utils.translation import gettext_lazy as _
 
 from wrsm_app.models import Station
@@ -58,11 +60,35 @@ class UsernameOrEmailPasswordResetForm(PasswordResetForm):
     def clean_email(self):
         return (self.cleaned_data.get("email") or "").strip()
 
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        """
+        Django's PasswordResetForm.send_mail catches all exceptions and only logs
+        them, so the reset view always redirects to "done" even when SMTP fails.
+        Re-raise so the view can show a clear error and operators can fix EMAIL_*.
+        """
+        subject = loader.render_to_string(subject_template_name, context)
+        subject = "".join(subject.splitlines())
+        body = loader.render_to_string(email_template_name, context)
+        email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+        if html_email_template_name is not None:
+            html_email = loader.render_to_string(html_email_template_name, context)
+            email_message.attach_alternative(html_email, "text/html")
+        email_message.send(fail_silently=False)
+
     def get_users(self, email):
         if not email:
-            return User._default_manager.none()
+            return ()
         email_field_name = User.get_email_field_name()
-        return User._default_manager.filter(
+        qs = User._default_manager.filter(
             Q(**{f"{email_field_name}__iexact": email}) | Q(username__iexact=email),
             is_active=True,
         )
+        return (u for u in qs if u.has_usable_password())

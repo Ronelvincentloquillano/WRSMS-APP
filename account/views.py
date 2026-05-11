@@ -60,14 +60,25 @@ class SafePasswordResetView(auth_views.PasswordResetView):
                 "extra_email_context": self.extra_email_context,
             }
             form.save(**opts)
+            messages.success(
+                self.request,
+                "Password reset link sent. Check your inbox and spam folder; delivery can take a minute.",
+            )
             return HttpResponseRedirect(self.get_success_url())
         except Exception as exc:
             logger.exception("Password reset email send failed.")
-            messages.error(
-                self.request,
-                f"We couldn't send the reset email right now ({exc.__class__.__name__}). "
-                "Please verify email service settings and try again."
+            detail = (str(exc) or "").strip()
+            if len(detail) > 280:
+                detail = detail[:280] + "..."
+            msg = (
+                f"We couldn't send the reset email ({exc.__class__.__name__}). "
+                "On Render (or your host), set EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS / "
+                "EMAIL_USE_SSL, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, and DEFAULT_FROM_EMAIL "
+                "to match your SMTP provider (e.g. Brevo)."
             )
+            if detail:
+                msg += f" Server said: {detail}"
+            messages.error(self.request, msg)
             return self.render_to_response(self.get_context_data(form=form))
 
 
