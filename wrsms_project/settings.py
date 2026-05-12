@@ -223,6 +223,9 @@ EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=25)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='WRSMS Support <rvloquillano07@gmail.com>')
 GCASH_ACCOUNT_NAME = env('GCASH_ACCOUNT_NAME', default='RONEL VINCENT CASEÑAS LOQUILLANO')
 GCASH_ACCOUNT_NUMBER = env('GCASH_ACCOUNT_NUMBER', default='09669733621')
+# Full https URL to the GCash QR image for platform subscription payments (same number as GCASH_ACCOUNT_NUMBER).
+# Set on Render so subscription-expired shows a scannable code without per-station Station Settings uploads.
+GCASH_QR_URL = (env('GCASH_QR_URL', default='') or '').strip()
 
 
 # Render sets RENDER=true; local disk for logs can be read-only or fail on startup.

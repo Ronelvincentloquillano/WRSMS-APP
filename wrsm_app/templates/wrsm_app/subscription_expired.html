@@ -36,8 +36,8 @@
                          data-fallback-src="{{ qr_fallback }}">
                 </div>
                 {% else %}
-                <div class="mt-4 rounded-md bg-yellow-50 p-3 text-xs text-yellow-800">
-                    GCash QR is not uploaded yet. Please ask admin to upload it in Station Settings.
+                <div class="mt-4 rounded-md bg-yellow-50 p-3 text-xs text-yellow-800 space-y-1">
+                    <p>No scannable QR is configured yet. Ask your admin to either upload a QR in <strong>Station Settings</strong> (saved to cloud storage) or set the <code class="bg-yellow-100 px-1 rounded">GCASH_QR_URL</code> environment variable to a full <code class="bg-yellow-100 px-1 rounded">https://</code> image URL for the GCash number above.</p>
                 </div>
                 {% endif %}
 

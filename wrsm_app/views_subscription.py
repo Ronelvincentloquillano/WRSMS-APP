@@ -10,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from account.models import StationSubscription, SubscriptionPlan, SubscriptionPaymentRequest
 from wrsm_app.models import StationSetting
+from wrsm_app.media_utils import resolve_hosted_media_url
 from .paymongo_config import create_gcash_source, retrieve_source, create_payment
 
 logger = logging.getLogger(__name__)
@@ -40,12 +41,17 @@ def subscription_expired(request):
         ).first()
         station_settings = StationSetting.objects.filter(station=station).order_by('-pk').first()
 
+    # Prefer platform subscription QR (env) so renewals match GCASH_*; then station upload if hosted-safe.
+    gcash_qr_url = getattr(settings, 'GCASH_QR_URL', '') or ''
+    if not gcash_qr_url and station_settings and station_settings.gcash_qr_image:
+        gcash_qr_url = resolve_hosted_media_url(station_settings.gcash_qr_image)
+
     context = {
         'plans': plans,
         'pending_request': pending_request,
         'gcash_account_name': getattr(settings, 'GCASH_ACCOUNT_NAME', ''),
         'gcash_account_number': getattr(settings, 'GCASH_ACCOUNT_NUMBER', ''),
-        'gcash_qr_url': (station_settings.gcash_qr_image.url if station_settings and station_settings.gcash_qr_image else ''),
+        'gcash_qr_url': gcash_qr_url,
     }
     return render(request, 'wrsm_app/subscription_expired.html', context)
 

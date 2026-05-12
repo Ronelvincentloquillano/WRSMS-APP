@@ -1,6 +1,6 @@
 from django import template
-from django.conf import settings
-import os
+
+from wrsm_app.media_utils import resolve_hosted_media_url
 
 register = template.Library()
 
@@ -14,26 +14,7 @@ def hosted_media_url(fieldfile):
     exist on Render. In production (DEBUG=False), only absolute http(s) URLs
     (e.g. Cloudinary) are returned so templates can fall back to placeholders.
     """
-    if not fieldfile:
-        return ''
-    try:
-        url = fieldfile.url
-    except ValueError:
-        return ''
-    if (
-        url.startswith('https://')
-        or url.startswith('http://')
-        or url.startswith('//')
-    ):
-        return url
-    # On Render, old DB paths usually point to missing /media files.
-    # Force template fallback instead of returning broken local paths.
-    is_render = os.environ.get('RENDER', '').lower() in ('1', 'true', 'yes')
-    if is_render:
-        return ''
-    if getattr(settings, 'DEBUG', False):
-        return url
-    return ''
+    return resolve_hosted_media_url(fieldfile)
 
 @register.filter
 def get_item(dictionary, key):
