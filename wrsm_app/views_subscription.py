@@ -16,6 +16,21 @@ from .paymongo_config import create_gcash_source, retrieve_source, create_paymen
 logger = logging.getLogger(__name__)
 
 
+def _gcash_subscription_builtin_qr_url():
+    """
+    Always-loadable QR (QuickChart) encoding the GCash number as plain text.
+    Used when no hosted image URL is configured, or as <img> onerror fallback when the primary URL is dead.
+    """
+    from urllib.parse import quote
+
+    raw = (getattr(settings, 'GCASH_ACCOUNT_NUMBER', '') or '').strip()
+    digits = ''.join(c for c in raw if c.isdigit())
+    if len(digits) < 10:
+        return ''
+    text = f'GCash {digits}'
+    return f'https://quickchart.io/qr?size=280&margin=2&text={quote(text)}'
+
+
 def _clear_payment_session(request):
     """Clear payment-related session keys so user can retry."""
     for key in ('paymongo_source_id', 'pending_plan_id', 'pending_billing_cycle'):
@@ -41,17 +56,22 @@ def subscription_expired(request):
         ).first()
         station_settings = StationSetting.objects.filter(station=station).order_by('-pk').first()
 
-    # Prefer platform subscription QR (env) so renewals match GCASH_*; then station upload if hosted-safe.
-    gcash_qr_url = getattr(settings, 'GCASH_QR_URL', '') or ''
-    if not gcash_qr_url and station_settings and station_settings.gcash_qr_image:
-        gcash_qr_url = resolve_hosted_media_url(station_settings.gcash_qr_image)
+    # Prefer platform image (GCASH_QR_URL), then station upload if absolute URL; else built-in number QR.
+    gcash_qr_primary_url = (getattr(settings, 'GCASH_QR_URL', '') or '').strip()
+    if not gcash_qr_primary_url and station_settings and station_settings.gcash_qr_image:
+        gcash_qr_primary_url = resolve_hosted_media_url(station_settings.gcash_qr_image)
+
+    gcash_qr_builtin_url = _gcash_subscription_builtin_qr_url()
+    has_gcash_qr = bool(gcash_qr_primary_url or gcash_qr_builtin_url)
 
     context = {
         'plans': plans,
         'pending_request': pending_request,
         'gcash_account_name': getattr(settings, 'GCASH_ACCOUNT_NAME', ''),
         'gcash_account_number': getattr(settings, 'GCASH_ACCOUNT_NUMBER', ''),
-        'gcash_qr_url': gcash_qr_url,
+        'gcash_qr_primary_url': gcash_qr_primary_url,
+        'gcash_qr_builtin_url': gcash_qr_builtin_url,
+        'has_gcash_qr': has_gcash_qr,
     }
     return render(request, 'wrsm_app/subscription_expired.html', context)
 

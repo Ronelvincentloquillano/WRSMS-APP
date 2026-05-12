@@ -29,11 +29,17 @@
                     <p class="text-xs text-gray-500">Pay the exact amount based on your selected plan and billing cycle.</p>
                 </div>
 
-                {% if gcash_qr_url %}
+                {% if has_gcash_qr %}
                 <div class="mt-4">
-                    <img src="{{ gcash_qr_url }}" alt="GCash QR Code"
+                    <img id="gcashSubQr"
+                         src="{% if gcash_qr_primary_url %}{{ gcash_qr_primary_url }}{% else %}{{ gcash_qr_builtin_url }}{% endif %}"
+                         alt="GCash QR Code"
                          class="w-full max-w-xs rounded-lg border border-gray-200 bg-white p-1 object-contain gcash-qr-preview-image"
+                         data-builtin-qr="{{ gcash_qr_builtin_url }}"
                          data-fallback-src="{{ qr_fallback }}">
+                    {% if gcash_qr_builtin_url %}
+                    <p class="mt-2 text-xs text-gray-500">If the image does not load, wait a moment or refresh. The code encodes the GCash number above for reference; for the official pay-to QR, set <code class="bg-gray-100 px-1 rounded">GCASH_QR_URL</code> in server settings.</p>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="mt-4 rounded-md bg-yellow-50 p-3 text-xs text-yellow-800 space-y-1">
@@ -146,15 +152,29 @@
         const qrImages = document.querySelectorAll('.gcash-qr-preview-image[data-fallback-src]');
         qrImages.forEach((img) => {
             const fallback = img.getAttribute('data-fallback-src');
-            const applyFallback = () => {
-                if (!fallback || img.dataset.fallbackApplied === '1') return;
-                img.dataset.fallbackApplied = '1';
-                img.src = fallback;
-                img.alt = 'GCash QR placeholder';
-            };
-            img.addEventListener('error', applyFallback);
+            const builtin = (img.getAttribute('data-builtin-qr') || '').trim();
+            img.addEventListener('error', function onQrImgError() {
+                if (img.dataset.qrRecover === '1') {
+                    if (fallback && img.src !== fallback) {
+                        img.dataset.qrRecover = '2';
+                        img.src = fallback;
+                        img.alt = 'GCash QR placeholder';
+                    }
+                    return;
+                }
+                if (builtin && !img.src.includes('quickchart.io')) {
+                    img.dataset.qrRecover = '1';
+                    img.src = builtin;
+                    return;
+                }
+                if (fallback) {
+                    img.dataset.qrRecover = '2';
+                    img.src = fallback;
+                    img.alt = 'GCash QR placeholder';
+                }
+            });
             if (img.complete && img.naturalWidth === 0) {
-                applyFallback();
+                img.dispatchEvent(new Event('error'));
             }
         });
 
